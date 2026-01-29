@@ -8,10 +8,12 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 
-export enum UserRole {
-  Admin = "admin",
-  Visitor = "visitor",
-}
+export const UserRole = {
+  Admin: "admin",
+  Visitor: "visitor",
+} as const;
+
+export type Role = (typeof UserRole)[keyof typeof UserRole];
 
 @ObjectType()
 @Entity()
@@ -33,7 +35,7 @@ export class User extends BaseEntity {
 
   @Field()
   @Column({ enum: UserRole, default: UserRole.Visitor })
-  role: UserRole;
+  role: Role;
 }
 
 @InputType()
