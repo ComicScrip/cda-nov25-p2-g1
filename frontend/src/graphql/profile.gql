@@ -1,0 +1,8 @@
+query profile {
+  me {
+    id
+    email
+    createdAt
+    role
+  }
+}

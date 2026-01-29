@@ -1,0 +1,38 @@
+services:
+  db:
+    stop_grace_period: 1s
+    image: postgres:18.1-alpine3.23
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 2s
+      retries: 10
+    ports:
+      - 5432:5432
+  backend:
+    stop_grace_period: 1s
+    build: backend
+    env_file:
+      - backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+    ports:
+      - 4000:4000
+    volumes:
+      - ./backend/src:/app/src
+  frontend:
+    stop_grace_period: 1s
+    build: frontend
+    env_file:
+      - frontend/.env
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
