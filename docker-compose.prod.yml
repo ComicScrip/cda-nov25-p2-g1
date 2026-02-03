@@ -23,6 +23,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: postgres
+      GRAPHQL_SERVER_PORT: 4000
     env_file:
       - .env.production
     healthcheck:
