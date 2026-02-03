@@ -1,11 +1,3 @@
-export const PathologyName = {
-  Diabete: "diabete",
-  Hypertension: "hypertension",
-  Obesite: "obesite",
-  Allergie: "allergie",
-} as const;
-
-export type PathologyName = (typeof PathologyName)[keyof typeof PathologyName];
 
 export const DishType = {
   Entree: "entree",
