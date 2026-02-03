@@ -2,7 +2,7 @@
 process.env.JWT_SECRET = "test-secret-key-for-jwt-tests";
 process.env.NODE_ENV = "test";
 
-import { verifyJWT, createJWT } from "../src/auth";
+import { createJWT, verifyJWT } from "../src/auth";
 import { User } from "../src/entities/User";
 
 describe("Auth functions", () => {

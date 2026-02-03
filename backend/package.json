@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "resetDB": "ts-node src/db/reset.ts",
+    "build": "tsc",
+    "start": "node build/index.js",
     "lint": "biome check",
     "format": "biome format --write && biome check --write",
     "test": "jest",
