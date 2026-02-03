@@ -1,0 +1,39 @@
+name: Compile and push client and server to staging environment
+
+on:
+  push:
+    branches: ["prepare-deploy"]
+  workflow_dispatch:
+
+jobs:
+  client-tests:
+    # To verify with Pierre whether we have the correct paths for the frontend tests (That's Ok now)
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-frontend.yml@prepare-deploy
+
+  server-tests:
+    # Added after creating backend test file
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@prepare-deploy
+
+  build-and-push-server:
+    needs:
+      - server-tests
+    # To verify with Pierre whether we have the correct paths for the backend build
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-backend.yml@prepare-deploy
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      # Change this to the correct image name for the backend with the correct tag and the correct repository name from the dockerhub
+      image_name: mydietchef/mdc-mars26-back:staging
+
+  build-and-push-client:
+    needs:
+      - client-tests
+    # To verify with Pierre whether we have the correct paths for the frontend build
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-frontend.yml@prepare-deploy
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      # Change this to the correct image name for the frontend with the correct tag and the correct repository name from the dockerhub
+      image_name: mydietchef/mdc-mars26-front:staging
