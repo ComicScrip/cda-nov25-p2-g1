@@ -24,7 +24,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
       # Change this to the correct image name for the backend with the correct tag and the correct repository name from the dockerhub
-      image_name: mydietchef/mdc-mars26-back:staging
+      image_name: mydietchief/mdc-mars26-back:staging
 
   build-and-push-client:
     needs:
@@ -36,4 +36,4 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
       # Change this to the correct image name for the frontend with the correct tag and the correct repository name from the dockerhub
-      image_name: mydietchef/mdc-mars26-front:staging
+      image_name: mydietchief/mdc-mars26-front:staging
