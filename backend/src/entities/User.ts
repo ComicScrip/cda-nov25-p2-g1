@@ -26,18 +26,16 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
-  @Field()
-  @Column({ enum: UserRole, default: UserRole.Visitor })
-  role: Role;
-
   @Column()
   hashedPassword: string;
 
   @Field()
+  @Column({ enum: UserRole, default: UserRole.Visitor })
+  role: Role;
+
+  @Field()
   @CreateDateColumn()
   createdAt: Date;
-
-
 }
 
 @InputType()
