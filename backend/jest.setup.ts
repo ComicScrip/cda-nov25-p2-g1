@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
-const envPath = path.resolve(__dirname, "..", ".env.test");
+const envPath = path.resolve(__dirname, ".env.test");
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf8");
@@ -13,7 +13,7 @@ if (fs.existsSync(envPath)) {
     const key = line.slice(0, eqIndex).trim();
     let value = line.slice(eqIndex + 1).trim();
     if (
-      (value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith('"') && value.endsWith('"')) ||
       (value.startsWith("'") && value.endsWith("'"))
     ) {
       value = value.slice(1, -1);
