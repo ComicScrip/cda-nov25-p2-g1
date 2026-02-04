@@ -1,0 +1,21 @@
+name: Lint frontend
+
+on:
+  pull_request:
+    paths: [ 'frontend/**' ]
+
+
+jobs:
+  linting-frontend:
+    name: Linting frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+      - name: Run Biome
+        run: biome ci .

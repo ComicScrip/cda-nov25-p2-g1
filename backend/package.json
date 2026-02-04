@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "resetDB": "ts-node src/db/reset.ts",
+    "build": "tsc",
+    "start": "node build/index.js",
     "lint": "biome check",
-    "format": "biome format --write && biome check --write"
+    "format": "biome format --write && biome check --write",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "repository": {
     "type": "git",
@@ -37,7 +41,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }
 }
