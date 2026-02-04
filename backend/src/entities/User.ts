@@ -30,12 +30,12 @@ export class User extends BaseEntity {
   hashedPassword: string;
 
   @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
   @Column({ enum: UserRole, default: UserRole.Visitor })
   role: Role;
+
+  @Field()
+  @CreateDateColumn()
+  createdAt: Date;
 }
 
 @InputType()

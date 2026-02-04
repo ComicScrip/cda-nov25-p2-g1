@@ -7,10 +7,11 @@ RUN apk add --no-cache curl ca-certificates
 
 COPY package*.json ./
 
-# Pour ne pas réécrire le package-lock.json
 RUN npm ci
 
 COPY src ./src
 COPY tsconfig.json ./tsconfig.json
 
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+CMD ["npm", "start"]
