@@ -12,8 +12,9 @@ import {
 import { UserProfile } from "./UserProfile";
 
 export enum UserRole {
-  ADMIN = "admin",
-  VISITOR = "visitor",
+  Coach = "coach",
+  Coachee = "coachee",
+  Admin = "admin",
 }
 
 registerEnumType(UserRole, {
@@ -38,7 +39,7 @@ export class User extends BaseEntity {
   @Column({
     type: "enum",
     enum: UserRole,
-    default: UserRole.VISITOR,
+    default: UserRole.Coachee,
   })
   role!: UserRole;
 
