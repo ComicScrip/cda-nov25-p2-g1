@@ -1,5 +1,6 @@
 import { DataSource } from "typeorm";
 import { User } from "../entities/User";
+import { UserProfile } from "../entities/UserProfile";
 import env from "../env";
 
 export default new DataSource({
@@ -9,7 +10,7 @@ export default new DataSource({
   password: env.DB_PASS,
   port: env.DB_PORT,
   database: env.DB_NAME,
-  entities: [User],
+  entities: [User, UserProfile],
   synchronize: env.NODE_ENV !== "production",
   //logging: true
 });
