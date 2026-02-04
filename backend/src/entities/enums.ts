@@ -1,66 +1,42 @@
+export enum DishType {
+  Entree = "entree",
+  Plat = "plat",
+  Dessert = "dessert",
+}
 
-export const DishType = {
-  Entree: "entree",
-  Plat: "plat",
-  Dessert: "dessert",
-} as const;
+export enum AnalysisStatus {
+  EnAttente = "en_attente",
+  EnCours = "en_cours",
+  Complete = "complete",
+  Valide = "valide",
+}
 
-export type DishType = (typeof DishType)[keyof typeof DishType];
+export enum Unit {
+  G = "g",
+  Ml = "ml",
+  Pcs = "pcs",
+}
 
-export const AnalysisStatus = {
-  EnAttente: "en_attente",
-  EnCours: "en_cours",
-  Complete: "complete",
-  Valide: "valide",
-} as const;
+export enum MealType {
+  PetitDejeuner = "petit_dejeuner",
+  Dejeuner = "dejeuner",
+  Collation = "collation",
+  Diner = "diner",
+}
 
-export type AnalysisStatus =
-  (typeof AnalysisStatus)[keyof typeof AnalysisStatus];
+export enum Status {
+  Brouillon = "brouillon",
+  Publie = "publie",
+  Archive = "archive",
+}
 
-export const Unit = {
-  G: "g",
-  Ml: "ml",
-  Pcs: "pcs",
-} as const;
+export enum UserRole {
+  Coach = "coach",
+  Coachee = "coachee",
+  Admin = "admin",
+}
 
-export type Unit = (typeof Unit)[keyof typeof Unit];
-
-export const MealType = {
-  PetitDejeuner: "petit_dejeuner",
-  Dejeuner: "dejeuner",
-  Collation: "collation",
-  Diner: "diner",
-} as const;
-
-export type MealType = (typeof MealType)[keyof typeof MealType];
-
-export const Status = {
-  Brouillon: "brouillon",
-  Publie: "publie",
-  Archive: "archive",
-} as const;
-
-export type Status = (typeof Status)[keyof typeof Status];
-
-export const UserRole = {
-  Coach: "coach",
-  Coachee: "coachee",
-  Admin: "admin",
-} as const;
-
-export type UserRole = (typeof UserRole)[keyof typeof UserRole];
-
-export const Gender = {
-  Homme: "homme",
-  Femme: "femme",
-} as const;
-
-export type Gender = (typeof Gender)[keyof typeof Gender];
-
-export const Goal = {
-  PertePoids: "perte_poids",
-  PriseMasse: "prise_masse",
-  Maintien: "maintien",
-} as const;
-
-export type Goal = (typeof Goal)[keyof typeof Goal];
+export enum Gender {
+  Homme = "homme",
+  Femme = "femme",
+}
