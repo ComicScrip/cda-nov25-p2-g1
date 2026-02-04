@@ -29,7 +29,7 @@ export default function Header() {
     <header>
       <nav className="flex p-4 border-b border-gray-400 w-full flex-row justify-between items-center">
         <Link href="/" className="w-max">
-          <h1 className="text-orange-600 text-2xl font-bold">P2 template</h1>
+          <h1 className="text-orange-600 text-2xl font-bold">P2 template Updated</h1>
         </Link>
 
         <div className="flex gap-2 items-center">

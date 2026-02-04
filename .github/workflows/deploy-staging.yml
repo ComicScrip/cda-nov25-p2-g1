@@ -10,13 +10,13 @@ jobs:
     # To verify with Pierre whether we have the correct paths for the frontend tests (That's Ok now)
     uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-frontend.yml@prepare-deploy
 
-  # server-tests:
-    # Added after creating backend test file
-    # uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@prepare-deploy
+  server-tests:
+    # To verify with Pierre whether we have the correct paths for the backend tests (That's Ok now)
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@prepare-deploy
 
   build-and-push-server:
-    # needs: 
-    #  - server-tests
+    needs: 
+      - server-tests
     # To verify with Pierre whether we have the correct paths for the backend build
     uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-backend.yml@prepare-deploy
     secrets:
@@ -37,3 +37,14 @@ jobs:
     with:
       # Change this to the correct image name for the frontend with the correct tag and the correct repository name from the dockerhub
       image_name: mydietchief/mdc-mars26-front:staging
+
+  notify-vps:
+    needs:
+    - build-and-push-server
+    - build-and-push-client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Webhook on VPS
+        run: |
+          curl -X POST -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-staging
+

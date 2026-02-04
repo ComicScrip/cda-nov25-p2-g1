@@ -15,7 +15,7 @@ services:
 
   backend:
     container_name: ${DEPLOY_ENV:-staging}-backend
-    image: mydietchef/mdc-mars26-back:${DEPLOY_ENV:-staging}
+    image: mydietchief/mdc-mars26-back:${DEPLOY_ENV:-staging}
     depends_on:
       db:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
 
   frontend:
     container_name: ${DEPLOY_ENV:-staging}-frontend
-    image: mydietchef/mdc-mars26-front:${DEPLOY_ENV:-staging}
+    image: mydietchief/mdc-mars26-front:${DEPLOY_ENV:-staging}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
       interval: 2s
