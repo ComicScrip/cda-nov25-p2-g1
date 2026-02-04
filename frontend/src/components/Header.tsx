@@ -29,12 +29,6 @@ export default function Header() {
   };
 
   return (
-<<<<<<< HEAD
-    <header>
-      <nav className="flex p-4 border-b border-gray-400 w-full flex-row justify-between items-center">
-        <Link href="/" className="w-max">
-          <h1 className="text-orange-600 text-2xl font-bold">P2 template</h1>
-=======
     <header className="bg-dark-header w-full">
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
@@ -42,7 +36,6 @@ export default function Header() {
           <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm">
             <span className="text-gray-800 text-2xl font-bold">M</span>
           </div>
->>>>>>> 6905a8a36a6496059909e357f539d0e9fe66c80f
         </Link>
 
         {/* Desktop Navigation */}
