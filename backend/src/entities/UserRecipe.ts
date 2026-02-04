@@ -28,10 +28,7 @@ export class UserRecipe extends BaseEntity {
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
 
-  @ManyToOne(
-    () => User,
-    { onDelete: "CASCADE" },
-  )
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: User;
 }

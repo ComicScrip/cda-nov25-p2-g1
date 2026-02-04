@@ -7,9 +7,9 @@ import {
   ManyToOne,
   PrimaryColumn,
 } from "typeorm";
+import { Unit } from "./enums";
 import { Ingredient } from "./Ingredient";
 import { Recipe } from "./Recipe";
-import { Unit } from "./enums";
 
 @ObjectType()
 @Entity({ name: "recipe_ingredient" })

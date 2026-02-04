@@ -71,7 +71,11 @@ export class Recipe extends BaseEntity {
   proteinsPerServing?: number | null;
 
   @Field({ nullable: true })
-  @Column({ name: "carbohydrates_per_serving", type: "numeric", nullable: true })
+  @Column({
+    name: "carbohydrates_per_serving",
+    type: "numeric",
+    nullable: true,
+  })
   carbohydratesPerServing?: number | null;
 
   @Field({ nullable: true })
