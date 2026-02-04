@@ -35,14 +35,14 @@ jobs:
       image_name: mydietchief/mdc-mars26-front:staging
 
   notify-vps:
-  needs:
+    needs:
     - build-and-push-server
     - build-and-push-client
-  runs-on: ubuntu-latest
-  steps:
-    - name: Trigger Webhook on VPS
-      run: |
-        curl -X POST \
-          -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
-          https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Webhook on VPS
+        run: |
+          curl -X POST \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-staging
 
