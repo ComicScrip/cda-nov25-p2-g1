@@ -3,14 +3,14 @@ import type { ReactNode } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
 
-interface LayoutProps {
+interface HomeLayoutProps {
   children: ReactNode;
   pageTitle: string;
 }
 
-export default function Layout({ children, pageTitle }: LayoutProps) {
+export default function HomeLayout({ children, pageTitle }: HomeLayoutProps) {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Head>
         <title>{`MyDietChef - ${pageTitle}`}</title>
         <meta
@@ -21,10 +21,8 @@ export default function Layout({ children, pageTitle }: LayoutProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
-      <main className="bg-gray-50 min-h-[calc(100vh-64px-100px)] flex items-center justify-center">
-        {children}
-      </main>
+      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">{children}</main>
       <Footer />
-    </>
+    </div>
   );
 }
