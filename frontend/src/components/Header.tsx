@@ -33,8 +33,8 @@ export default function Header() {
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm">
-            <span className="text-gray-800 text-2xl font-bold">M</span>
+          <div className="logo-circle logo-circle-hover w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm">
+            <span className="text-gray-800 text-2xl font-semi-bold logo-letter">M</span>
           </div>
         </Link>
 
