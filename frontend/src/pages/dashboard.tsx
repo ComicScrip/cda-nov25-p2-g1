@@ -81,7 +81,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="mt-6 rounded-md border border-[#d5a76a] bg-gradient-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
+                <div className="mt-6 rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
                   <div className="flex items-start justify-between">
                     <div className="text-sm font-semibold text-[#3a2a12]">
                       Objectif calorique <span className="ml-2 font-normal">2000 cal / j</span>

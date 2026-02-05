@@ -1,21 +1,17 @@
 import { IsEmail, IsStrongPassword } from "class-validator";
-import {
-  Field,
-  InputType,
-  Int,
-  ObjectType,
-  registerEnumType,
-} from "type-graphql";
+import { Field, InputType, Int, ObjectType, registerEnumType } from "type-graphql";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { UserProfile } from "./UserProfile";
+import { Meal } from "./Meal";
+import { User_profile } from "./User_profile";
 
 export enum UserRole {
   Coach = "coach",
@@ -63,12 +59,19 @@ export class User extends BaseEntity {
 
   /* ---------------- Relations ---------------- */
 
-  @Field(() => UserProfile, { nullable: true })
+  @Field(() => User_profile, { nullable: true })
   @OneToOne(
-    () => UserProfile,
+    () => User_profile,
     (profile) => profile.user,
   )
-  profile?: UserProfile;
+  profile?: User_profile;
+
+  @Field(() => [Meal], { nullable: true })
+  @OneToMany(
+    () => Meal,
+    (meal) => meal.user,
+  )
+  meals?: Meal[];
 }
 
 @InputType()
