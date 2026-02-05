@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { UserProfile } from "./UserProfile";
+import { User_profile } from "./User_profile";
 
 export enum UserRole {
   Coach = "coach",
@@ -57,9 +57,9 @@ export class User extends BaseEntity {
 
   /* ---------------- Relations ---------------- */
 
-  @Field(() => UserProfile, { nullable: true })
-  @OneToOne(() => UserProfile, (profile) => profile.user)
-  profile?: UserProfile;
+  @Field(() => User_profile, { nullable: true })
+  @OneToOne(() => User_profile, (profile) => profile.user)
+  profile?: User_profile;
 }
 
 
