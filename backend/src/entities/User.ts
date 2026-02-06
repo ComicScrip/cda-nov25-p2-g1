@@ -1,32 +1,26 @@
 import { IsEmail, IsStrongPassword } from "class-validator";
-import { Field, Int, ObjectType, registerEnumType, InputType } from "type-graphql";
+import { Field, InputType, Int, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
-  OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from "typeorm";
-import { User_profile } from "./User_profile";
 
-export enum UserRole {
-  Coach = "coach",
-  Coachee = "coachee",
-  Admin = "admin",
-}
+export const UserRole = {
+  Admin: "admin",
+  Visitor: "visitor",
+} as const;
 
-registerEnumType(UserRole, {
-  name: "UserRole",
-});
+export type Role = (typeof UserRole)[keyof typeof UserRole];
 
 @ObjectType()
-@Entity({ name: "users" })
+@Entity()
 export class User extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
-  id!: number;
+  id: number;
 
   @Field()
   @Column({ unique: true })
@@ -35,33 +29,14 @@ export class User extends BaseEntity {
   @Column()
   hashedPassword: string;
 
-  @Field(() => UserRole)
-  @Column({
-    type: "enum",
-    enum: UserRole,
-    default: UserRole.Coachee,
-  })
-  role!: UserRole;
+  @Field()
+  @Column({ enum: UserRole, default: UserRole.Visitor })
+  role: Role;
 
-  @Field(() => Date)
-  @CreateDateColumn({ name: "created_at" })
-  created_at!: Date;
-
-  @Field(() => Date, { nullable: true })
-  @Column({ name: "last_login_at", type: "timestamp", nullable: true })
-  last_login_at!: Date | null;
-
-  @Field(() => Date)
-  @UpdateDateColumn({ name: "uploaded_at" })
-  uploaded_at!: Date;
-
-  /* ---------------- Relations ---------------- */
-
-  @Field(() => User_profile, { nullable: true })
-  @OneToOne(() => User_profile, (profile) => profile.user)
-  profile?: User_profile;
+  @Field()
+  @CreateDateColumn()
+  createdAt: Date;
 }
-
 
 @InputType()
 export class SignupInput {
