@@ -6,7 +6,7 @@ import {
   ManyToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { User_profile } from "./User_Profile";
+import { User_profile } from "./User_profile";
 
 @ObjectType()
 @Entity({ name: "pathologies" })

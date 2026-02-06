@@ -1,7 +1,7 @@
 import { DataSource } from "typeorm";
 import { User } from "../entities/User";
 import { Pathology } from "../entities/Pathology";
-import { User_profile } from "../entities/User_Profile";
+import { User_profile } from "../entities/User_profile";
 import { Weight_measure } from "../entities/Weight_measure";
 import env from "../env";
 
