@@ -1,8 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Italiano&display=swap");
 @import "tailwindcss";
-@plugin "daisyui" {
-  themes: bumblebee --default;
-}
 
 @theme {
   --color-dark-header: #2d2d2d;
@@ -82,6 +79,14 @@
 }
 
 @layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+
   .logo-circle {
     @apply w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.15)];
   }
