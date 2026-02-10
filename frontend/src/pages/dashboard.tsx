@@ -11,6 +11,7 @@ const meals = [
   { name: "Salade méditerranéenne", kcal: "320 kcal", protein: "25g", carbs: "42g", fat: "18g" },
   { name: "Hachis parmentier allégé", kcal: "420 kcal", protein: "25g", carbs: "42g", fat: "18g" },
   { name: "Salade césar", kcal: "380 kcal", protein: "25g", carbs: "42g", fat: "18g" },
+  { name: "Bowl quinoa & poulet", kcal: "410 kcal", protein: "30g", carbs: "36g", fat: "14g" },
 ];
 
 export default function DashboardPage() {
@@ -52,7 +53,7 @@ export default function DashboardPage() {
                         type="button"
                         className="w-full rounded-sm bg-[#f1f1f1] py-2 shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
                       >
-                        xxxxx
+                        Mon évolution
                       </button>
                     </li>
                   </ul>
@@ -109,15 +110,28 @@ export default function DashboardPage() {
                 <div className="mt-6 rounded-md bg-[#89c689] p-4 text-[#1f3d1f] shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
                   <h2 className="text-sm font-semibold">Derniers repas de la journée</h2>
                   <div className="mt-3 grid gap-3 text-[11px] sm:grid-cols-2">
-                    {meals.map((meal) => (
-                      <div key={meal.name} className="space-y-1">
+                    {meals.map((meal, index) => {
+                      const isSecondRow = index >= 2;
+                      const isRightColumn = index % 2 === 1;
+                      const dividerClasses = [
+                        "space-y-1",
+                        index > 0 ? "border-t border-[#1f3d1f]/25 pt-2" : "",
+                        isSecondRow ? "sm:border-t sm:border-[#1f3d1f]/25 sm:pt-3" : "sm:border-t-0 sm:pt-0",
+                        isRightColumn ? "sm:border-l sm:border-[#1f3d1f]/25 sm:pl-3" : "sm:border-l-0 sm:pl-0",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+
+                      return (
+                        <div key={meal.name} className={dividerClasses}>
                         <div className="font-semibold">{meal.name}</div>
                         <div>{meal.kcal}</div>
                         <div>
                           P: {meal.protein} | G: {meal.carbs} | L: {meal.fat}
                         </div>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

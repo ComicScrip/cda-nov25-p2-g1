@@ -20,7 +20,7 @@ export default function HeroSection() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-dark-base"
         style={{
-          backgroundImage: "url('/MyDietChef_image.webp')",
+          backgroundImage: "url('/MyDietChef_image.png')",
         }}
       >
         {/* Overlay sombre pour améliorer la lisibilité du texte */}

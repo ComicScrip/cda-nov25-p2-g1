@@ -17,7 +17,7 @@ export default function HomeLayout({ children, pageTitle }: HomeLayoutProps) {
           name="description"
           content="Plateforme conçue pour vous aider à atteindre vos objectifs diététiques"
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width,initial-scale=1 " />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
