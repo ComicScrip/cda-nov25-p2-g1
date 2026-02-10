@@ -1,5 +1,5 @@
 {
-  "name": "p2-template-backend",
+  "name": "mydietchef-backend",
   "version": "0.0.1",
   "main": "src/index.ts",
   "scripts": {
