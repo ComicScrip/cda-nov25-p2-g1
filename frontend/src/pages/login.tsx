@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import Field from "@/components/Field";
-import Layout from "@/components/Layout";
+import HomeLayout from "@/components/HomeLayout";
 import { type LoginInput, useLoginMutation } from "@/graphql/generated/schema";
 
 export default function Login() {
@@ -23,7 +23,7 @@ export default function Login() {
   };
 
   return (
-    <Layout pageTitle="Connexion">
+    <HomeLayout pageTitle="Connexion">
       <div className="p-4 max-w-[400px] mx-auto">
         <h2 className="text-xl font-bold my-6 text-center">Se connecter</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -90,6 +90,6 @@ export default function Login() {
           </p>
         )}
       </div>
-    </Layout>
+    </HomeLayout>
   );
 }
