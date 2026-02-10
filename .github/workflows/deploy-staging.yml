@@ -2,23 +2,23 @@ name: Compile and push client and server to staging environment
 
 on:
   push:
-    branches: ["prepare-deploy"]
+    branches: ["dev"]
   workflow_dispatch:
 
 jobs:
   client-tests:
     # To verify with Pierre whether we have the correct paths for the frontend tests (That's Ok now)
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-frontend.yml@prepare-deploy
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-frontend.yml@dev
 
   server-tests:
     # To verify with Pierre whether we have the correct paths for the backend tests (That's Ok now)
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@prepare-deploy
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@dev
 
   build-and-push-server:
     needs: 
       - server-tests
     # To verify with Pierre whether we have the correct paths for the backend build
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-backend.yml@prepare-deploy
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-backend.yml@dev
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -30,7 +30,7 @@ jobs:
     needs:
       - client-tests
     # To verify with Pierre whether we have the correct paths for the frontend build
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-frontend.yml@prepare-deploy
+    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-frontend.yml@dev
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
