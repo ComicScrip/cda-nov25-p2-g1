@@ -6,7 +6,7 @@ import { ForbiddenError, UnauthenticatedError } from "./errors";
 import type { GraphQLContext } from "./types";
 
 export interface JWTPayload {
-  userId: number;
+  userId: string;
 }
 
 export async function createJWT(user: User): Promise<string> {

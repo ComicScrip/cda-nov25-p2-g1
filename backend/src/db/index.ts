@@ -1,6 +1,19 @@
 import { DataSource } from "typeorm";
-import { User } from "../entities/User";
 import env from "../env";
+
+
+import { User } from "../entities/User";
+import { Pathology } from "../entities/Pathology";
+import { User_profile } from "../entities/User_Profile";
+import { Weight_Measure } from "../entities/Weight_Measure";
+import { Dish } from "../entities/Dish";
+import { Dish_Ingredient } from "../entities/Dish_Ingredient";
+import { Ingredient } from "../entities/Ingredient";
+import { Meal } from "../entities/Meal";
+import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
+import { Recipe } from "../entities/Recipe";
+import { Recipe_Ingredient } from "../entities/Recipe_Ingredient";
+import { User_Recipe } from "../entities/User_Recipe";
 
 export default new DataSource({
   type: "postgres",
@@ -9,7 +22,20 @@ export default new DataSource({
   password: env.DB_PASS,
   port: env.DB_PORT,
   database: env.DB_NAME,
-  entities: [User],
+  entities: [
+    User, 
+    User_profile, 
+    Weight_Measure, 
+    Pathology,  
+    Dish,
+    Dish_Ingredient,
+    Ingredient,
+    Meal,
+    Nutritional_Analysis,
+    Recipe,
+    Recipe_Ingredient,
+    User_Recipe
+  ],
   synchronize: env.NODE_ENV !== "production",
   //logging: true
 });
