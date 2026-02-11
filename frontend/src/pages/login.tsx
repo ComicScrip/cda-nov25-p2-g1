@@ -4,6 +4,7 @@ import Field from "@/components/Field";
 import HomeLayout from "@/components/HomeLayout";
 import { type LoginInput, useLoginMutation } from "@/graphql/generated/schema";
 
+
 export default function Login() {
   const router = useRouter();
   const [login, { loading: isSubmitting, error }] = useLoginMutation();
@@ -24,7 +25,7 @@ export default function Login() {
 
   return (
     <HomeLayout pageTitle="Connexion">
-      <div className="p-4 max-w-[400px] mx-auto">
+      <div className="p-4 max-w-100 mx-auto">
         <h2 className="text-xl font-bold my-6 text-center">Se connecter</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Field
