@@ -5,7 +5,7 @@ describe("Auth functions", () => {
   describe("createJWT", () => {
     it("should create a valid JWT token for a user", async () => {
       const user = new User();
-      user.id = 1;
+      user.id = "1";
       user.email = "test@example.com";
 
       const token = await createJWT(user);
@@ -19,14 +19,14 @@ describe("Auth functions", () => {
   describe("verifyJWT", () => {
     it("should verify a valid JWT token", async () => {
       const user = new User();
-      user.id = 1;
+      user.id = "1";
       user.email = "test@example.com";
 
       const token = await createJWT(user);
       const payload = verifyJWT(token);
 
       expect(payload).not.toBeNull();
-      expect(payload?.userId).toBe(1);
+      expect(payload?.userId).toBe("1");
     });
 
     it("should return null for an invalid token", () => {
