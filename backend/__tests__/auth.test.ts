@@ -12,7 +12,7 @@ describe("Auth functions", () => {
 
       expect(token).toBeDefined();
       expect(typeof token).toBe("string");
-      expect(token.split(".").length).toBe(3); // JWT format: header.payload.signature
+      expect(token.split(".").length).toBe("3"); // JWT format: header.payload.signature
     });
   });
 
@@ -26,7 +26,7 @@ describe("Auth functions", () => {
       const payload = verifyJWT(token);
 
       expect(payload).not.toBeNull();
-      expect(payload?.userId).toBe(1);
+      expect(payload?.userId).toBe("1");
     });
 
     it("should return null for an invalid token", () => {
