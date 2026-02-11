@@ -1,4 +1,4 @@
-import { Field, Float, Int, ObjectType } from "type-graphql";
+import { Field, Float, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
@@ -8,16 +8,15 @@ import {
   ManyToMany,
   OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from "typeorm";
-import { User } from "./User";
 import { Pathology } from "./Pathology";
+import { User } from "./User";
 import { Weight_Measure } from "./Weight_Measure";
 
 @ObjectType()
 @Entity({ name: "user_profiles" })
 export class User_profile extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -48,25 +47,32 @@ export class User_profile extends BaseEntity {
 
   /* ---------------- Relations ---------------- */
 
-
   @Field(() => User)
-  @OneToOne(() => User, (user) => user.profile, { onDelete: "CASCADE" })
+  @OneToOne(
+    () => User,
+    (user) => user.profile,
+    { onDelete: "CASCADE" },
+  )
   @JoinColumn({ name: "user_id" })
   user!: User;
 
   @Field(() => [Pathology])
-  @ManyToMany(() => Pathology, (pathology) => pathology.user_profiles, {
-    cascade: true
-  })
+  @ManyToMany(
+    () => Pathology,
+    (pathology) => pathology.user_profiles,
+    {
+      cascade: true,
+    },
+  )
   @JoinTable({
     name: "User_pathologies",
     joinColumn: {
       name: "id",
-      referencedColumnName: "id"
+      referencedColumnName: "id",
     },
     inverseJoinColumn: {
       name: "id",
-      referencedColumnName: "id"
+      referencedColumnName: "id",
     },
   })
   pathologies!: Pathology[];
@@ -74,6 +80,9 @@ export class User_profile extends BaseEntity {
   //ONE TO MANY on réutilise pas la mesure de poid chez un autre utilisateur
 
   @Field(() => [Weight_Measure])
-  @OneToMany(() => Weight_Measure, (weight_measure) => weight_measure.user_profiles)
+  @OneToMany(
+    () => Weight_Measure,
+    (weight_measure) => weight_measure.user_profiles,
+  )
   weight_measures!: Weight_Measure[];
 }

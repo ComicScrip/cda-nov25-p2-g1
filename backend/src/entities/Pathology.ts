@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from "type-graphql";
+import { Field, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
@@ -11,7 +11,6 @@ import { User_profile } from "./User_Profile";
 @ObjectType()
 @Entity({ name: "pathologies" })
 export class Pathology extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -24,7 +23,7 @@ export class Pathology extends BaseEntity {
 
   @ManyToMany(
     () => User_profile,
-    (user_profile) => user_profile.pathologies
+    (user_profile) => user_profile.pathologies,
   )
   user_profiles!: User_profile[];
 }

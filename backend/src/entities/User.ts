@@ -1,33 +1,32 @@
 import { IsEmail, IsStrongPassword } from "class-validator";
-import { Field, ObjectType, registerEnumType, InputType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
-  OneToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from "typeorm";
-import { User_profile } from "./User_Profile";
 import { Meal } from "./Meal";
+import { User_profile } from "./User_Profile";
 import { User_Recipe } from "./User_Recipe";
 
 export enum UserRole {
   Coach = "coach",
   Coachee = "coachee",
-  Admin = "admin"
+  Admin = "admin",
 }
 
 registerEnumType(UserRole, {
-  name: "UserRole"
+  name: "UserRole",
 });
 
 @ObjectType()
 @Entity({ name: "users" })
 export class User extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -43,7 +42,7 @@ export class User extends BaseEntity {
   @Column({
     type: "enum",
     enum: UserRole,
-    default: UserRole.Coachee
+    default: UserRole.Coachee,
   })
   role!: UserRole;
 
@@ -62,18 +61,26 @@ export class User extends BaseEntity {
   /* ---------------- Relations ---------------- */
 
   @Field(() => User_profile, { nullable: true })
-  @OneToOne(() => User_profile, (profile) => profile.user)
+  @OneToOne(
+    () => User_profile,
+    (profile) => profile.user,
+  )
   profile?: User_profile;
 
   @Field(() => [Meal], { nullable: true })
-  @OneToMany(() => Meal, (meal) => meal.user)
+  @OneToMany(
+    () => Meal,
+    (meal) => meal.user,
+  )
   meals?: Meal[];
 
   @Field(() => [User_Recipe], { nullable: true })
-  @OneToMany(() => User_Recipe, (user_recipe) => user_recipe.user)
+  @OneToMany(
+    () => User_Recipe,
+    (user_recipe) => user_recipe.user,
+  )
   recipes?: User_Recipe[];
 }
-
 
 @InputType()
 export class SignupInput {
@@ -87,7 +94,7 @@ export class SignupInput {
     {
       message:
         "Le mot de passe doit contenir au moins 8 caractères, dont une minuscule, une majuscule, un chiffre et un caractère spécial",
-    }
+    },
   )
   password: string;
 }
@@ -104,10 +111,7 @@ export class LoginInput {
     {
       message:
         "Le mot de passe doit contenir au moins 8 caractères, dont une minuscule, une majuscule, un chiffre et un caractère spécial",
-    }
+    },
   )
   password: string;
 }
-
-
-

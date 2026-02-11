@@ -85,8 +85,8 @@ export class Nutritional_Analysis extends BaseEntity {
     () => Dish,
     (dish) => dish.analysis,
     {
-      nullable: true
-    }
+      nullable: true,
+    },
   )
   dish?: Dish;
 }

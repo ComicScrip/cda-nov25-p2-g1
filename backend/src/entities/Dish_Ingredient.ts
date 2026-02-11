@@ -5,7 +5,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from "typeorm";
 import { Dish } from "./Dish";
 import { Ingredient } from "./Ingredient";
@@ -13,7 +13,6 @@ import { Ingredient } from "./Ingredient";
 @ObjectType()
 @Entity({ name: "dish_ingredient" })
 export class Dish_Ingredient extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -25,7 +24,7 @@ export class Dish_Ingredient extends BaseEntity {
   @ManyToOne(
     () => Dish,
     (dish) => dish.dish_ingredients,
-    { onDelete: "CASCADE" }
+    { onDelete: "CASCADE" },
   )
   @JoinColumn({ name: "dish_id" })
   dish: Dish;
@@ -35,7 +34,7 @@ export class Dish_Ingredient extends BaseEntity {
     (ingredient) => ingredient.dish_ingredients,
     {
       onDelete: "CASCADE",
-    }
+    },
   )
   @JoinColumn({ name: "ingredient_id" })
   ingredient: Ingredient;

@@ -4,7 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from "typeorm";
 import { Recipe } from "./Recipe";
 import { User } from "./User";
@@ -12,7 +12,6 @@ import { User } from "./User";
 @ObjectType()
 @Entity({ name: "user_recipe" })
 export class User_Recipe extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -20,7 +19,7 @@ export class User_Recipe extends BaseEntity {
   @ManyToOne(
     () => Recipe,
     (recipe) => recipe.user_recipes,
-    { onDelete: "CASCADE" }
+    { onDelete: "CASCADE" },
   )
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;

@@ -88,13 +88,13 @@ export class Recipe extends BaseEntity {
 
   @OneToMany(
     () => Recipe_Ingredient,
-    (recipe_ingredient) => recipe_ingredient.recipe
+    (recipe_ingredient) => recipe_ingredient.recipe,
   )
   recipe_ingredients?: Recipe_Ingredient[];
 
   @OneToMany(
     () => User_Recipe,
-    (user_recipe) => user_recipe.recipe
+    (user_recipe) => user_recipe.recipe,
   )
   user_recipes?: User_Recipe[];
 }

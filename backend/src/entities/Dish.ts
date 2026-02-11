@@ -7,7 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from "typeorm";
 import { Dish_Ingredient } from "./Dish_Ingredient";
 import { AnalysisStatus, DishType } from "./enums";
@@ -17,7 +17,6 @@ import { Nutritional_Analysis } from "./Nutritional_Analysis";
 @ObjectType()
 @Entity({ name: "dish" })
 export class Dish extends BaseEntity {
-  
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -31,7 +30,12 @@ export class Dish extends BaseEntity {
   dishType?: DishType;
 
   @Field({ nullable: true })
-  @Column({ name: "analysis_status", type: "enum", enum: AnalysisStatus, nullable: true })
+  @Column({
+    name: "analysis_status",
+    type: "enum",
+    enum: AnalysisStatus,
+    nullable: true,
+  })
   analysisStatus?: AnalysisStatus;
 
   @Field({ nullable: true })
@@ -40,7 +44,7 @@ export class Dish extends BaseEntity {
 
   @OneToOne(
     () => Nutritional_Analysis,
-    (analysis) => analysis.dish
+    (analysis) => analysis.dish,
   )
   @JoinColumn({ name: "analysis_id" })
   analysis?: Nutritional_Analysis;
@@ -48,7 +52,7 @@ export class Dish extends BaseEntity {
   @ManyToOne(
     () => Meal,
     (meal) => meal.dishes,
-    { nullable: true, onDelete: "CASCADE" }
+    { nullable: true, onDelete: "CASCADE" },
   )
   @JoinColumn({ name: "meal_id" })
   meal?: Meal;

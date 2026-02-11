@@ -15,7 +15,6 @@ import { User } from "./User";
 @ObjectType()
 @Entity({ name: "meal" })
 export class Meal extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -31,14 +30,14 @@ export class Meal extends BaseEntity {
   @ManyToOne(
     () => User,
     (user) => user.meals,
-    { nullable: true }
+    { nullable: true },
   )
   @JoinColumn({ name: "user_id" })
   user?: User;
 
   @OneToMany(
     () => Dish,
-    (dish) => dish.meal
+    (dish) => dish.meal,
   )
   dishes?: Dish[];
 }

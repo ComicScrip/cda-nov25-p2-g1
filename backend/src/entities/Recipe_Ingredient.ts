@@ -5,7 +5,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from "typeorm";
 import { Unit } from "./enums";
 import { Ingredient } from "./Ingredient";
@@ -14,7 +14,6 @@ import { Recipe } from "./Recipe";
 @ObjectType()
 @Entity({ name: "recipe_ingredient" })
 export class Recipe_Ingredient extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -30,7 +29,7 @@ export class Recipe_Ingredient extends BaseEntity {
   @ManyToOne(
     () => Recipe,
     (recipe) => recipe.recipe_ingredients,
-    { onDelete: "CASCADE" }
+    { onDelete: "CASCADE" },
   )
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
@@ -38,7 +37,7 @@ export class Recipe_Ingredient extends BaseEntity {
   @ManyToOne(
     () => Ingredient,
     (ingredient) => ingredient.recipe_ingredients,
-    { onDelete: "CASCADE" }
+    { onDelete: "CASCADE" },
   )
   @JoinColumn({ name: "ingredient_id" })
   ingredient: Ingredient;

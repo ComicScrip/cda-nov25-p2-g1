@@ -1,16 +1,20 @@
-import { Field, Float, Int, ObjectType } from "type-graphql";
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, ManyToMany, ManyToOne } from "typeorm";
+import { Field, Float, ObjectType } from "type-graphql";
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { User_profile } from "./User_Profile";
 
 @ObjectType()
 @Entity({ name: "weight_measures" })
 export class Weight_Measure extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
 
-  
   @Field(() => Date)
   @Column({ name: "measured_at", type: "timestamp" })
   measured_at?: Date;
@@ -21,9 +25,12 @@ export class Weight_Measure extends BaseEntity {
 
   /* ---------------- Relations ---------------- */
 
-  @ManyToOne(() => User_profile, (user_profile) => user_profile.weight_measures, {
-    onDelete: 'CASCADE'
-  })
+  @ManyToOne(
+    () => User_profile,
+    (user_profile) => user_profile.weight_measures,
+    {
+      onDelete: "CASCADE",
+    },
+  )
   user_profiles!: User_profile[];
-
 }

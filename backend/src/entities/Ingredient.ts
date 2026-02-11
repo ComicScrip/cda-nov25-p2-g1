@@ -13,7 +13,6 @@ import { Recipe_Ingredient } from "./Recipe_Ingredient";
 @ObjectType()
 @Entity({ name: "ingredient" })
 export class Ingredient extends BaseEntity {
-
   @Field()
   @PrimaryGeneratedColumn("uuid", { name: "id" })
   id!: string;
@@ -28,13 +27,13 @@ export class Ingredient extends BaseEntity {
 
   @OneToMany(
     () => Recipe_Ingredient,
-    (recipe_ingredient) => recipe_ingredient.ingredient
+    (recipe_ingredient) => recipe_ingredient.ingredient,
   )
   recipe_ingredients?: Recipe_Ingredient[];
 
   @OneToMany(
     () => Dish_Ingredient,
-    (dish_ingredient) => dish_ingredient.ingredient
+    (dish_ingredient) => dish_ingredient.ingredient,
   )
   dish_ingredients?: Dish_Ingredient[];
 }
