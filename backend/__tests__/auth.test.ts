@@ -12,7 +12,7 @@ describe("Auth functions", () => {
 
       expect(token).toBeDefined();
       expect(typeof token).toBe("string");
-      expect(token.split(".").length).toBe("3"); // JWT format: header.payload.signature
+      expect(token.split(".").length).toBe(3); // JWT format: header.payload.signature
     });
   });
 
