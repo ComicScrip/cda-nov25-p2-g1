@@ -1,3 +1,5 @@
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import HomeLayout from "@/components/HomeLayout";
 
@@ -9,14 +11,27 @@ const navItems = [
   { label: "Mon Profile", href: "/user_profile", active: false },
 ];
 
-const evolutionData = [
-  { week: "S1", weight: 84.2, calories: 2140, score: 70 },
-  { week: "S2", weight: 83.6, calories: 2080, score: 73 },
-  { week: "S3", weight: 82.9, calories: 2010, score: 77 },
-  { week: "S4", weight: 82.2, calories: 1960, score: 81 },
-  { week: "S5", weight: 81.6, calories: 1910, score: 85 },
-  { week: "S6", weight: 80.9, calories: 1875, score: 88 },
-];
+const USER_EVOLUTION_QUERY = gql`
+  query UserEvolutionData {
+    userEvolutionData {
+      week
+      weight
+      calories
+      score
+    }
+  }
+`;
+
+type EvolutionPoint = {
+  week: string;
+  weight: number;
+  calories: number;
+  score: number;
+};
+
+type EvolutionQueryData = {
+  userEvolutionData: EvolutionPoint[];
+};
 
 const chartWidth = 560;
 const chartHeight = 230;
@@ -24,23 +39,34 @@ const paddingX = 34;
 const paddingY = 24;
 
 export default function EvolutionUserPage() {
+  const { data, loading, error } = useQuery<EvolutionQueryData>(USER_EVOLUTION_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+
+  const evolutionData = data?.userEvolutionData ?? [];
+  const hasData = evolutionData.length > 0;
   const firstPoint = evolutionData[0];
   const lastPoint = evolutionData[evolutionData.length - 1];
-  const totalLoss = Number((firstPoint.weight - lastPoint.weight).toFixed(1));
+  const totalLoss = hasData ? Number((firstPoint.weight - lastPoint.weight).toFixed(1)) : 0;
   const averageScore = Math.round(
-    evolutionData.reduce((sum, point) => sum + point.score, 0) / evolutionData.length,
+    hasData ? evolutionData.reduce((sum, point) => sum + point.score, 0) / evolutionData.length : 0,
   );
   const averageCalories = Math.round(
-    evolutionData.reduce((sum, point) => sum + point.calories, 0) / evolutionData.length,
+    hasData
+      ? evolutionData.reduce((sum, point) => sum + point.calories, 0) / evolutionData.length
+      : 0,
   );
 
-  const weights = evolutionData.map((point) => point.weight);
+  const weights = hasData ? evolutionData.map((point) => point.weight) : [0, 1];
   const minWeight = Math.min(...weights) - 0.4;
   const maxWeight = Math.max(...weights) + 0.4;
   const chartInnerHeight = chartHeight - paddingY * 2;
   const chartInnerWidth = chartWidth - paddingX * 2;
 
-  const getX = (index: number) => paddingX + (index / (evolutionData.length - 1)) * chartInnerWidth;
+  const getX = (index: number) =>
+    evolutionData.length <= 1
+      ? paddingX + chartInnerWidth / 2
+      : paddingX + (index / (evolutionData.length - 1)) * chartInnerWidth;
 
   const getY = (weight: number) =>
     paddingY + ((maxWeight - weight) / (maxWeight - minWeight)) * chartInnerHeight;
@@ -95,23 +121,35 @@ export default function EvolutionUserPage() {
               </aside>
 
               <div className="bg-[#f5fbf1] px-5 py-6 md:px-8">
+                {loading && (
+                  <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+                    Chargement de vos donnees...
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md bg-[#f7e1e1] px-3 py-2 text-xs text-[#7b2222]">
+                    Donnees indisponibles. Verifie que vous etes bien connecte(e).
+                  </div>
+                )}
+
                 <div className="max-w-3xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">Mon evolution sur 6 semaines</h1>
                   <p className="mt-1 text-xs text-[#555]">
-                    Vue d&apos;ensemble mockee de ta progression poids, calories et score sante.
+                    Vue d&apos;ensemble de ta progression poids, calories et score sante.
                   </p>
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-md bg-[#bfe8ea] px-3 py-3 text-[#1d3d45] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                     <div className="text-xs uppercase tracking-wide">Poids actuel</div>
-                    <div className="mt-1 text-lg font-semibold">{lastPoint.weight} kg</div>
-                    <div className="text-[11px]">Depart: {firstPoint.weight} kg</div>
+                    <div className="mt-1 text-lg font-semibold">{lastPoint?.weight ?? 0} kg</div>
+                    <div className="text-[11px]">Depart: {firstPoint?.weight ?? 0} kg</div>
                   </div>
                   <div className="rounded-md bg-[#a7d9a1] px-3 py-3 text-[#214021] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                     <div className="text-xs uppercase tracking-wide">Perte totale</div>
                     <div className="mt-1 text-lg font-semibold">-{totalLoss} kg</div>
-                    <div className="text-[11px]">Sur {evolutionData.length} semaines</div>
+                    <div className="text-[11px]">Sur {evolutionData.length || 0} semaines</div>
                   </div>
                   <div className="rounded-md bg-[#e9b26b] px-3 py-3 text-[#4a2a10] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                     <div className="text-xs uppercase tracking-wide">Score sante moyen</div>
@@ -188,6 +226,12 @@ export default function EvolutionUserPage() {
                         </g>
                       ))}
                     </svg>
+
+                    {!hasData && (
+                      <p className="mt-3 text-xs text-[#5a6c59]">
+                        Aucune donnee d evolution disponible pour le moment.
+                      </p>
+                    )}
                   </div>
                 </section>
 

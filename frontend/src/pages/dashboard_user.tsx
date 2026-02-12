@@ -1,21 +1,95 @@
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import HomeLayout from "@/components/HomeLayout";
 
-const stats = [
-  { value: "7", label: "jours d'utilisation", bg: "bg-[#bfe8ea]" },
-  { value: "85%", label: "Score santé", bg: "bg-[#cfa0c8]" },
-  { value: "10", label: "repas scannés", bg: "bg-[#a7d9a1]" },
-  { value: "1780", label: "Calories moyennes", bg: "bg-[#e9b26b]" },
-];
+const USER_DASHBOARD_QUERY = gql`
+  query UserDashboardData {
+    userDashboardData {
+      firstName
+      daysOfUse
+      healthScore
+      scannedMeals
+      averageCalories
+      targetCalories
+      targetProgress
+      targetProtein
+      targetCarbs
+      targetLipids
+      todayProtein
+      todayCarbs
+      todayFat
+      recentMeals {
+        name
+        calories
+        protein
+        carbs
+        fat
+      }
+    }
+  }
+`;
 
-const meals = [
-  { name: "Salade méditerranéenne", kcal: "320 kcal", protein: "25g", carbs: "42g", fat: "18g" },
-  { name: "Hachis parmentier allégé", kcal: "420 kcal", protein: "25g", carbs: "42g", fat: "18g" },
-  { name: "Salade césar", kcal: "380 kcal", protein: "25g", carbs: "42g", fat: "18g" },
-  { name: "Bowl quinoa & poulet", kcal: "410 kcal", protein: "30g", carbs: "36g", fat: "14g" },
-];
+type DashboardMeal = {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+type DashboardPayload = {
+  firstName: string;
+  daysOfUse: number;
+  healthScore: number;
+  scannedMeals: number;
+  averageCalories: number;
+  targetCalories: number;
+  targetProgress: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetLipids: number;
+  todayProtein: number;
+  todayCarbs: number;
+  todayFat: number;
+  recentMeals: DashboardMeal[];
+};
+
+type DashboardQueryData = {
+  userDashboardData: DashboardPayload | null;
+};
 
 export default function DashboardPage() {
+  const { data, loading, error } = useQuery<DashboardQueryData>(USER_DASHBOARD_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+
+  const dashboard = data?.userDashboardData;
+  const stats = [
+    {
+      value: String(dashboard?.daysOfUse ?? 0),
+      label: "jours d'utilisation",
+      bg: "bg-[#bfe8ea]",
+    },
+    {
+      value: `${dashboard?.healthScore ?? 0}%`,
+      label: "Score sante",
+      bg: "bg-[#cfa0c8]",
+    },
+    {
+      value: String(dashboard?.scannedMeals ?? 0),
+      label: "repas scannes",
+      bg: "bg-[#a7d9a1]",
+    },
+    {
+      value: `${dashboard?.averageCalories ?? 0}`,
+      label: "Calories moyennes",
+      bg: "bg-[#e9b26b]",
+    },
+  ];
+
+  const meals = dashboard?.recentMeals ?? [];
+
   return (
     <HomeLayout pageTitle="Dashboard">
       <section className="flex-1 bg-[#f3f7ee] py-6">
@@ -70,6 +144,18 @@ export default function DashboardPage() {
               </aside>
 
               <div className="bg-[#f5fbf1] px-5 py-6 md:px-8">
+                {loading && (
+                  <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+                    Chargement de vos donnees...
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md bg-[#f7e1e1] px-3 py-2 text-xs text-[#7b2222]">
+                    Donnees indisponibles. Verifie que vous etes bien connecte(e).
+                  </div>
+                )}
+
                 <div className="grid w-full max-w-md grid-cols-2 gap-3">
                   {stats.map((stat) => (
                     <div
@@ -84,34 +170,43 @@ export default function DashboardPage() {
 
                 <div className="mt-6 max-w-2xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">
-                    Bienvenue dans ta tour de contrôle Anthony
+                    Bienvenue dans ta tour de controle {dashboard?.firstName ?? "Utilisateur"}
                   </h1>
                   <p className="mt-1 text-xs text-[#555]">
-                    Ici, vous avez un résumé en chiffres de votre activité nutritionnelle
+                    Ici, vous avez un resume en chiffres de votre activite nutritionnelle
                   </p>
                 </div>
 
                 <div className="mt-6 rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
                   <div className="flex items-start justify-between">
                     <div className="text-sm font-semibold text-[#3a2a12]">
-                      Objectif calorique <span className="ml-2 font-normal">2000 cal / j</span>
+                      Objectif calorique{" "}
+                      <span className="ml-2 font-normal">
+                        {dashboard?.targetCalories ?? 0} cal / j
+                      </span>
                     </div>
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2bbf5c] text-xs font-bold text-white">
-                      97%
+                      {dashboard?.targetProgress ?? 0}%
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-[#3a2a12]">
                     <div>
                       <div>Protéines</div>
-                      <div className="font-semibold">150 g</div>
+                      <div className="font-semibold">
+                        {dashboard?.todayProtein ?? 0} g / {dashboard?.targetProtein ?? 0} g
+                      </div>
                     </div>
                     <div className="border-x border-[#c9935d] px-3">
                       <div>Glucides</div>
-                      <div className="font-semibold">120 g</div>
+                      <div className="font-semibold">
+                        {dashboard?.todayCarbs ?? 0} g / {dashboard?.targetCarbs ?? 0} g
+                      </div>
                     </div>
                     <div>
                       <div>Lipides</div>
-                      <div className="font-semibold">40 g</div>
+                      <div className="font-semibold">
+                        {dashboard?.todayFat ?? 0} g / {dashboard?.targetLipids ?? 0} g
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -135,15 +230,15 @@ export default function DashboardPage() {
                         .filter(Boolean)
                         .join(" ");
 
-                      return (
-                        <div key={meal.name} className={dividerClasses}>
-                          <div className="font-semibold">{meal.name}</div>
-                          <div>{meal.kcal}</div>
-                          <div>
-                            P: {meal.protein} | G: {meal.carbs} | L: {meal.fat}
+                        return (
+                          <div key={meal.name} className={dividerClasses}>
+                            <div className="font-semibold">{meal.name}</div>
+                            <div>{meal.calories} kcal</div>
+                            <div>
+                              P: {meal.protein}g | G: {meal.carbs}g | L: {meal.fat}g
+                            </div>
                           </div>
-                        </div>
-                      );
+                        );
                     })}
                   </div>
                 </div>
