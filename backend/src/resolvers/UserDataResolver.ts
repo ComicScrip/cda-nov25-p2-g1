@@ -1,9 +1,22 @@
-import { Ctx, Field, Float, Int, ObjectType, Query, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Field,
+  Float,
+  InputType,
+  Int,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from "type-graphql";
 import { getCurrentUser } from "../auth";
+import { Pathology } from "../entities/Pathology";
 import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
+import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
 
 const BENEFITS_SEPARATOR = "\n##BENEFITS##\n";
@@ -161,6 +174,60 @@ class EvolutionDataPoint {
   score!: number;
 }
 
+@ObjectType()
+class UserProfileData {
+  @Field(() => String)
+  firstName!: string;
+
+  @Field(() => String)
+  lastName!: string;
+
+  @Field(() => String, { nullable: true })
+  dateOfBirth?: string;
+
+  @Field(() => String, { nullable: true })
+  gender?: string;
+
+  @Field(() => Float, { nullable: true })
+  height?: number;
+
+  @Field(() => Float, { nullable: true })
+  currentWeight?: number;
+
+  @Field(() => String, { nullable: true })
+  goal?: string;
+
+  @Field(() => [String])
+  medicalTags!: string[];
+}
+
+@InputType()
+class UserProfileUpdateInput {
+  @Field(() => String)
+  firstName!: string;
+
+  @Field(() => String)
+  lastName!: string;
+
+  @Field(() => String, { nullable: true })
+  dateOfBirth?: string;
+
+  @Field(() => String, { nullable: true })
+  gender?: string;
+
+  @Field(() => Float, { nullable: true })
+  height?: number;
+
+  @Field(() => Float, { nullable: true })
+  currentWeight?: number;
+
+  @Field(() => String, { nullable: true })
+  goal?: string;
+
+  @Field(() => [String])
+  medicalTags!: string[];
+}
+
 function toNumber(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -183,6 +250,11 @@ function safeDate(dateLike?: Date): Date | null {
   if (!dateLike) return null;
   const date = new Date(dateLike);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toIsoDate(date?: Date): string | undefined {
+  const safe = safeDate(date);
+  return safe ? safe.toISOString().slice(0, 10) : undefined;
 }
 
 type DishEntry = {
@@ -223,6 +295,136 @@ export default class UserDataResolver {
       .filter((dish) => dish.calories > 0);
 
     return dishEntries.sort((a, b) => b.consumedAt.getTime() - a.consumedAt.getTime());
+  }
+
+  private async buildUserProfilePayload(
+    userId: string,
+    fallbackEmail: string,
+  ): Promise<UserProfileData> {
+    const profile = await User_profile.findOne({
+      where: { user: { id: userId } },
+      relations: ["pathologies", "weight_measures"],
+    });
+
+    if (!profile) {
+      return {
+        firstName: fallbackEmail.split("@")[0] ?? "Utilisateur",
+        lastName: "",
+        dateOfBirth: undefined,
+        gender: undefined,
+        height: undefined,
+        currentWeight: undefined,
+        goal: undefined,
+        medicalTags: [],
+      };
+    }
+
+    const weights = [...(profile.weight_measures ?? [])]
+      .map((item) => ({
+        measuredAt: safeDate(item.measured_at) ?? new Date(0),
+        weight: toNumber(item.weight),
+      }))
+      .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+
+    return {
+      firstName: profile.first_name ?? "",
+      lastName: profile.last_name ?? "",
+      dateOfBirth: toIsoDate(profile.date_of_birth),
+      gender: profile.gender ?? undefined,
+      height: profile.height ?? undefined,
+      currentWeight: weights[0]?.weight ?? undefined,
+      goal: profile.goal ?? undefined,
+      medicalTags: (profile.pathologies ?? []).map((item) => item.name),
+    };
+  }
+
+  @Query(() => UserProfileData, { nullable: true })
+  async userProfileData(@Ctx() context: GraphQLContext): Promise<UserProfileData | null> {
+    try {
+      const currentUser = await getCurrentUser(context);
+      return this.buildUserProfilePayload(currentUser.id, currentUser.email);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  @Mutation(() => UserProfileData, { nullable: true })
+  async updateUserProfileData(
+    @Arg("data", () => UserProfileUpdateInput) data: UserProfileUpdateInput,
+    @Ctx() context: GraphQLContext,
+  ): Promise<UserProfileData | null> {
+    let currentUserId = "";
+    let fallbackEmail = "";
+    try {
+      const currentUser = await getCurrentUser(context);
+      currentUserId = currentUser.id;
+      fallbackEmail = currentUser.email;
+    } catch (_e) {
+      return null;
+    }
+
+    let profile = await User_profile.findOne({
+      where: { user: { id: currentUserId } },
+      relations: ["pathologies", "weight_measures"],
+    });
+
+    if (!profile) {
+      profile = User_profile.create();
+      (profile as unknown as { user: { id: string } }).user = { id: currentUserId };
+    }
+
+    const firstName = data.firstName.trim();
+    const lastName = data.lastName.trim();
+    const dateOfBirth = data.dateOfBirth?.trim();
+    const parsedDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00.000Z`) : null;
+
+    profile.first_name = firstName || profile.first_name || fallbackEmail.split("@")[0] || "Utilisateur";
+    profile.last_name = lastName || profile.last_name || "";
+    profile.date_of_birth = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : profile.date_of_birth;
+    profile.gender = data.gender?.trim() || profile.gender || "";
+    profile.height = Number.isFinite(data.height) ? Number(data.height) : profile.height;
+    profile.goal = data.goal?.trim() || profile.goal || "";
+
+    const incomingTags = [...new Set(data.medicalTags.map((item) => item.trim()).filter(Boolean))];
+
+    if (incomingTags.length > 0) {
+      const existingPathologies = await Pathology.find({
+        where: incomingTags.map((name) => ({ name })),
+      });
+      const knownNames = new Set(existingPathologies.map((item) => item.name));
+      const missingNames = incomingTags.filter((name) => !knownNames.has(name));
+      const createdPathologies: Pathology[] = [];
+
+      for (const name of missingNames) {
+        const pathology = Pathology.create({ name });
+        await pathology.save();
+        createdPathologies.push(pathology);
+      }
+
+      profile.pathologies = [...existingPathologies, ...createdPathologies];
+    } else {
+      profile.pathologies = [];
+    }
+
+    await profile.save();
+
+    if (Number.isFinite(data.currentWeight) && Number(data.currentWeight) > 0) {
+      const latestKnown = [...(profile.weight_measures ?? [])]
+        .map((item) => ({ measuredAt: safeDate(item.measured_at) ?? new Date(0), weight: toNumber(item.weight) }))
+        .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime())[0];
+      const nextWeight = Number(data.currentWeight);
+
+      if (!latestKnown || Math.abs(latestKnown.weight - nextWeight) > 0.01) {
+        const weightMeasure = Weight_Measure.create({
+          measured_at: new Date(),
+          weight: nextWeight,
+        });
+        (weightMeasure as unknown as { user_profiles: User_profile }).user_profiles = profile;
+        await weightMeasure.save();
+      }
+    }
+
+    return this.buildUserProfilePayload(currentUserId, fallbackEmail);
   }
 
   @Query(() => DashboardData, { nullable: true })

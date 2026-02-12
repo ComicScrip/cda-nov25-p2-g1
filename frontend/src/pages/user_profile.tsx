@@ -1,6 +1,70 @@
+import { gql } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
+
+const USER_PROFILE_QUERY = gql`
+  query UserProfileData {
+    userProfileData {
+      firstName
+      lastName
+      dateOfBirth
+      gender
+      height
+      currentWeight
+      goal
+      medicalTags
+    }
+  }
+`;
+
+const UPDATE_USER_PROFILE_MUTATION = gql`
+  mutation UpdateUserProfileData($data: UserProfileUpdateInput!) {
+    updateUserProfileData(data: $data) {
+      firstName
+      lastName
+      dateOfBirth
+      gender
+      height
+      currentWeight
+      goal
+      medicalTags
+    }
+  }
+`;
+
+type UserProfilePayload = {
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  height?: number | null;
+  currentWeight?: number | null;
+  goal?: string | null;
+  medicalTags: string[];
+};
+
+type UserProfileQueryData = {
+  userProfileData: UserProfilePayload | null;
+};
+
+type UpdateUserProfileMutationData = {
+  updateUserProfileData: UserProfilePayload | null;
+};
+
+type UpdateUserProfileMutationVariables = {
+  data: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    gender?: string;
+    height?: number;
+    currentWeight?: number;
+    goal?: string;
+    medicalTags: string[];
+  };
+};
 
 const navItems = [
   { label: "Mon Dashboard", active: false, href: "/dashboard_user" },
@@ -9,13 +73,6 @@ const navItems = [
   { label: "Mon évolution", active: false, href: "/evolution_user" },
 ];
 
-const initialMedicalTags = [
-  "Allergie gluten",
-  "Thrombose",
-  "Anxiété",
-  "Hypertension",
-  "Pose anneau gastrique",
-];
 const dayOptions = Array.from({ length: 31 }, (_, index) => index + 1);
 const monthOptions = [
   { value: 1, label: "Jan" },
@@ -34,14 +91,79 @@ const monthOptions = [
 const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 120 }, (_, index) => currentYear - index);
 
+function parseDate(dateText?: string | null): { day: number; month: number; year: number } {
+  if (!dateText) {
+    return { day: 12, month: 6, year: 1984 };
+  }
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) {
+    return { day: 12, month: 6, year: 1984 };
+  }
+  return {
+    day: date.getUTCDate(),
+    month: date.getUTCMonth() + 1,
+    year: date.getUTCFullYear(),
+  };
+}
+
+function toNumber(value: string): number | undefined {
+  const parsed = Number(value.replace(",", ".").trim());
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export default function UserProfilePage() {
+  const { data, loading, error } = useQuery<UserProfileQueryData>(USER_PROFILE_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+
+  const [updateProfile, { loading: isSaving, error: saveError }] = useMutation<
+    UpdateUserProfileMutationData,
+    UpdateUserProfileMutationVariables
+  >(UPDATE_USER_PROFILE_MUTATION);
+
+  const [firstName, setFirstName] = useState("Jane");
+  const [lastName, setLastName] = useState("Doe");
   const [birthDay, setBirthDay] = useState(12);
   const [birthMonth, setBirthMonth] = useState(6);
   const [birthYear, setBirthYear] = useState(1984);
-  const [medicalTags, setMedicalTags] = useState(initialMedicalTags);
+  const [heightInput, setHeightInput] = useState("");
+  const [weightInput, setWeightInput] = useState("");
+  const [goal, setGoal] = useState("");
+  const [gender, setGender] = useState("femme");
+  const [medicalTags, setMedicalTags] = useState<string[]>([]);
   const [medicalInfoInput, setMedicalInfoInput] = useState("");
+  const [saveFeedback, setSaveFeedback] = useState("");
+
+  useEffect(() => {
+    const profile = data?.userProfileData;
+    if (!profile) {
+      return;
+    }
+
+    const parsedDate = parseDate(profile.dateOfBirth);
+    setFirstName(profile.firstName || "Jane");
+    setLastName(profile.lastName || "Doe");
+    setBirthDay(parsedDate.day);
+    setBirthMonth(parsedDate.month);
+    setBirthYear(parsedDate.year);
+    setHeightInput(
+      profile.height !== null && profile.height !== undefined ? String(profile.height) : "",
+    );
+    setWeightInput(
+      profile.currentWeight !== null && profile.currentWeight !== undefined
+        ? String(profile.currentWeight)
+        : "",
+    );
+    setGoal(profile.goal ?? "");
+    setGender((profile.gender || "femme").toLowerCase());
+    setMedicalTags(profile.medicalTags ?? []);
+  }, [data]);
 
   const formattedBirthDate = `${String(birthDay).padStart(2, "0")}/${String(birthMonth).padStart(2, "0")}/${birthYear}`;
+
+  const profileName = useMemo(() => {
+    return firstName.trim() || "Utilisateur";
+  }, [firstName]);
 
   const handleAddMedicalTag = () => {
     const nextTag = medicalInfoInput.trim();
@@ -57,6 +179,33 @@ export default function UserProfilePage() {
 
   const handleRemoveMedicalTag = (tagToRemove: string) => {
     setMedicalTags((previousTags) => previousTags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleSave = async () => {
+    setSaveFeedback("");
+
+    const height = toNumber(heightInput);
+    const currentWeight = toNumber(weightInput);
+
+    try {
+      await updateProfile({
+        variables: {
+          data: {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            dateOfBirth: `${birthYear}-${String(birthMonth).padStart(2, "0")}-${String(birthDay).padStart(2, "0")}`,
+            gender,
+            height,
+            currentWeight,
+            goal: goal.trim(),
+            medicalTags,
+          },
+        },
+      });
+      setSaveFeedback("Profil enregistré.");
+    } catch (_e) {
+      setSaveFeedback("Erreur pendant l'enregistrement.");
+    }
   };
 
   return (
@@ -100,24 +249,37 @@ export default function UserProfilePage() {
               </aside>
 
               <div className="bg-[#f5fbf1] px-5 py-6 md:px-8">
+                {loading && (
+                  <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+                    Chargement de votre profil...
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md bg-[#f7e1e1] px-3 py-2 text-xs text-[#7b2222]">
+                    Donnees indisponibles. Verifie que vous etes bien connecte(e).
+                  </div>
+                )}
+
                 <div className="max-w-3xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">Modifier son profil :</h1>
                   <p className="mt-1 text-xs text-[#576057]">
-                    Anthony, ces infos serviront à améliorer l&apos;expérience de ton parcours santé
-                    avec ton coach personnel.
+                    {profileName}, ces infos servent a personnaliser votre parcours sante avec
+                    votre coach.
                   </p>
                 </div>
 
                 <div className="mt-6 space-y-6">
                   <section className="rounded-md border border-[#d3d8cf] bg-[#eef4e8] p-4 md:p-5">
-                    <h2 className="text-sm font-semibold text-[#2e3a2d]">Identité</h2>
+                    <h2 className="text-sm font-semibold text-[#2e3a2d]">Identite</h2>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <label className="text-xs text-[#4b5a4b]" htmlFor="firstName">
-                        Prénom
+                        Prenom
                         <input
                           id="firstName"
                           type="text"
-                          defaultValue="Anthony"
+                          value={firstName}
+                          onChange={(event) => setFirstName(event.target.value)}
                           className="mt-1 w-full rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -126,7 +288,8 @@ export default function UserProfilePage() {
                         <input
                           id="lastName"
                           type="text"
-                          defaultValue="Dilassienne"
+                          value={lastName}
+                          onChange={(event) => setLastName(event.target.value)}
                           className="mt-1 w-full rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -175,28 +338,6 @@ export default function UserProfilePage() {
                               </option>
                             ))}
                           </select>
-                          <button
-                            type="button"
-                            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#bdbdbd] bg-white text-[#2c2c2c] shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                            aria-label="Ouvrir le calendrier"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4"
-                            >
-                              <title>Calendrier</title>
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                              <line x1="16" y1="2" x2="16" y2="6" />
-                              <line x1="8" y1="2" x2="8" y2="6" />
-                              <line x1="3" y1="10" x2="21" y2="10" />
-                            </svg>
-                          </button>
                         </div>
                       </label>
                     </div>
@@ -211,7 +352,8 @@ export default function UserProfilePage() {
                           <input
                             id="height"
                             type="text"
-                            defaultValue="1m70"
+                            value={heightInput}
+                            onChange={(event) => setHeightInput(event.target.value)}
                             className="w-full rounded-l-md bg-transparent px-3 py-2 text-sm text-[#2c2c2c] focus:outline-none"
                           />
                           <span className="px-3 text-xs text-[#4b5a4b]">Cm</span>
@@ -223,7 +365,8 @@ export default function UserProfilePage() {
                           <input
                             id="weight"
                             type="text"
-                            defaultValue="80"
+                            value={weightInput}
+                            onChange={(event) => setWeightInput(event.target.value)}
                             className="w-full rounded-l-md bg-transparent px-3 py-2 text-sm text-[#2c2c2c] focus:outline-none"
                           />
                           <span className="px-3 text-xs text-[#4b5a4b]">Kg</span>
@@ -236,10 +379,11 @@ export default function UserProfilePage() {
                     <h2 className="text-sm font-semibold text-[#2e3a2d]">Objectif</h2>
                     <div className="mt-4 space-y-4">
                       <label className="text-xs text-[#4b5a4b]" htmlFor="goal">
-                        But à atteindre
+                        But a atteindre
                         <textarea
                           id="goal"
-                          defaultValue="Me sentir mieux dans mon corps, manger sainement et équilibré. Le tout accompagné par un professionnel pour me motiver."
+                          value={goal}
+                          onChange={(event) => setGoal(event.target.value)}
                           className="mt-1 min-h-[110px] w-full resize-none rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -253,7 +397,7 @@ export default function UserProfilePage() {
                       >
                         <input
                           type="text"
-                          placeholder="Ajouter une information médicale"
+                          placeholder="Ajouter une information medicale"
                           value={medicalInfoInput}
                           onChange={(event) => setMedicalInfoInput(event.target.value)}
                           className="flex-1 rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
@@ -279,7 +423,7 @@ export default function UserProfilePage() {
                               aria-label={`Supprimer ${tag}`}
                               className="inline-flex h-3 w-3 items-center justify-center rounded-full border border-[#6a746a] text-[8px]"
                             >
-                              ×
+                              x
                             </button>
                           </span>
                         ))}
@@ -291,13 +435,20 @@ export default function UserProfilePage() {
                           <input
                             type="radio"
                             name="gender"
-                            defaultChecked
+                            checked={gender === "homme"}
+                            onChange={() => setGender("homme")}
                             className="accent-[#7a9378]"
                           />
                           Homme
                         </label>
                         <label className="flex items-center gap-2">
-                          <input type="radio" name="gender" className="accent-[#7a9378]" />
+                          <input
+                            type="radio"
+                            name="gender"
+                            checked={gender === "femme"}
+                            onChange={() => setGender("femme")}
+                            className="accent-[#7a9378]"
+                          />
                           Femme
                         </label>
                       </div>
@@ -305,12 +456,18 @@ export default function UserProfilePage() {
                   </section>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex items-center justify-end gap-3">
+                  {saveFeedback && <p className="text-xs text-[#2f5c2f]">{saveFeedback}</p>}
+                  {saveError && (
+                    <p className="text-xs text-[#7b2222]">Erreur: {saveError.message}</p>
+                  )}
                   <button
                     type="button"
-                    className="rounded-md bg-[#2f3d2f] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.25)]"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="rounded-md bg-[#2f3d2f] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.25)] disabled:opacity-60"
                   >
-                    Enregistrer
+                    {isSaving ? "Enregistrement..." : "Enregistrer"}
                   </button>
                 </div>
               </div>
