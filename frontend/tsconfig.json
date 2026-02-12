@@ -15,7 +15,8 @@
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node", "jest", "@testing-library/jest-dom"]
   },
   "include": [
     "next-env.d.ts",
@@ -25,6 +26,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"],
-  "typeRoots": ["../../node_modules/@heroicons/**/*.d.ts"]
+  "exclude": ["node_modules"]
 }

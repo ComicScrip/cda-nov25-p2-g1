@@ -16,7 +16,7 @@ export default function Login() {
   const onSubmit = async (data: LoginInput) => {
     try {
       await login({ variables: { data } });
-      router.push("/");
+      router.push("/dashboard_user");
     } catch (err) {
       console.error(err);
     }

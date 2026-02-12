@@ -83,7 +83,7 @@ export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: '
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, createdAt: any, role: string } | null };
+export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, created_at: any, role: string } | null };
 
 
 export const LoginDocument = gql`
@@ -187,7 +187,7 @@ export const ProfileDocument = gql`
   me {
     id
     email
-    createdAt
+    created_at
     role
   }
 }
