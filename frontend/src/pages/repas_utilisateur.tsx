@@ -258,11 +258,10 @@ export default function RepasUtilisateurPage() {
                         {item.href ? (
                           <Link
                             href={item.href}
-                            className={`block w-full rounded-sm py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)] ${
-                              item.active
+                            className={`block w-full rounded-sm py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)] ${item.active
                                 ? "bg-[#a680a8] text-white"
                                 : "bg-[#f1f1f1] text-[#3c3c3c]"
-                            }`}
+                              }`}
                           >
                             {item.label}
                           </Link>
@@ -307,7 +306,7 @@ export default function RepasUtilisateurPage() {
                 <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
                   <section className="rounded-md border border-[#d3d8cf] bg-[#eef4e8] p-4 md:p-5">
                     <h2 className="text-sm font-semibold text-[#2e3a2d]">Mes 10 derniers repas</h2>
-                    <div className="mt-3 max-h-[620px] space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                    <div className="mt-3 max-h-55 space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable]">
                       {mealHistory.map((meal) => {
                         const isSelected = meal.id === selectedMeal.id;
                         return (
@@ -315,11 +314,10 @@ export default function RepasUtilisateurPage() {
                             key={meal.id}
                             type="button"
                             onClick={() => setSelectedMealId(meal.id)}
-                            className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
-                              isSelected
+                            className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${isSelected
                                 ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
                                 : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-                            }`}
+                              }`}
                           >
                             <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[#5a6758]">
                               <span className="rounded-full bg-[#edf4ea] px-2 py-0.5 font-medium">
