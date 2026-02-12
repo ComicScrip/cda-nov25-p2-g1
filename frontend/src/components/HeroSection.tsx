@@ -33,7 +33,7 @@ export default function HeroSection() {
           Bienvenue sur MyDietChef
         </h1>
         <p className="text-base md:text-lg lg:text-xl text-white mb-8 md:mb-12">
-          Plateforme conçue pour vous aider à atteindre vos objectifs diététiques
+          Plateforme conçue pour vous aider à atteindre vos objectifs diététiques en maître
         </p>
 
         {/* Buttons */}
