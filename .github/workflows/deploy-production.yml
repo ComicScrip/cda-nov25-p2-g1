@@ -1,4 +1,4 @@
-name: Compile and push client and server to prod environment
+name: Compile and push client and server to production environment
 
 on:
   push:

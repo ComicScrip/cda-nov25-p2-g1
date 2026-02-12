@@ -14,7 +14,7 @@ BACK_CONTEXT="${BACK_CONTEXT:-./backend}"
 build() {
     local image="$1" dockerfile="$2" context="$3"
     docker buildx build \
-        --platform linux/amd64,linux/arm64 \
+        --platform linux/amd64 \
         -t "${image}:${IMAGE_TAG}" \
         --file "${dockerfile}" \
         "${context}" \
