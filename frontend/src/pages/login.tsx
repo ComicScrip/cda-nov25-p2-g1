@@ -4,7 +4,6 @@ import Field from "@/components/Field";
 import HomeLayout from "@/components/HomeLayout";
 import { type LoginInput, useLoginMutation } from "@/graphql/generated/schema";
 
-
 export default function Login() {
   const router = useRouter();
   const [login, { loading: isSubmitting, error }] = useLoginMutation();
