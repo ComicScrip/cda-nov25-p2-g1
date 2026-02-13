@@ -82,7 +82,7 @@ export class User_profile extends BaseEntity {
   @Field(() => [Weight_Measure])
   @OneToMany(
     () => Weight_Measure,
-    (weight_measure) => weight_measure.user_profiles,
+    (weight_measure) => weight_measure.user_profile,
   )
   weight_measures!: Weight_Measure[];
 }
