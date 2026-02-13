@@ -16,7 +16,7 @@ export async function seedUsers() {
     role: UserRole.Coachee,
   }).save();
 
-    const janette = await User.create({
+  const janette = await User.create({
     email: "janette.doe@app.com",
     hashedPassword: await hash("SuperP@ssW0rd!"),
     role: UserRole.Coachee,
