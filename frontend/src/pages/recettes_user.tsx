@@ -106,7 +106,6 @@ export default function RecettesUserPage() {
     [recipes, selectedRecipeId],
   );
 
-  const favoriteCount = recipes.filter((recipe) => recipe.source === "favori").length;
   const coachCount = recipes.filter((recipe) => recipe.source === "coach").length;
   const averageCalories = Math.round(
     recipes.length > 0
@@ -136,19 +135,15 @@ export default function RecettesUserPage() {
         <div className="max-w-4xl text-[#2c2c2c]">
           <h1 className="text-lg font-semibold">Mes recettes</h1>
           <p className="mt-1 text-xs text-[#555]">
-            Retrouve ici tes recettes favorites et celles recommandees par ton coach, avec
-            preparation detaillee, apports nutritionnels et bienfaits.
+            Retrouve ici tes recettes recommandees par ton coach, avec preparation detaillee,
+            apports nutritionnels et bienfaits.
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-[#bfe8ea] px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
             <div className="text-sm font-semibold">{recipes.length}</div>
             <div className="text-[11px]">recettes disponibles</div>
-          </div>
-          <div className="rounded-md bg-[#a7d9a1] px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-            <div className="text-sm font-semibold">{favoriteCount}</div>
-            <div className="text-[11px]">recettes favorites</div>
           </div>
           <div className="rounded-md bg-[#e9b26b] px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
             <div className="text-sm font-semibold">{coachCount}</div>
