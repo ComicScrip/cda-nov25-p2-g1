@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 
 type MealHistoryEntry = {
@@ -243,12 +243,7 @@ const mealHistory: MealHistoryEntry[] = [
 ];
 
 export default function RepasUtilisateurPage() {
-  const [selectedMealId, setSelectedMealId] = useState(mealHistory[0].id);
-
-  const selectedMeal = useMemo(
-    () => mealHistory.find((meal) => meal.id === selectedMealId) ?? mealHistory[0],
-    [selectedMealId],
-  );
+  const [selectedMeal, setSelectedMeal] = useState(mealHistory[0]);
 
   const averageCalories = Math.round(
     mealHistory.reduce((sum, meal) => sum + meal.calories, 0) / mealHistory.length,
@@ -327,7 +322,7 @@ export default function RepasUtilisateurPage() {
                           <button
                             key={meal.id}
                             type="button"
-                            onClick={() => setSelectedMealId(meal.id)}
+                            onClick={() => setSelectedMeal(meal)}
                             className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
                               isSelected
                                 ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
