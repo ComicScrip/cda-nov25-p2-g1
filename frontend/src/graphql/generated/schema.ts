@@ -24,7 +24,8 @@ export type DashboardData = {
   __typename?: 'DashboardData';
   averageCalories: Scalars['Int']['output'];
   daysOfUse: Scalars['Int']['output'];
-  firstName: Scalars['String']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  hasMoreMeals: Scalars['Boolean']['output'];
   healthScore: Scalars['Int']['output'];
   recentMeals: Array<DashboardMealData>;
   scannedMeals: Scalars['Int']['output'];
@@ -104,6 +105,12 @@ export type Query = {
   userProfileData?: Maybe<UserProfileData>;
   userRecipesData: Array<RecipeData>;
   users: Array<User>;
+};
+
+
+export type QueryUserDashboardDataArgs = {
+  limit?: Scalars['Int']['input'];
+  offset?: Scalars['Int']['input'];
 };
 
 export type RecipeData = {
@@ -222,6 +229,14 @@ export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, email: string, createdAt: any, role: UserRole } | null };
+
+export type UserDashboardDataQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type UserDashboardDataQuery = { __typename?: 'Query', userDashboardData?: { __typename?: 'DashboardData', firstName?: string | null, daysOfUse: number, healthScore: number, scannedMeals: number, averageCalories: number, targetCalories: number, targetProgress: number, targetProtein: number, targetCarbs: number, targetLipids: number, todayProtein: number, todayCarbs: number, todayFat: number, hasMoreMeals: boolean, recentMeals: Array<{ __typename?: 'DashboardMealData', name: string, calories: number, protein: number, carbs: number, fat: number }> } | null };
 
 
 export const LoginDocument = gql`
@@ -365,3 +380,67 @@ export type ProfileQueryHookResult = ReturnType<typeof useProfileQuery>;
 export type ProfileLazyQueryHookResult = ReturnType<typeof useProfileLazyQuery>;
 export type ProfileSuspenseQueryHookResult = ReturnType<typeof useProfileSuspenseQuery>;
 export type ProfileQueryResult = ApolloReactCommon.QueryResult<ProfileQuery, ProfileQueryVariables>;
+export const UserDashboardDataDocument = gql`
+    query UserDashboardData($limit: Int, $offset: Int) {
+  userDashboardData(limit: $limit, offset: $offset) {
+    firstName
+    daysOfUse
+    healthScore
+    scannedMeals
+    averageCalories
+    targetCalories
+    targetProgress
+    targetProtein
+    targetCarbs
+    targetLipids
+    todayProtein
+    todayCarbs
+    todayFat
+    hasMoreMeals
+    recentMeals {
+      name
+      calories
+      protein
+      carbs
+      fat
+    }
+  }
+}
+    `;
+
+/**
+ * __useUserDashboardDataQuery__
+ *
+ * To run a query within a React component, call `useUserDashboardDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useUserDashboardDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useUserDashboardDataQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useUserDashboardDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+      }
+export function useUserDashboardDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+        }
+// @ts-ignore
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<UserDashboardDataQuery, UserDashboardDataQueryVariables>;
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<UserDashboardDataQuery | undefined, UserDashboardDataQueryVariables>;
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+        }
+export type UserDashboardDataQueryHookResult = ReturnType<typeof useUserDashboardDataQuery>;
+export type UserDashboardDataLazyQueryHookResult = ReturnType<typeof useUserDashboardDataLazyQuery>;
+export type UserDashboardDataSuspenseQueryHookResult = ReturnType<typeof useUserDashboardDataSuspenseQuery>;
+export type UserDashboardDataQueryResult = ApolloReactCommon.QueryResult<UserDashboardDataQuery, UserDashboardDataQueryVariables>;

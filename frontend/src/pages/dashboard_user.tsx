@@ -1,83 +1,16 @@
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
-
-const USER_DASHBOARD_QUERY = gql`
-  query UserDashboardData($limit: Int, $offset: Int) {
-    userDashboardData(limit: $limit, offset: $offset) {
-      firstName
-      daysOfUse
-      healthScore
-      scannedMeals
-      averageCalories
-      targetCalories
-      targetProgress
-      targetProtein
-      targetCarbs
-      targetLipids
-      todayProtein
-      todayCarbs
-      todayFat
-      hasMoreMeals
-      recentMeals {
-        name
-        calories
-        protein
-        carbs
-        fat
-      }
-    }
-  }
-`;
-
-type DashboardMeal = {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-};
-
-type DashboardPayload = {
-  firstName?: string | null;
-  daysOfUse: number;
-  healthScore: number;
-  scannedMeals: number;
-  averageCalories: number;
-  targetCalories: number;
-  targetProgress: number;
-  targetProtein: number;
-  targetCarbs: number;
-  targetLipids: number;
-  todayProtein: number;
-  todayCarbs: number;
-  todayFat: number;
-  hasMoreMeals: boolean;
-  recentMeals: DashboardMeal[];
-};
-
-type DashboardQueryData = {
-  userDashboardData: DashboardPayload | null;
-};
-
-type DashboardQueryVariables = {
-  limit?: number;
-  offset?: number;
-};
+import { useUserDashboardDataQuery } from "@/graphql/generated/schema";
 
 const PAGE_SIZE = 10;
 
 export default function DashboardPage() {
   const [offset, setOffset] = useState(0);
-  const { data, loading, error } = useQuery<DashboardQueryData, DashboardQueryVariables>(
-    USER_DASHBOARD_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-      variables: { limit: PAGE_SIZE, offset },
-    },
-  );
+  const { data, loading, error } = useUserDashboardDataQuery({
+    fetchPolicy: "cache-and-network",
+    variables: { limit: PAGE_SIZE, offset },
+  });
 
   const dashboard = data?.userDashboardData;
   const hasMoreMeals = Boolean(dashboard?.hasMoreMeals);

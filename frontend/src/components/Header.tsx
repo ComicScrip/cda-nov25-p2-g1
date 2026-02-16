@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { UserRole, useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function Header() {
                 >
                   Déconnexion
                 </Button>
-                {user.role === "admin" && (
+                {user.role === UserRole.Admin && (
                   <Button
                     asChild
                     variant="ghost"
@@ -130,7 +130,7 @@ export default function Header() {
                   >
                     Déconnexion
                   </Button>
-                  {user.role === "admin" && (
+                  {user.role === UserRole.Admin && (
                     <Button
                       asChild
                       variant="ghost"
