@@ -43,8 +43,8 @@ class DashboardMealData {
 
 @ObjectType()
 class DashboardData {
-  @Field(() => String)
-  firstName!: string;
+  @Field(() => String, { nullable: true })
+  firstName?: string | null;
 
   @Field(() => Int)
   daysOfUse!: number;
@@ -447,7 +447,6 @@ export default class UserDataResolver {
   ): Promise<DashboardData | null> {
     const currentUser = await getCurrentUser(context);
     const currentUserId = currentUser.id;
-    const fallbackFirstName = currentUser.email.split("@")[0] ?? "Utilisateur";
 
     const [profile, dishes] = await Promise.all([
       User_profile.findOne({ where: { user: { id: currentUserId } } }),
@@ -499,7 +498,7 @@ export default class UserDataResolver {
         : 0;
 
     return {
-      firstName: profile?.first_name ?? fallbackFirstName,
+      firstName: profile?.first_name?.trim() || null,
       daysOfUse: dailyTotals.size,
       healthScore,
       scannedMeals: latestTenDishes.length,
