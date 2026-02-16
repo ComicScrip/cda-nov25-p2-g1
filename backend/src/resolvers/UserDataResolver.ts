@@ -629,11 +629,10 @@ export default class UserDataResolver {
     });
 
     const weights = [...(profile?.weight_measures ?? [])]
-      .map((measure) => ({
-        measuredAt: measure.measured_at ?? new Date(),
-        weight: toNumber(measure.weight),
-      }))
-      .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime());
+      .filter((measure): measure is Weight_Measure & { measured_at: Date } =>
+        Boolean(measure.measured_at),
+      )
+      .sort((a, b) => a.measured_at.getTime() - b.measured_at.getTime());
 
     if (weights.length === 0) {
       return [];
@@ -678,9 +677,9 @@ export default class UserDataResolver {
         : 0;
 
     return weights.map((weightPoint, index) => {
-      const dayKey = toDateKey(weightPoint.measuredAt);
+      const dayKey = toDateKey(weightPoint.measured_at);
       const dayBucket = dailyStats.get(dayKey);
-      const key = toIsoWeekKey(weightPoint.measuredAt);
+      const key = toIsoWeekKey(weightPoint.measured_at);
       const bucket = weeklyStats.get(key);
       const calories =
         dayBucket && dayBucket.calories.length > 0
