@@ -11,9 +11,9 @@ import {
   Resolver,
 } from "type-graphql";
 import { getCurrentUser } from "../auth";
-import { Pathology } from "../entities/Pathology";
 import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
+import { Pathology } from "../entities/Pathology";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
@@ -24,11 +24,14 @@ const BENEFITS_SEPARATOR = "\n##BENEFITS##\n";
 const DISH_NAME_BY_PHOTO: Record<string, string> = {
   "/Repas_images_temporary/quinoapoulet.jpg": "Bowl quinoa & poulet",
   "/Repas_images_temporary/saladecesar.webp": "Salade cesar",
-  "/Repas_images_temporary/saumonrizcomplet.webp": "Saumon, riz complet et brocoli",
+  "/Repas_images_temporary/saumonrizcomplet.webp":
+    "Saumon, riz complet et brocoli",
   "/Repas_images_temporary/wrapdinde.jpg": "Wrap dinde crudites",
   "/Repas_images_temporary/patebolo.jpg": "Pates completes bolognaise",
-  "/Repas_images_temporary/soupelegumetartine.webp": "Soupe legumes + tartine chevre",
-  "/Repas_images_temporary/recette-frittata-epinards-feta.jpg": "Omelette epinards & feta",
+  "/Repas_images_temporary/soupelegumetartine.webp":
+    "Soupe legumes + tartine chevre",
+  "/Repas_images_temporary/recette-frittata-epinards-feta.jpg":
+    "Omelette epinards & feta",
   "/Repas_images_temporary/burgerpatate.jpg": "Burger maison + patates roties",
   "/Repas_images_temporary/pkebawltofu.webp": "Poke bowl tofu",
   "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp":
@@ -36,11 +39,16 @@ const DISH_NAME_BY_PHOTO: Record<string, string> = {
 };
 
 const RECIPE_PHOTO_BY_TITLE: Record<string, string> = {
-  "Bowl quinoa, poulet et legumes verts": "/Repas_images_temporary/quinoapoulet.jpg",
-  "Saumon, riz complet et brocoli": "/Repas_images_temporary/saumonrizcomplet.webp",
-  "Wrap dinde, crudites et sauce yaourt": "/Repas_images_temporary/wrapdinde.jpg",
-  "Omelette epinards et feta": "/Repas_images_temporary/recette-frittata-epinards-feta.jpg",
-  "Poke bowl tofu, avocat et graines": "/Repas_images_temporary/pkebawltofu.webp",
+  "Bowl quinoa, poulet et legumes verts":
+    "/Repas_images_temporary/quinoapoulet.jpg",
+  "Saumon, riz complet et brocoli":
+    "/Repas_images_temporary/saumonrizcomplet.webp",
+  "Wrap dinde, crudites et sauce yaourt":
+    "/Repas_images_temporary/wrapdinde.jpg",
+  "Omelette epinards et feta":
+    "/Repas_images_temporary/recette-frittata-epinards-feta.jpg",
+  "Poke bowl tofu, avocat et graines":
+    "/Repas_images_temporary/pkebawltofu.webp",
   "Yaourt grec, granola et fruits rouges":
     "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
 };
@@ -238,11 +246,15 @@ function toDateKey(date: Date): string {
 }
 
 function toIsoWeekKey(date: Date): string {
-  const tmp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const tmp = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   const day = tmp.getUTCDay() || 7;
   tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  const weekNo = Math.ceil(
+    ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+  );
   return `${tmp.getUTCFullYear()}-W${weekNo}`;
 }
 
@@ -279,7 +291,10 @@ export default class UserDataResolver {
     const dishEntries = meals
       .flatMap((meal) =>
         (meal.dishes ?? []).map((dish) => {
-          const consumedAt = safeDate(meal.consumedAt) ?? safeDate(dish.uploadedAt) ?? new Date();
+          const consumedAt =
+            safeDate(meal.consumedAt) ??
+            safeDate(dish.uploadedAt) ??
+            new Date();
           const analysis = dish.analysis;
           return {
             consumedAt,
@@ -294,7 +309,9 @@ export default class UserDataResolver {
       )
       .filter((dish) => dish.calories > 0);
 
-    return dishEntries.sort((a, b) => b.consumedAt.getTime() - a.consumedAt.getTime());
+    return dishEntries.sort(
+      (a, b) => b.consumedAt.getTime() - a.consumedAt.getTime(),
+    );
   }
 
   private async buildUserProfilePayload(
@@ -339,7 +356,9 @@ export default class UserDataResolver {
   }
 
   @Query(() => UserProfileData, { nullable: true })
-  async userProfileData(@Ctx() context: GraphQLContext): Promise<UserProfileData | null> {
+  async userProfileData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<UserProfileData | null> {
     try {
       const currentUser = await getCurrentUser(context);
       return this.buildUserProfilePayload(currentUser.id, currentUser.email);
@@ -370,22 +389,37 @@ export default class UserDataResolver {
 
     if (!profile) {
       profile = User_profile.create();
-      (profile as unknown as { user: { id: string } }).user = { id: currentUserId };
+      (profile as unknown as { user: { id: string } }).user = {
+        id: currentUserId,
+      };
     }
 
     const firstName = data.firstName.trim();
     const lastName = data.lastName.trim();
     const dateOfBirth = data.dateOfBirth?.trim();
-    const parsedDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00.000Z`) : null;
+    const parsedDate = dateOfBirth
+      ? new Date(`${dateOfBirth}T00:00:00.000Z`)
+      : null;
 
-    profile.first_name = firstName || profile.first_name || fallbackEmail.split("@")[0] || "Utilisateur";
+    profile.first_name =
+      firstName ||
+      profile.first_name ||
+      fallbackEmail.split("@")[0] ||
+      "Utilisateur";
     profile.last_name = lastName || profile.last_name || "";
-    profile.date_of_birth = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : profile.date_of_birth;
+    profile.date_of_birth =
+      parsedDate && !Number.isNaN(parsedDate.getTime())
+        ? parsedDate
+        : profile.date_of_birth;
     profile.gender = data.gender?.trim() || profile.gender || "";
-    profile.height = Number.isFinite(data.height) ? Number(data.height) : profile.height;
+    profile.height = Number.isFinite(data.height)
+      ? Number(data.height)
+      : profile.height;
     profile.goal = data.goal?.trim() || profile.goal || "";
 
-    const incomingTags = [...new Set(data.medicalTags.map((item) => item.trim()).filter(Boolean))];
+    const incomingTags = [
+      ...new Set(data.medicalTags.map((item) => item.trim()).filter(Boolean)),
+    ];
 
     if (incomingTags.length > 0) {
       const existingPathologies = await Pathology.find({
@@ -410,7 +444,10 @@ export default class UserDataResolver {
 
     if (Number.isFinite(data.currentWeight) && Number(data.currentWeight) > 0) {
       const latestKnown = [...(profile.weight_measures ?? [])]
-        .map((item) => ({ measuredAt: safeDate(item.measured_at) ?? new Date(0), weight: toNumber(item.weight) }))
+        .map((item) => ({
+          measuredAt: safeDate(item.measured_at) ?? new Date(0),
+          weight: toNumber(item.weight),
+        }))
         .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime())[0];
       const nextWeight = Number(data.currentWeight);
 
@@ -419,7 +456,9 @@ export default class UserDataResolver {
           measured_at: new Date(),
           weight: nextWeight,
         });
-        (weightMeasure as unknown as { user_profiles: User_profile }).user_profiles = profile;
+        (
+          weightMeasure as unknown as { user_profiles: User_profile }
+        ).user_profiles = profile;
         await weightMeasure.save();
       }
     }
@@ -428,7 +467,9 @@ export default class UserDataResolver {
   }
 
   @Query(() => DashboardData, { nullable: true })
-  async userDashboardData(@Ctx() context: GraphQLContext): Promise<DashboardData | null> {
+  async userDashboardData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<DashboardData | null> {
     let currentUserId = "";
     let fallbackFirstName = "";
 
@@ -447,7 +488,9 @@ export default class UserDataResolver {
 
     const latestTenDishes = dishes.slice(0, 10);
     const dailyTotals = new Map<string, number>();
-    const todayKey = latestTenDishes[0] ? toDateKey(latestTenDishes[0].consumedAt) : null;
+    const todayKey = latestTenDishes[0]
+      ? toDateKey(latestTenDishes[0].consumedAt)
+      : null;
     let todayProtein = 0;
     let todayCarbs = 0;
     let todayFat = 0;
@@ -464,15 +507,28 @@ export default class UserDataResolver {
       }
     }
 
-    const totalCalories = latestTenDishes.reduce((sum, dish) => sum + dish.calories, 0);
-    const totalScore = latestTenDishes.reduce((sum, dish) => sum + dish.score, 0);
+    const totalCalories = latestTenDishes.reduce(
+      (sum, dish) => sum + dish.calories,
+      0,
+    );
+    const totalScore = latestTenDishes.reduce(
+      (sum, dish) => sum + dish.score,
+      0,
+    );
     const averageCalories =
       dailyTotals.size > 0 ? Math.round(totalCalories / dailyTotals.size) : 0;
     const healthScore =
-      latestTenDishes.length > 0 ? Math.round(totalScore / latestTenDishes.length) : 0;
+      latestTenDishes.length > 0
+        ? Math.round(totalScore / latestTenDishes.length)
+        : 0;
     const targetCalories = 2000;
     const targetProgress =
-      targetCalories > 0 ? Math.max(0, Math.min(100, Math.round((todayCalories / targetCalories) * 100))) : 0;
+      targetCalories > 0
+        ? Math.max(
+            0,
+            Math.min(100, Math.round((todayCalories / targetCalories) * 100)),
+          )
+        : 0;
 
     return {
       firstName: profile?.first_name ?? fallbackFirstName,
@@ -490,7 +546,7 @@ export default class UserDataResolver {
       todayFat: Math.round(todayFat),
       recentMeals: latestTenDishes.slice(0, 4).map((dish, index) => ({
         name: dish.photoUrl
-          ? DISH_NAME_BY_PHOTO[dish.photoUrl] ?? `Repas ${index + 1}`
+          ? (DISH_NAME_BY_PHOTO[dish.photoUrl] ?? `Repas ${index + 1}`)
           : `Repas ${index + 1}`,
         calories: Math.round(dish.calories),
         protein: Math.round(dish.proteins),
@@ -522,7 +578,8 @@ export default class UserDataResolver {
       .map((recipe) => {
         const source = recipe.status === Status.Publie ? "coach" : "favori";
         const photo =
-          RECIPE_PHOTO_BY_TITLE[recipe.title] ?? "/Repas_images_temporary/quinoapoulet.jpg";
+          RECIPE_PHOTO_BY_TITLE[recipe.title] ??
+          "/Repas_images_temporary/quinoapoulet.jpg";
         const prepSteps = (recipe.instructions ?? "")
           .split("\n")
           .map((step) => step.trim())
@@ -566,7 +623,9 @@ export default class UserDataResolver {
   }
 
   @Query(() => [EvolutionDataPoint])
-  async userEvolutionData(@Ctx() context: GraphQLContext): Promise<EvolutionDataPoint[]> {
+  async userEvolutionData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<EvolutionDataPoint[]> {
     let currentUserId = "";
     try {
       const currentUser = await getCurrentUser(context);
@@ -592,8 +651,14 @@ export default class UserDataResolver {
     }
 
     const dishes = await this.loadUserDishEntries(currentUserId);
-    const weeklyStats = new Map<string, { calories: number[]; scores: number[] }>();
-    const dailyStats = new Map<string, { calories: number[]; scores: number[] }>();
+    const weeklyStats = new Map<
+      string,
+      { calories: number[]; scores: number[] }
+    >();
+    const dailyStats = new Map<
+      string,
+      { calories: number[]; scores: number[] }
+    >();
 
     for (const dish of dishes) {
       const key = toIsoWeekKey(dish.consumedAt);
@@ -611,10 +676,17 @@ export default class UserDataResolver {
 
     const globalCalories =
       dishes.length > 0
-        ? Math.round(dishes.reduce((sum, dish) => sum + dish.calories, 0) / dishes.length)
+        ? Math.round(
+            dishes.reduce((sum, dish) => sum + dish.calories, 0) /
+              dishes.length,
+          )
         : 0;
     const globalScore =
-      dishes.length > 0 ? Math.round(dishes.reduce((sum, dish) => sum + dish.score, 0) / dishes.length) : 0;
+      dishes.length > 0
+        ? Math.round(
+            dishes.reduce((sum, dish) => sum + dish.score, 0) / dishes.length,
+          )
+        : 0;
 
     return weights.map((weightPoint, index) => {
       const dayKey = toDateKey(weightPoint.measuredAt);
@@ -624,19 +696,27 @@ export default class UserDataResolver {
       const calories =
         dayBucket && dayBucket.calories.length > 0
           ? Math.round(
-              dayBucket.calories.reduce((sum, value) => sum + value, 0) / dayBucket.calories.length,
+              dayBucket.calories.reduce((sum, value) => sum + value, 0) /
+                dayBucket.calories.length,
             )
           : bucket && bucket.calories.length > 0
-          ? Math.round(bucket.calories.reduce((sum, value) => sum + value, 0) / bucket.calories.length)
-          : globalCalories;
+            ? Math.round(
+                bucket.calories.reduce((sum, value) => sum + value, 0) /
+                  bucket.calories.length,
+              )
+            : globalCalories;
       const score =
         dayBucket && dayBucket.scores.length > 0
           ? Math.round(
-              dayBucket.scores.reduce((sum, value) => sum + value, 0) / dayBucket.scores.length,
+              dayBucket.scores.reduce((sum, value) => sum + value, 0) /
+                dayBucket.scores.length,
             )
           : bucket && bucket.scores.length > 0
-          ? Math.round(bucket.scores.reduce((sum, value) => sum + value, 0) / bucket.scores.length)
-          : globalScore;
+            ? Math.round(
+                bucket.scores.reduce((sum, value) => sum + value, 0) /
+                  bucket.scores.length,
+              )
+            : globalScore;
 
       return {
         week: `S${index + 1}`,

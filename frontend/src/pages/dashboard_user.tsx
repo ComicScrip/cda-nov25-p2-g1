@@ -230,15 +230,15 @@ export default function DashboardPage() {
                         .filter(Boolean)
                         .join(" ");
 
-                        return (
-                          <div key={meal.name} className={dividerClasses}>
-                            <div className="font-semibold">{meal.name}</div>
-                            <div>{meal.calories} kcal</div>
-                            <div>
-                              P: {meal.protein}g | G: {meal.carbs}g | L: {meal.fat}g
-                            </div>
+                      return (
+                        <div key={meal.name} className={dividerClasses}>
+                          <div className="font-semibold">{meal.name}</div>
+                          <div>{meal.calories} kcal</div>
+                          <div>
+                            P: {meal.protein}g | G: {meal.carbs}g | L: {meal.fat}g
                           </div>
-                        );
+                        </div>
+                      );
                     })}
                   </div>
                 </div>

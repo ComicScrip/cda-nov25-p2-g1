@@ -291,10 +291,12 @@ export default function RecettesUserPage() {
                             {selectedRecipe.calories} kcal
                           </div>
                           <div>
-                            <span className="font-semibold">Proteines:</span> {selectedRecipe.protein} g
+                            <span className="font-semibold">Proteines:</span>{" "}
+                            {selectedRecipe.protein} g
                           </div>
                           <div>
-                            <span className="font-semibold">Glucides:</span> {selectedRecipe.carbs} g
+                            <span className="font-semibold">Glucides:</span> {selectedRecipe.carbs}{" "}
+                            g
                           </div>
                           <div>
                             <span className="font-semibold">Lipides:</span> {selectedRecipe.fat} g

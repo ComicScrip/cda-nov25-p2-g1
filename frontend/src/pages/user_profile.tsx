@@ -264,8 +264,8 @@ export default function UserProfilePage() {
                 <div className="max-w-3xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">Modifier son profil :</h1>
                   <p className="mt-1 text-xs text-[#576057]">
-                    {profileName}, ces infos servent a personnaliser votre parcours sante avec
-                    votre coach.
+                    {profileName}, ces infos servent a personnaliser votre parcours sante avec votre
+                    coach.
                   </p>
                 </div>
 

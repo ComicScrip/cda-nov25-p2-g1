@@ -1,6 +1,6 @@
 import { hash } from "argon2";
-import { AnalysisStatus, DishType, MealType, Status } from "../entities/enums";
 import { Dish } from "../entities/Dish";
+import { AnalysisStatus, DishType, MealType, Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Recipe } from "../entities/Recipe";
@@ -101,7 +101,8 @@ const mealHistorySeeds: MealSeed[] = [
       "Bon apport en omega-3 lie au saumon.",
       "Quantite de glucides adaptee a une journee active.",
     ],
-    coachComment: "Parfait. Ce type d assiette est exactement ce qu on vise sur la semaine.",
+    coachComment:
+      "Parfait. Ce type d assiette est exactement ce qu on vise sur la semaine.",
     coachName: "Coach Lucie",
   },
   {
@@ -227,7 +228,8 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 12,
     fiber: 5,
     score: 82,
-    photo: "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
+    photo:
+      "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
     aiInsights: [
       "Repas rapide mais bien structure pour une soiree legere.",
       "Attention au sucre ajoute dans le granola.",
@@ -240,12 +242,42 @@ const mealHistorySeeds: MealSeed[] = [
 ];
 
 const evolutionSeeds = [
-  { measuredAt: "2026-01-05T08:30:00Z", weight: 84.2, calories: 2140, score: 70 },
-  { measuredAt: "2026-01-12T08:30:00Z", weight: 83.6, calories: 2080, score: 73 },
-  { measuredAt: "2026-01-19T08:30:00Z", weight: 82.9, calories: 2010, score: 77 },
-  { measuredAt: "2026-01-26T08:30:00Z", weight: 82.2, calories: 1960, score: 81 },
-  { measuredAt: "2026-02-02T08:30:00Z", weight: 81.6, calories: 1910, score: 85 },
-  { measuredAt: "2026-02-09T08:30:00Z", weight: 80.9, calories: 1875, score: 88 },
+  {
+    measuredAt: "2026-01-05T08:30:00Z",
+    weight: 84.2,
+    calories: 2140,
+    score: 70,
+  },
+  {
+    measuredAt: "2026-01-12T08:30:00Z",
+    weight: 83.6,
+    calories: 2080,
+    score: 73,
+  },
+  {
+    measuredAt: "2026-01-19T08:30:00Z",
+    weight: 82.9,
+    calories: 2010,
+    score: 77,
+  },
+  {
+    measuredAt: "2026-01-26T08:30:00Z",
+    weight: 82.2,
+    calories: 1960,
+    score: 81,
+  },
+  {
+    measuredAt: "2026-02-02T08:30:00Z",
+    weight: 81.6,
+    calories: 1910,
+    score: 85,
+  },
+  {
+    measuredAt: "2026-02-09T08:30:00Z",
+    weight: 80.9,
+    calories: 1875,
+    score: 88,
+  },
 ];
 
 const recipeSeeds: RecipeSeed[] = [
@@ -441,7 +473,9 @@ async function upsertJaneUser() {
 }
 
 async function upsertJaneProfile(user: User) {
-  let profile = await User_profile.findOne({ where: { user: { id: user.id } } });
+  let profile = await User_profile.findOne({
+    where: { user: { id: user.id } },
+  });
   if (!profile) {
     profile = User_profile.create({
       first_name: "Jane",
@@ -458,7 +492,8 @@ async function upsertJaneProfile(user: User) {
     profile.date_of_birth = new Date("1990-06-12");
     profile.gender = "femme";
     profile.height = 170;
-    profile.goal = "Manger sainement et garder une routine stable avec mon coach.";
+    profile.goal =
+      "Manger sainement et garder une routine stable avec mon coach.";
     profile.user = user;
   }
 
@@ -558,7 +593,9 @@ async function seedEvolutionData(user: User, profile: User_profile) {
       measured_at: measuredAt,
       weight: evolutionSeed.weight,
     });
-    (weightMeasure as unknown as { user_profiles: User_profile }).user_profiles = profile;
+    (
+      weightMeasure as unknown as { user_profiles: User_profile }
+    ).user_profiles = profile;
     await weightMeasure.save();
 
     const meal = Meal.create({
