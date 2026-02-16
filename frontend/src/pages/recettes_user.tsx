@@ -1,7 +1,7 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 
@@ -64,21 +64,45 @@ const sourceBadgeStyles: Record<RecipeSource, string> = {
 };
 
 export default function RecettesUserPage() {
-  const { data, loading, error } = useQuery<RecipesQueryData>(USER_RECIPES_QUERY, {
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const { data, loading, error, observable } = useQuery<RecipesQueryData>(USER_RECIPES_QUERY, {
     fetchPolicy: "cache-and-network",
   });
-  const recipes = data?.userRecipesData ?? [];
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+
+  const handleRecipesLoaded = useCallback((loadedRecipes: Array<{ id?: string | null }>) => {
+    const recipeIds = loadedRecipes
+      .map((recipe) => recipe.id)
+      .filter((recipeId): recipeId is string => Boolean(recipeId));
+
+    setSelectedRecipeId((currentSelectedRecipeId) => {
+      if (recipeIds.length === 0) {
+        return null;
+      }
+      if (currentSelectedRecipeId && recipeIds.includes(currentSelectedRecipeId)) {
+        return currentSelectedRecipeId;
+      }
+      return recipeIds[0];
+    });
+  }, []);
 
   useEffect(() => {
-    if (recipes.length === 0) return;
-    if (!selectedRecipeId || !recipes.some((recipe) => recipe.id === selectedRecipeId)) {
-      setSelectedRecipeId(recipes[0].id);
-    }
-  }, [recipes, selectedRecipeId]);
+    handleRecipesLoaded(observable.getCurrentResult().data?.userRecipesData ?? []);
+
+    const subscription = observable.subscribe({
+      next: ({ data: queryData }) => {
+        handleRecipesLoaded(queryData?.userRecipesData ?? []);
+      },
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [handleRecipesLoaded, observable]);
+
+  const recipes = data?.userRecipesData ?? [];
 
   const selectedRecipe = useMemo(
-    () => recipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0] ?? null,
+    () => recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null,
     [recipes, selectedRecipeId],
   );
 
