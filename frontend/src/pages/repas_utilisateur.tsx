@@ -27,6 +27,19 @@ const navItems = [
   { label: "Mon Profile", href: "/user_profile", active: false },
 ];
 
+const mealPhotos = {
+  quinoapoulet: "https://i.ibb.co/trmHDr7/quinoapoulet.jpg",
+  saladecesar: "https://i.ibb.co/XfSWKQQZ/saladecesar.webp",
+  saumonrizcomplet: "https://i.ibb.co/s91VB246/saumonrizcomplet.webp",
+  wrapdinde: "https://i.ibb.co/6cKNXC6y/wrapdinde.jpg",
+  patebolo: "https://i.ibb.co/PGZC28f9/patebolo.jpg",
+  soupelegumetartine: "https://i.ibb.co/jxrSHnq/soupelegumetartine.webp",
+  recetteFrittata: "https://i.ibb.co/q3FT9XH7/recette-frittata-epinards-feta.jpg",
+  burgerpatate: "https://i.ibb.co/LXYpct9j/burgerpatate.jpg",
+  pkebawltofu: "https://i.ibb.co/FLphFzdz/pkebawltofu.webp",
+  yaourtGranola: "https://i.ibb.co/rRbRvfdC/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
+} as const;
+
 const mealHistory: MealHistoryEntry[] = [
   {
     id: 1,
@@ -38,7 +51,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 38,
     fat: 14,
     aiScore: 89,
-    photo: "/Repas_images_temporary/quinoapoulet.jpg",
+    photo: mealPhotos.quinoapoulet,
     aiInsights: [
       "Bon ratio protéines / glucides pour le déjeuner.",
       "Fibres estimées correctes, légumes présents en quantité suffisante.",
@@ -58,7 +71,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 20,
     fat: 24,
     aiScore: 78,
-    photo: "/Repas_images_temporary/saladecesar.webp",
+    photo: mealPhotos.saladecesar,
     aiInsights: [
       "Protéines correctes mais sauce assez riche en matières grasses.",
       "Apport en fibres moyen, quantité de verdure correcte.",
@@ -78,7 +91,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 46,
     fat: 17,
     aiScore: 92,
-    photo: "/Repas_images_temporary/saumonrizcomplet.webp",
+    photo: mealPhotos.saumonrizcomplet,
     aiInsights: [
       "Excellent équilibre global avec une protéine de qualité.",
       "Bon apport en oméga-3 lié au saumon.",
@@ -97,7 +110,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 34,
     fat: 11,
     aiScore: 84,
-    photo: "/Repas_images_temporary/wrapdinde.jpg",
+    photo: mealPhotos.wrapdinde,
     aiInsights: [
       "Repas léger et bien réparti en macronutriments.",
       "Niveau calorique adapté à un dîner.",
@@ -117,7 +130,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 66,
     fat: 18,
     aiScore: 74,
-    photo: "/Repas_images_temporary/patebolo.jpg",
+    photo: mealPhotos.patebolo,
     aiInsights: [
       "Charge glucidique élevée, utile avant entraînement.",
       "Portion généreuse, potentielle surconsommation calorique.",
@@ -137,7 +150,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 32,
     fat: 12,
     aiScore: 80,
-    photo: "/Repas_images_temporary/soupelegumetartine.webp",
+    photo: mealPhotos.soupelegumetartine,
     aiInsights: [
       "Repas léger, hydratant et adapté au dîner.",
       "Apport en protéines un peu faible.",
@@ -157,7 +170,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 9,
     fat: 29,
     aiScore: 83,
-    photo: "/Repas_images_temporary/recette-frittata-epinards-feta.jpg",
+    photo: mealPhotos.recetteFrittata,
     aiInsights: [
       "Très bonne densité en protéines.",
       "Glucides faibles, pense à ajouter une petite source féculente si besoin d'énergie.",
@@ -177,7 +190,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 58,
     fat: 35,
     aiScore: 66,
-    photo: "/Repas_images_temporary/burgerpatate.jpg",
+    photo: mealPhotos.burgerpatate,
     aiInsights: [
       "Repas calorique et riche en matières grasses.",
       "Protéines correctes, mais sodium élevé probable.",
@@ -197,7 +210,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 49,
     fat: 18,
     aiScore: 87,
-    photo: "/Repas_images_temporary/pkebawltofu.webp",
+    photo: mealPhotos.pkebawltofu,
     aiInsights: [
       "Bon repas complet avec apport végétal intéressant.",
       "Qualité lipidique correcte (graines, avocat).",
@@ -217,7 +230,7 @@ const mealHistory: MealHistoryEntry[] = [
     carbs: 37,
     fat: 12,
     aiScore: 82,
-    photo: "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
+    photo: mealPhotos.yaourtGranola,
     aiInsights: [
       "Repas rapide mais bien structuré pour une soirée légère.",
       "Attention au sucre ajouté dans le granola.",

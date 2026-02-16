@@ -57,7 +57,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 14,
     fiber: 8,
     score: 89,
-    photo: "/Repas_images_temporary/quinoapoulet.jpg",
+    photo: "https://i.ibb.co/trmHDr7/quinoapoulet.jpg",
     aiInsights: [
       "Bon ratio proteines / glucides pour le dejeuner.",
       "Fibres estimees correctes, legumes presents en quantite suffisante.",
@@ -76,7 +76,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 24,
     fiber: 4,
     score: 78,
-    photo: "/Repas_images_temporary/saladecesar.webp",
+    photo: "https://i.ibb.co/XfSWKQQZ/saladecesar.webp",
     aiInsights: [
       "Proteines correctes mais sauce assez riche en matieres grasses.",
       "Apport en fibres moyen, quantite de verdure correcte.",
@@ -95,7 +95,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 17,
     fiber: 6,
     score: 92,
-    photo: "/Repas_images_temporary/saumonrizcomplet.webp",
+    photo: "https://i.ibb.co/s91VB246/saumonrizcomplet.webp",
     aiInsights: [
       "Excellent equilibre global avec une proteine de qualite.",
       "Bon apport en omega-3 lie au saumon.",
@@ -114,7 +114,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 11,
     fiber: 7,
     score: 84,
-    photo: "/Repas_images_temporary/wrapdinde.jpg",
+    photo: "https://i.ibb.co/6cKNXC6y/wrapdinde.jpg",
     aiInsights: [
       "Repas leger et bien reparti en macronutriments.",
       "Niveau calorique adapte a un diner.",
@@ -133,7 +133,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 18,
     fiber: 5,
     score: 74,
-    photo: "/Repas_images_temporary/patebolo.jpg",
+    photo: "https://i.ibb.co/PGZC28f9/patebolo.jpg",
     aiInsights: [
       "Charge glucidique elevee, utile avant entrainement.",
       "Portion genereuse, potentielle surconsommation calorique.",
@@ -152,7 +152,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 12,
     fiber: 6,
     score: 80,
-    photo: "/Repas_images_temporary/soupelegumetartine.webp",
+    photo: "https://i.ibb.co/jxrSHnq/soupelegumetartine.webp",
     aiInsights: [
       "Repas leger, hydratant et adapte au diner.",
       "Apport en proteines un peu faible.",
@@ -171,7 +171,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 29,
     fiber: 4,
     score: 83,
-    photo: "/Repas_images_temporary/recette-frittata-epinards-feta.jpg",
+    photo: "https://i.ibb.co/q3FT9XH7/recette-frittata-epinards-feta.jpg",
     aiInsights: [
       "Tres bonne densite en proteines.",
       "Glucides faibles, pense a ajouter une petite source feculente si besoin d energie.",
@@ -190,7 +190,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 35,
     fiber: 3,
     score: 66,
-    photo: "/Repas_images_temporary/burgerpatate.jpg",
+    photo: "https://i.ibb.co/LXYpct9j/burgerpatate.jpg",
     aiInsights: [
       "Repas calorique et riche en matieres grasses.",
       "Proteines correctes, mais sodium eleve probable.",
@@ -209,7 +209,7 @@ const mealHistorySeeds: MealSeed[] = [
     fat: 18,
     fiber: 9,
     score: 87,
-    photo: "/Repas_images_temporary/pkebawltofu.webp",
+    photo: "https://i.ibb.co/FLphFzdz/pkebawltofu.webp",
     aiInsights: [
       "Bon repas complet avec apport vegetal interessant.",
       "Qualite lipidique correcte (graines, avocat).",
@@ -229,7 +229,7 @@ const mealHistorySeeds: MealSeed[] = [
     fiber: 5,
     score: 82,
     photo:
-      "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
+      "https://i.ibb.co/rRbRvfdC/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
     aiInsights: [
       "Repas rapide mais bien structure pour une soiree legere.",
       "Attention au sucre ajoute dans le granola.",
@@ -622,7 +622,7 @@ async function seedEvolutionData(user: User, profile: User_profile) {
     await analysis.save();
 
     const dish = Dish.create({
-      photoUrl: "/Repas_images_temporary/quinoapoulet.jpg",
+      photoUrl: "https://i.ibb.co/trmHDr7/quinoapoulet.jpg",
       dishType: DishType.Plat,
       analysisStatus: AnalysisStatus.Valide,
       uploadedAt: measuredAt,

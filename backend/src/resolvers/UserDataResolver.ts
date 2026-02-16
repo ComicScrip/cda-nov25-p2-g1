@@ -21,38 +21,6 @@ import type { GraphQLContext } from "../types";
 
 const BENEFITS_SEPARATOR = "\n##BENEFITS##\n";
 
-const DISH_NAME_BY_PHOTO: Record<string, string> = {
-  "/Repas_images_temporary/quinoapoulet.jpg": "Bowl quinoa & poulet",
-  "/Repas_images_temporary/saladecesar.webp": "Salade cesar",
-  "/Repas_images_temporary/saumonrizcomplet.webp":
-    "Saumon, riz complet et brocoli",
-  "/Repas_images_temporary/wrapdinde.jpg": "Wrap dinde crudites",
-  "/Repas_images_temporary/patebolo.jpg": "Pates completes bolognaise",
-  "/Repas_images_temporary/soupelegumetartine.webp":
-    "Soupe legumes + tartine chevre",
-  "/Repas_images_temporary/recette-frittata-epinards-feta.jpg":
-    "Omelette epinards & feta",
-  "/Repas_images_temporary/burgerpatate.jpg": "Burger maison + patates roties",
-  "/Repas_images_temporary/pkebawltofu.webp": "Poke bowl tofu",
-  "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp":
-    "Yaourt grec, granola et fruits",
-};
-
-const RECIPE_PHOTO_BY_TITLE: Record<string, string> = {
-  "Bowl quinoa, poulet et legumes verts":
-    "/Repas_images_temporary/quinoapoulet.jpg",
-  "Saumon, riz complet et brocoli":
-    "/Repas_images_temporary/saumonrizcomplet.webp",
-  "Wrap dinde, crudites et sauce yaourt":
-    "/Repas_images_temporary/wrapdinde.jpg",
-  "Omelette epinards et feta":
-    "/Repas_images_temporary/recette-frittata-epinards-feta.jpg",
-  "Poke bowl tofu, avocat et graines":
-    "/Repas_images_temporary/pkebawltofu.webp",
-  "Yaourt grec, granola et fruits rouges":
-    "/Repas_images_temporary/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
-};
-
 @ObjectType()
 class DashboardMealData {
   @Field(() => String)
@@ -269,8 +237,16 @@ function toIsoDate(date?: Date): string | undefined {
   return safe ? safe.toISOString().slice(0, 10) : undefined;
 }
 
+function formatMealTypeLabel(mealType?: string): string | undefined {
+  if (!mealType) return undefined;
+  const normalized = mealType.trim().replaceAll("_", " ");
+  if (!normalized) return undefined;
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 type DishEntry = {
   consumedAt: Date;
+  mealType?: string;
   photoUrl?: string;
   calories: number;
   proteins: number;
@@ -298,6 +274,7 @@ export default class UserDataResolver {
           const analysis = dish.analysis;
           return {
             consumedAt,
+            mealType: meal.mealType,
             photoUrl: dish.photoUrl,
             calories: toNumber(analysis?.calories),
             proteins: toNumber(analysis?.proteins),
@@ -544,15 +521,18 @@ export default class UserDataResolver {
       todayProtein: Math.round(todayProtein),
       todayCarbs: Math.round(todayCarbs),
       todayFat: Math.round(todayFat),
-      recentMeals: latestTenDishes.slice(0, 4).map((dish, index) => ({
-        name: dish.photoUrl
-          ? (DISH_NAME_BY_PHOTO[dish.photoUrl] ?? `Repas ${index + 1}`)
-          : `Repas ${index + 1}`,
-        calories: Math.round(dish.calories),
-        protein: Math.round(dish.proteins),
-        carbs: Math.round(dish.carbs),
-        fat: Math.round(dish.fats),
-      })),
+      recentMeals: latestTenDishes.slice(0, 4).map((dish, index) => {
+        const fallbackName = `Repas ${index + 1}`;
+        const name = formatMealTypeLabel(dish.mealType) ?? fallbackName;
+
+        return {
+          name,
+          calories: Math.round(dish.calories),
+          protein: Math.round(dish.proteins),
+          carbs: Math.round(dish.carbs),
+          fat: Math.round(dish.fats),
+        };
+      }),
     };
   }
 
@@ -566,10 +546,34 @@ export default class UserDataResolver {
       return [];
     }
 
-    const userRecipes = await User_Recipe.find({
-      where: { user: { id: currentUserId } },
-      relations: ["recipe"],
-    });
+    const [userRecipes, dishes] = await Promise.all([
+      User_Recipe.find({
+        where: { user: { id: currentUserId } },
+        relations: ["recipe"],
+      }),
+      this.loadUserDishEntries(currentUserId),
+    ]);
+
+    const dishesWithPhoto = dishes
+      .map((dish) => ({
+        photoUrl: dish.photoUrl?.trim(),
+        mealType: dish.mealType,
+      }))
+      .filter((dish) => Boolean(dish.photoUrl));
+
+    const fallbackPhoto =
+      dishesWithPhoto[0]?.photoUrl ?? "/MyDietChef_image.webp";
+    const mealTypePhotoMap = new Map<string, string>();
+
+    for (const dish of dishesWithPhoto) {
+      if (
+        !dish.photoUrl ||
+        !dish.mealType ||
+        mealTypePhotoMap.has(dish.mealType)
+      )
+        continue;
+      mealTypePhotoMap.set(dish.mealType, dish.photoUrl);
+    }
 
     return userRecipes
       .map((link) => link.recipe)
@@ -578,8 +582,9 @@ export default class UserDataResolver {
       .map((recipe) => {
         const source = recipe.status === Status.Publie ? "coach" : "favori";
         const photo =
-          RECIPE_PHOTO_BY_TITLE[recipe.title] ??
-          "/Repas_images_temporary/quinoapoulet.jpg";
+          (recipe.mealType
+            ? mealTypePhotoMap.get(recipe.mealType)
+            : undefined) ?? fallbackPhoto;
         const prepSteps = (recipe.instructions ?? "")
           .split("\n")
           .map((step) => step.trim())

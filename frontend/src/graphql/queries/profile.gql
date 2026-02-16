@@ -2,7 +2,7 @@ query profile {
   me {
     id
     email
-    created_at
+    createdAt
     role
   }
 }

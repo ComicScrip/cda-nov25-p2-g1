@@ -20,9 +20,51 @@ export type Scalars = {
   DateTimeISO: { input: any; output: any; }
 };
 
+export type DashboardData = {
+  __typename?: 'DashboardData';
+  averageCalories: Scalars['Int']['output'];
+  daysOfUse: Scalars['Int']['output'];
+  firstName: Scalars['String']['output'];
+  healthScore: Scalars['Int']['output'];
+  recentMeals: Array<DashboardMealData>;
+  scannedMeals: Scalars['Int']['output'];
+  targetCalories: Scalars['Int']['output'];
+  targetCarbs: Scalars['Int']['output'];
+  targetLipids: Scalars['Int']['output'];
+  targetProgress: Scalars['Int']['output'];
+  targetProtein: Scalars['Int']['output'];
+  todayCarbs: Scalars['Int']['output'];
+  todayFat: Scalars['Int']['output'];
+  todayProtein: Scalars['Int']['output'];
+};
+
+export type DashboardMealData = {
+  __typename?: 'DashboardMealData';
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  fat: Scalars['Int']['output'];
+  name: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
+};
+
+export type EvolutionDataPoint = {
+  __typename?: 'EvolutionDataPoint';
+  calories: Scalars['Int']['output'];
+  score: Scalars['Int']['output'];
+  week: Scalars['String']['output'];
+  weight: Scalars['Float']['output'];
+};
+
 export type LoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
+};
+
+export type Meal = {
+  __typename?: 'Meal';
+  consumedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  id: Scalars['String']['output'];
+  mealType?: Maybe<Scalars['String']['output']>;
 };
 
 export type Mutation = {
@@ -30,6 +72,7 @@ export type Mutation = {
   login: Scalars['String']['output'];
   logout: Scalars['Boolean']['output'];
   signup: User;
+  updateUserProfileData?: Maybe<UserProfileData>;
 };
 
 
@@ -42,10 +85,45 @@ export type MutationSignupArgs = {
   data: SignupInput;
 };
 
+
+export type MutationUpdateUserProfileDataArgs = {
+  data: UserProfileUpdateInput;
+};
+
+export type Pathology = {
+  __typename?: 'Pathology';
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   me?: Maybe<User>;
+  userDashboardData?: Maybe<DashboardData>;
+  userEvolutionData: Array<EvolutionDataPoint>;
+  userProfileData?: Maybe<UserProfileData>;
+  userRecipesData: Array<RecipeData>;
   users: Array<User>;
+};
+
+export type RecipeData = {
+  __typename?: 'RecipeData';
+  benefits: Array<Scalars['String']['output']>;
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  coachNote: Scalars['String']['output'];
+  description: Scalars['String']['output'];
+  difficulty: Scalars['String']['output'];
+  fat: Scalars['Int']['output'];
+  fiber: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  photo: Scalars['String']['output'];
+  prepSteps: Array<Scalars['String']['output']>;
+  prepTime: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
+  servings: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  title: Scalars['String']['output'];
 };
 
 export type SignupInput = {
@@ -57,8 +135,68 @@ export type User = {
   __typename?: 'User';
   createdAt: Scalars['DateTimeISO']['output'];
   email: Scalars['String']['output'];
-  id: Scalars['Int']['output'];
-  role: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  last_login_at?: Maybe<Scalars['DateTimeISO']['output']>;
+  meals?: Maybe<Array<Meal>>;
+  profile?: Maybe<User_Profile>;
+  recipes?: Maybe<Array<User_Recipe>>;
+  role: UserRole;
+  uploaded_at: Scalars['DateTimeISO']['output'];
+};
+
+export type UserProfileData = {
+  __typename?: 'UserProfileData';
+  currentWeight?: Maybe<Scalars['Float']['output']>;
+  dateOfBirth?: Maybe<Scalars['String']['output']>;
+  firstName: Scalars['String']['output'];
+  gender?: Maybe<Scalars['String']['output']>;
+  goal?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Float']['output']>;
+  lastName: Scalars['String']['output'];
+  medicalTags: Array<Scalars['String']['output']>;
+};
+
+export type UserProfileUpdateInput = {
+  currentWeight?: InputMaybe<Scalars['Float']['input']>;
+  dateOfBirth?: InputMaybe<Scalars['String']['input']>;
+  firstName: Scalars['String']['input'];
+  gender?: InputMaybe<Scalars['String']['input']>;
+  goal?: InputMaybe<Scalars['String']['input']>;
+  height?: InputMaybe<Scalars['Float']['input']>;
+  lastName: Scalars['String']['input'];
+  medicalTags: Array<Scalars['String']['input']>;
+};
+
+export enum UserRole {
+  Admin = 'Admin',
+  Coach = 'Coach',
+  Coachee = 'Coachee'
+}
+
+export type User_Recipe = {
+  __typename?: 'User_Recipe';
+  id: Scalars['String']['output'];
+};
+
+export type User_Profile = {
+  __typename?: 'User_profile';
+  date_of_birth?: Maybe<Scalars['DateTimeISO']['output']>;
+  first_name: Scalars['String']['output'];
+  gender?: Maybe<Scalars['String']['output']>;
+  goal?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['String']['output'];
+  last_name: Scalars['String']['output'];
+  pathologies: Array<Pathology>;
+  user: User;
+  weight_measures: Array<Weight_Measure>;
+};
+
+export type Weight_Measure = {
+  __typename?: 'Weight_Measure';
+  id: Scalars['String']['output'];
+  measured_at: Scalars['DateTimeISO']['output'];
+  weight: Scalars['Float']['output'];
 };
 
 export type LoginMutationVariables = Exact<{
@@ -78,12 +216,12 @@ export type SignupMutationVariables = Exact<{
 }>;
 
 
-export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: number, email: string, createdAt: any } };
+export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: string, email: string, createdAt: any } };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, created_at: any, role: string } | null };
+export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, email: string, createdAt: any, role: UserRole } | null };
 
 
 export const LoginDocument = gql`
@@ -187,7 +325,7 @@ export const ProfileDocument = gql`
   me {
     id
     email
-    created_at
+    createdAt
     role
   }
 }
