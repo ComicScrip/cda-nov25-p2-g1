@@ -288,7 +288,7 @@ export default function RepasUtilisateurPage() {
                 </nav>
               </aside>
 
-              <div className="bg-[#f5fbf1] px-5 py-6 md:px-8">
+              <div className="bg-[#f5fbf1] px-5 py-6 md:px-8 lg:flex lg:min-h-0 lg:flex-col">
                 <div className="max-w-4xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">Historique des repas scannés</h1>
                   <p className="mt-1 text-xs text-[#555]">
@@ -312,10 +312,10 @@ export default function RepasUtilisateurPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-                  <section className="rounded-md border border-[#d3d8cf] bg-[#eef4e8] p-4 md:p-5">
+                <div className="mt-6 grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[1.35fr_1fr]">
+                  <section className="rounded-md border border-[#d3d8cf] bg-[#eef4e8] p-4 md:p-5 lg:flex lg:min-h-0 lg:flex-col">
                     <h2 className="text-sm font-semibold text-[#2e3a2d]">Mes 10 derniers repas</h2>
-                    <div className="mt-3 max-h-55 space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                    <div className="mt-3 space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable] lg:min-h-0 lg:flex-1">
                       {mealHistory.map((meal) => {
                         const isSelected = meal.id === selectedMeal.id;
                         return (
@@ -366,7 +366,7 @@ export default function RepasUtilisateurPage() {
                     </div>
                   </section>
 
-                  <aside className="rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5">
+                  <aside className="rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:min-h-0 lg:overflow-y-auto">
                     <div className="mb-3 rounded-md bg-[#eef4e8] px-3 py-2 text-[#3d4e3c]">
                       <p className="text-[10px] uppercase tracking-wide text-[#5a6758]">
                         Prise du repas
