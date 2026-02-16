@@ -1,7 +1,7 @@
 import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
-import { useUserDashboardDataQuery } from "@/graphql/generated/schema";
+import { type UserDashboardDataQuery, useUserDashboardDataQuery } from "@/graphql/generated/schema";
 
 const PAGE_SIZE = 10;
 
@@ -37,7 +37,10 @@ export default function DashboardPage() {
     },
   ];
 
-  const meals = dashboard?.recentMeals ?? [];
+  type DashboardMeal = NonNullable<
+    UserDashboardDataQuery["userDashboardData"]
+  >["recentMeals"][number];
+  const meals: DashboardMeal[] = dashboard?.recentMeals ?? [];
 
   return (
     <HomeLayout pageTitle="Dashboard">
@@ -110,7 +113,7 @@ export default function DashboardPage() {
         <div className="mt-6 rounded-md bg-[#89c689] p-4 text-[#1f3d1f] shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
           <h2 className="text-sm font-semibold">Derniers repas de la journée</h2>
           <div className="mt-3 grid gap-3 text-[11px] sm:grid-cols-2">
-            {meals.map((meal, index) => {
+            {meals.map((meal: DashboardMeal, index: number) => {
               const isSecondRow = index >= 2;
               const isRightColumn = index % 2 === 1;
               const dividerClasses = [

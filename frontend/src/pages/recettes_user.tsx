@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";

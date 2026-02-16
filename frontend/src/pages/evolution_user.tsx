@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
@@ -76,7 +76,7 @@ export default function EvolutionUserPage() {
   const targetWeight = summary?.targetWeight ?? null;
   const remainingToGoal = summary?.remainingToGoal ?? null;
 
-  const weights = hasData ? evolutionData.map((point) => point.weight) : [0, 1];
+  const weights = hasData ? evolutionData.map((point: EvolutionPoint) => point.weight) : [0, 1];
   const minWeight = Math.min(...weights) - 0.4;
   const maxWeight = Math.max(...weights) + 0.4;
   const chartInnerHeight = chartHeight - paddingY * 2;
@@ -90,7 +90,9 @@ export default function EvolutionUserPage() {
   const getY = (weight: number) =>
     paddingY + ((maxWeight - weight) / (maxWeight - minWeight)) * chartInnerHeight;
 
-  const linePoints = evolutionData.map((point, index) => `${getX(index)},${getY(point.weight)}`);
+  const linePoints = evolutionData.map(
+    (point: EvolutionPoint, index: number) => `${getX(index)},${getY(point.weight)}`,
+  );
   const areaPoints = [
     ...linePoints,
     `${getX(evolutionData.length - 1)},${chartHeight - paddingY}`,
@@ -185,7 +187,7 @@ export default function EvolutionUserPage() {
                 points={linePoints.join(" ")}
               />
 
-              {evolutionData.map((point, index) => (
+              {evolutionData.map((point: EvolutionPoint, index: number) => (
                 <g key={point.week}>
                   <circle
                     cx={getX(index)}
@@ -219,7 +221,7 @@ export default function EvolutionUserPage() {
         <section className="mt-6 rounded-md bg-[#89c689] p-4 text-[#1f3d1f] shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
           <h2 className="text-sm font-semibold">Details hebdomadaires</h2>
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[440px] text-left text-[11px]">
+            <table className="w-full min-w-110 text-left text-[11px]">
               <thead>
                 <tr className="border-b border-[#1f3d1f]/25 text-[10px] uppercase tracking-wide">
                   <th className="pb-2 pr-2">Semaine</th>
@@ -229,7 +231,7 @@ export default function EvolutionUserPage() {
                 </tr>
               </thead>
               <tbody>
-                {evolutionData.map((point) => (
+                {evolutionData.map((point: EvolutionPoint) => (
                   <tr key={point.week} className="border-b border-[#1f3d1f]/15 last:border-b-0">
                     <td className="py-2 pr-2 font-semibold">{point.week}</td>
                     <td className="py-2 pr-2">{point.weight} kg</td>
