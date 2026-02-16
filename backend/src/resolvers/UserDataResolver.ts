@@ -1,6 +1,7 @@
 import { IsDateString, IsNumber, IsOptional, Min } from "class-validator";
 import {
   Arg,
+  Authorized,
   Ctx,
   Field,
   Float,
@@ -440,19 +441,13 @@ export default class UserDataResolver {
   }
 
   @Query(() => DashboardData, { nullable: true })
+  @Authorized()
   async userDashboardData(
     @Ctx() context: GraphQLContext,
   ): Promise<DashboardData | null> {
-    let currentUserId = "";
-    let fallbackFirstName = "";
-
-    try {
-      const currentUser = await getCurrentUser(context);
-      currentUserId = currentUser.id;
-      fallbackFirstName = currentUser.email.split("@")[0] ?? "Utilisateur";
-    } catch (_e) {
-      return null;
-    }
+    const currentUser = await getCurrentUser(context);
+    const currentUserId = currentUser.id;
+    const fallbackFirstName = currentUser.email.split("@")[0] ?? "Utilisateur";
 
     const [profile, dishes] = await Promise.all([
       User_profile.findOne({ where: { user: { id: currentUserId } } }),
