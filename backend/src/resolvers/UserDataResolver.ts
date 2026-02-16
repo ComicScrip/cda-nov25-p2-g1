@@ -315,7 +315,7 @@ export default class UserDataResolver {
 
     const weights = [...(profile.weight_measures ?? [])]
       .map((item) => ({
-        measuredAt: safeDate(item.measured_at) ?? new Date(0),
+        measuredAt: item.measured_at ?? new Date(0),
         weight: toNumber(item.weight),
       }))
       .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
@@ -422,7 +422,7 @@ export default class UserDataResolver {
     if (Number.isFinite(data.currentWeight) && Number(data.currentWeight) > 0) {
       const latestKnown = [...(profile.weight_measures ?? [])]
         .map((item) => ({
-          measuredAt: safeDate(item.measured_at) ?? new Date(0),
+          measuredAt: item.measured_at ?? new Date(0),
           weight: toNumber(item.weight),
         }))
         .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime())[0];
@@ -646,7 +646,7 @@ export default class UserDataResolver {
 
     const weights = [...(profile?.weight_measures ?? [])]
       .map((measure) => ({
-        measuredAt: safeDate(measure.measured_at) ?? new Date(),
+        measuredAt: measure.measured_at ?? new Date(),
         weight: toNumber(measure.weight),
       }))
       .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime());
