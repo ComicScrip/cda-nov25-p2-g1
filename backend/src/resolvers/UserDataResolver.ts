@@ -485,20 +485,22 @@ export default class UserDataResolver {
     const paginatedDishes = dishes.slice(offset, offset + limit);
     const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const todayKey = dishes[0] ? toDateKey(dishes[0].consumedAt) : null;
-    let todayProtein = 0;
-    let todayCarbs = 0;
-    let todayFat = 0;
-    let todayCalories = 0;
+    const latestRecordedDayKey = dishes[0]
+      ? toDateKey(dishes[0].consumedAt)
+      : null;
+    let latestDayProtein = 0;
+    let latestDayCarbs = 0;
+    let latestDayFat = 0;
+    let latestDayCalories = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
-      if (todayKey && dayKey === todayKey) {
-        todayProtein += dish.proteins;
-        todayCarbs += dish.carbs;
-        todayFat += dish.fats;
-        todayCalories += dish.calories;
+      if (latestRecordedDayKey && dayKey === latestRecordedDayKey) {
+        latestDayProtein += dish.proteins;
+        latestDayCarbs += dish.carbs;
+        latestDayFat += dish.fats;
+        latestDayCalories += dish.calories;
       }
     }
 
@@ -513,7 +515,10 @@ export default class UserDataResolver {
       targetCalories > 0
         ? Math.max(
             0,
-            Math.min(100, Math.round((todayCalories / targetCalories) * 100)),
+            Math.min(
+              100,
+              Math.round((latestDayCalories / targetCalories) * 100),
+            ),
           )
         : 0;
 
@@ -528,9 +533,9 @@ export default class UserDataResolver {
       targetProtein: 150,
       targetCarbs: 120,
       targetLipids: 40,
-      todayProtein: Math.round(todayProtein),
-      todayCarbs: Math.round(todayCarbs),
-      todayFat: Math.round(todayFat),
+      todayProtein: Math.round(latestDayProtein),
+      todayCarbs: Math.round(latestDayCarbs),
+      todayFat: Math.round(latestDayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
         const name = formatMealTypeLabel(dish.mealType) ?? fallbackName;
