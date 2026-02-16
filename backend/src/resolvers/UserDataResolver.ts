@@ -553,6 +553,7 @@ export default class UserDataResolver {
   }
 
   @Query(() => [RecipeData])
+  @Authorized()
   async userRecipesData(@Ctx() context: GraphQLContext): Promise<RecipeData[]> {
     let currentUserId = "";
     try {
