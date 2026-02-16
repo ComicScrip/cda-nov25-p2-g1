@@ -19,6 +19,17 @@ const USER_EVOLUTION_QUERY = gql`
       calories
       score
     }
+    userEvolutionSummaryData {
+      startWeight
+      currentWeight
+      totalLoss
+      averageScore
+      averageCalories
+      weeksCount
+      targetWeight
+      targetProgress
+      remainingToGoal
+    }
   }
 `;
 
@@ -31,6 +42,19 @@ type EvolutionPoint = {
 
 type EvolutionQueryData = {
   userEvolutionData: EvolutionPoint[];
+  userEvolutionSummaryData: EvolutionSummary | null;
+};
+
+type EvolutionSummary = {
+  startWeight: number;
+  currentWeight: number;
+  totalLoss: number;
+  averageScore: number;
+  averageCalories: number;
+  weeksCount: number;
+  targetWeight?: number | null;
+  targetProgress?: number | null;
+  remainingToGoal?: number | null;
 };
 
 const chartWidth = 560;
@@ -45,17 +69,20 @@ export default function EvolutionUserPage() {
 
   const evolutionData = data?.userEvolutionData ?? [];
   const hasData = evolutionData.length > 0;
+  const summary = data?.userEvolutionSummaryData;
   const firstPoint = evolutionData[0];
   const lastPoint = evolutionData[evolutionData.length - 1];
-  const totalLoss = hasData ? Number((firstPoint.weight - lastPoint.weight).toFixed(1)) : 0;
-  const averageScore = Math.round(
-    hasData ? evolutionData.reduce((sum, point) => sum + point.score, 0) / evolutionData.length : 0,
-  );
-  const averageCalories = Math.round(
-    hasData
-      ? evolutionData.reduce((sum, point) => sum + point.calories, 0) / evolutionData.length
-      : 0,
-  );
+  const startWeight = summary?.startWeight ?? firstPoint?.weight ?? 0;
+  const currentWeight = summary?.currentWeight ?? lastPoint?.weight ?? 0;
+  const totalLoss =
+    summary?.totalLoss ?? (hasData ? Number((startWeight - currentWeight).toFixed(1)) : 0);
+  const totalLossDisplay =
+    totalLoss > 0 ? `-${totalLoss}` : totalLoss < 0 ? `+${Math.abs(totalLoss)}` : "0";
+  const averageScore = summary?.averageScore ?? 0;
+  const averageCalories = summary?.averageCalories ?? 0;
+  const weeksCount = summary?.weeksCount ?? evolutionData.length;
+  const targetWeight = summary?.targetWeight ?? null;
+  const remainingToGoal = summary?.remainingToGoal ?? null;
 
   const weights = hasData ? evolutionData.map((point) => point.weight) : [0, 1];
   const minWeight = Math.min(...weights) - 0.4;
@@ -143,13 +170,17 @@ export default function EvolutionUserPage() {
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-md bg-[#bfe8ea] px-3 py-3 text-[#1d3d45] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                     <div className="text-xs uppercase tracking-wide">Poids actuel</div>
-                    <div className="mt-1 text-lg font-semibold">{lastPoint?.weight ?? 0} kg</div>
-                    <div className="text-[11px]">Depart: {firstPoint?.weight ?? 0} kg</div>
+                    <div className="mt-1 text-lg font-semibold">{currentWeight} kg</div>
+                    <div className="text-[11px]">Depart: {startWeight} kg</div>
                   </div>
                   <div className="rounded-md bg-[#a7d9a1] px-3 py-3 text-[#214021] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                    <div className="text-xs uppercase tracking-wide">Perte totale</div>
-                    <div className="mt-1 text-lg font-semibold">-{totalLoss} kg</div>
-                    <div className="text-[11px]">Sur {evolutionData.length || 0} semaines</div>
+                    <div className="text-xs uppercase tracking-wide">Variation totale</div>
+                    <div className="mt-1 text-lg font-semibold">{totalLossDisplay} kg</div>
+                    <div className="text-[11px]">
+                      {targetWeight !== null && remainingToGoal !== null
+                        ? `Objectif: ${targetWeight} kg | Reste: ${remainingToGoal} kg`
+                        : `Sur ${weeksCount} semaines`}
+                    </div>
                   </div>
                   <div className="rounded-md bg-[#e9b26b] px-3 py-3 text-[#4a2a10] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                     <div className="text-xs uppercase tracking-wide">Score sante moyen</div>

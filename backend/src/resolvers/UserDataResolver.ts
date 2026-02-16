@@ -163,6 +163,36 @@ class EvolutionDataPoint {
 }
 
 @ObjectType()
+class EvolutionSummaryData {
+  @Field(() => Float)
+  startWeight!: number;
+
+  @Field(() => Float)
+  currentWeight!: number;
+
+  @Field(() => Float)
+  totalLoss!: number;
+
+  @Field(() => Int)
+  averageScore!: number;
+
+  @Field(() => Int)
+  averageCalories!: number;
+
+  @Field(() => Int)
+  weeksCount!: number;
+
+  @Field(() => Float, { nullable: true })
+  targetWeight?: number | null;
+
+  @Field(() => Int, { nullable: true })
+  targetProgress?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  remainingToGoal?: number | null;
+}
+
+@ObjectType()
 class UserProfileData {
   @Field(() => String)
   firstName!: string;
@@ -275,6 +305,38 @@ function formatMealTypeLabel(mealType?: string): string | undefined {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
+function roundToOneDecimal(value: number): number {
+  return Number(value.toFixed(1));
+}
+
+function extractTargetWeight(goal?: string | null): number | null {
+  if (!goal) {
+    return null;
+  }
+
+  const match = goal.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  const parsed = Number(match[1].replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function computeWeightGoalProgress(
+  startWeight: number,
+  currentWeight: number,
+  targetWeight: number,
+): number {
+  const fullRange = targetWeight - startWeight;
+  if (Math.abs(fullRange) < 0.0001) {
+    return currentWeight === targetWeight ? 100 : 0;
+  }
+
+  const rawProgress = ((currentWeight - startWeight) / fullRange) * 100;
+  return Math.max(0, Math.min(100, Math.round(rawProgress)));
+}
+
 type DishEntry = {
   consumedAt: Date;
   mealType?: string;
@@ -361,6 +423,136 @@ export default class UserDataResolver {
       goal: profile.goal ?? undefined,
       medicalTags: (profile.pathologies ?? []).map((item) => item.name),
     };
+  }
+
+  private async buildUserEvolutionPayload(userId: string): Promise<{
+    points: EvolutionDataPoint[];
+    summary: EvolutionSummaryData | null;
+  }> {
+    const profile = await User_profile.findOne({
+      where: { user: { id: userId } },
+      relations: ["weight_measures"],
+    });
+
+    const weights = [...(profile?.weight_measures ?? [])]
+      .filter((measure): measure is Weight_Measure & { measured_at: Date } =>
+        Boolean(measure.measured_at),
+      )
+      .sort((a, b) => a.measured_at.getTime() - b.measured_at.getTime());
+
+    if (weights.length === 0) {
+      return {
+        points: [],
+        summary: null,
+      };
+    }
+
+    const dishes = await this.loadUserDishEntries(userId);
+    const weeklyStats = new Map<
+      string,
+      { calories: number[]; scores: number[] }
+    >();
+    const dailyStats = new Map<
+      string,
+      { calories: number[]; scores: number[] }
+    >();
+
+    for (const dish of dishes) {
+      const key = toIsoWeekKey(dish.consumedAt);
+      const bucket = weeklyStats.get(key) ?? { calories: [], scores: [] };
+      bucket.calories.push(dish.calories);
+      bucket.scores.push(dish.score);
+      weeklyStats.set(key, bucket);
+
+      const dayKey = toDateKey(dish.consumedAt);
+      const dayBucket = dailyStats.get(dayKey) ?? { calories: [], scores: [] };
+      dayBucket.calories.push(dish.calories);
+      dayBucket.scores.push(dish.score);
+      dailyStats.set(dayKey, dayBucket);
+    }
+
+    const globalCalories =
+      dishes.length > 0
+        ? Math.round(
+            dishes.reduce((sum, dish) => sum + dish.calories, 0) /
+              dishes.length,
+          )
+        : 0;
+    const globalScore =
+      dishes.length > 0
+        ? Math.round(
+            dishes.reduce((sum, dish) => sum + dish.score, 0) / dishes.length,
+          )
+        : 0;
+
+    const points = weights.map((weightPoint, index) => {
+      const dayKey = toDateKey(weightPoint.measured_at);
+      const dayBucket = dailyStats.get(dayKey);
+      const key = toIsoWeekKey(weightPoint.measured_at);
+      const bucket = weeklyStats.get(key);
+      const calories =
+        dayBucket && dayBucket.calories.length > 0
+          ? Math.round(
+              dayBucket.calories.reduce((sum, value) => sum + value, 0) /
+                dayBucket.calories.length,
+            )
+          : bucket && bucket.calories.length > 0
+            ? Math.round(
+                bucket.calories.reduce((sum, value) => sum + value, 0) /
+                  bucket.calories.length,
+              )
+            : globalCalories;
+      const score =
+        dayBucket && dayBucket.scores.length > 0
+          ? Math.round(
+              dayBucket.scores.reduce((sum, value) => sum + value, 0) /
+                dayBucket.scores.length,
+            )
+          : bucket && bucket.scores.length > 0
+            ? Math.round(
+                bucket.scores.reduce((sum, value) => sum + value, 0) /
+                  bucket.scores.length,
+              )
+            : globalScore;
+
+      return {
+        week: `S${index + 1}`,
+        weight: roundToOneDecimal(weightPoint.weight),
+        calories,
+        score,
+      };
+    });
+
+    const startWeight = points[0]?.weight ?? 0;
+    const currentWeight = points[points.length - 1]?.weight ?? startWeight;
+    const targetWeight = extractTargetWeight(profile?.goal);
+    const targetProgress =
+      targetWeight === null
+        ? null
+        : computeWeightGoalProgress(startWeight, currentWeight, targetWeight);
+    const remainingToGoal =
+      targetWeight === null
+        ? null
+        : roundToOneDecimal(Math.abs(currentWeight - targetWeight));
+
+    const summary: EvolutionSummaryData = {
+      startWeight,
+      currentWeight,
+      totalLoss: roundToOneDecimal(startWeight - currentWeight),
+      averageScore: Math.round(
+        points.reduce((sum, point) => sum + point.score, 0) / points.length,
+      ),
+      averageCalories: Math.round(
+        points.reduce((sum, point) => sum + point.calories, 0) / points.length,
+      ),
+      weeksCount: points.length,
+      targetWeight:
+        targetWeight === null ? null : roundToOneDecimal(targetWeight),
+      targetProgress,
+      remainingToGoal,
+    };
+
+    return { points, summary };
   }
 
   @Query(() => UserProfileData, { nullable: true })
@@ -615,103 +807,18 @@ export default class UserDataResolver {
   async userEvolutionData(
     @Ctx() context: GraphQLContext,
   ): Promise<EvolutionDataPoint[]> {
-    let currentUserId = "";
-    try {
-      const currentUser = await getCurrentUser(context);
-      currentUserId = currentUser.id;
-    } catch (_e) {
-      return [];
-    }
+    const currentUser = await getCurrentUser(context);
+    const { points } = await this.buildUserEvolutionPayload(currentUser.id);
+    return points;
+  }
 
-    const profile = await User_profile.findOne({
-      where: { user: { id: currentUserId } },
-      relations: ["weight_measures"],
-    });
-
-    const weights = [...(profile?.weight_measures ?? [])]
-      .filter((measure): measure is Weight_Measure & { measured_at: Date } =>
-        Boolean(measure.measured_at),
-      )
-      .sort((a, b) => a.measured_at.getTime() - b.measured_at.getTime());
-
-    if (weights.length === 0) {
-      return [];
-    }
-
-    const dishes = await this.loadUserDishEntries(currentUserId);
-    const weeklyStats = new Map<
-      string,
-      { calories: number[]; scores: number[] }
-    >();
-    const dailyStats = new Map<
-      string,
-      { calories: number[]; scores: number[] }
-    >();
-
-    for (const dish of dishes) {
-      const key = toIsoWeekKey(dish.consumedAt);
-      const bucket = weeklyStats.get(key) ?? { calories: [], scores: [] };
-      bucket.calories.push(dish.calories);
-      bucket.scores.push(dish.score);
-      weeklyStats.set(key, bucket);
-
-      const dayKey = toDateKey(dish.consumedAt);
-      const dayBucket = dailyStats.get(dayKey) ?? { calories: [], scores: [] };
-      dayBucket.calories.push(dish.calories);
-      dayBucket.scores.push(dish.score);
-      dailyStats.set(dayKey, dayBucket);
-    }
-
-    const globalCalories =
-      dishes.length > 0
-        ? Math.round(
-            dishes.reduce((sum, dish) => sum + dish.calories, 0) /
-              dishes.length,
-          )
-        : 0;
-    const globalScore =
-      dishes.length > 0
-        ? Math.round(
-            dishes.reduce((sum, dish) => sum + dish.score, 0) / dishes.length,
-          )
-        : 0;
-
-    return weights.map((weightPoint, index) => {
-      const dayKey = toDateKey(weightPoint.measured_at);
-      const dayBucket = dailyStats.get(dayKey);
-      const key = toIsoWeekKey(weightPoint.measured_at);
-      const bucket = weeklyStats.get(key);
-      const calories =
-        dayBucket && dayBucket.calories.length > 0
-          ? Math.round(
-              dayBucket.calories.reduce((sum, value) => sum + value, 0) /
-                dayBucket.calories.length,
-            )
-          : bucket && bucket.calories.length > 0
-            ? Math.round(
-                bucket.calories.reduce((sum, value) => sum + value, 0) /
-                  bucket.calories.length,
-              )
-            : globalCalories;
-      const score =
-        dayBucket && dayBucket.scores.length > 0
-          ? Math.round(
-              dayBucket.scores.reduce((sum, value) => sum + value, 0) /
-                dayBucket.scores.length,
-            )
-          : bucket && bucket.scores.length > 0
-            ? Math.round(
-                bucket.scores.reduce((sum, value) => sum + value, 0) /
-                  bucket.scores.length,
-              )
-            : globalScore;
-
-      return {
-        week: `S${index + 1}`,
-        weight: Number(weightPoint.weight.toFixed(1)),
-        calories,
-        score,
-      };
-    });
+  @Authorized()
+  @Query(() => EvolutionSummaryData, { nullable: true })
+  async userEvolutionSummaryData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<EvolutionSummaryData | null> {
+    const currentUser = await getCurrentUser(context);
+    const { summary } = await this.buildUserEvolutionPayload(currentUser.id);
+    return summary;
   }
 }
