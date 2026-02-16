@@ -1,8 +1,12 @@
 import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import Link from "next/link";
 import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
+
+dayjs.extend(customParseFormat);
 
 const USER_PROFILE_QUERY = gql`
   query UserProfileData {
@@ -108,14 +112,14 @@ function parseDate(dateText?: string | null): { day: number; month: number; year
   if (!dateText) {
     return { day: 12, month: 6, year: 1984 };
   }
-  const date = new Date(`${dateText}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) {
+  const parsedDate = dayjs(dateText, "YYYY-MM-DD", true);
+  if (!parsedDate.isValid()) {
     return { day: 12, month: 6, year: 1984 };
   }
   return {
-    day: date.getUTCDate(),
-    month: date.getUTCMonth() + 1,
-    year: date.getUTCFullYear(),
+    day: parsedDate.date(),
+    month: parsedDate.month() + 1,
+    year: parsedDate.year(),
   };
 }
 
@@ -160,8 +164,11 @@ export default function UserProfilePage() {
   const goal = draft.goal ?? profile?.goal ?? "";
   const gender = draft.gender ?? normalizeGender(profile?.gender);
   const medicalTags = draft.medicalTags ?? profile?.medicalTags ?? [];
+  const selectedBirthDate = dayjs(`${birthYear}-${birthMonth}-${birthDay}`, "YYYY-M-D", true);
 
-  const formattedBirthDate = `${String(birthDay).padStart(2, "0")}/${String(birthMonth).padStart(2, "0")}/${birthYear}`;
+  const formattedBirthDate = selectedBirthDate.isValid()
+    ? selectedBirthDate.format("DD/MM/YYYY")
+    : "";
   const profileName = firstName.trim() || "Utilisateur";
 
   const handleAddMedicalTag = () => {
@@ -199,7 +206,9 @@ export default function UserProfilePage() {
           data: {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
-            dateOfBirth: `${birthYear}-${String(birthMonth).padStart(2, "0")}-${String(birthDay).padStart(2, "0")}`,
+            dateOfBirth: selectedBirthDate.isValid()
+              ? selectedBirthDate.format("YYYY-MM-DD")
+              : undefined,
             gender,
             height,
             currentWeight,
