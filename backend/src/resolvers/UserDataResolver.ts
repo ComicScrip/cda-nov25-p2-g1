@@ -419,14 +419,14 @@ export default class UserDataResolver {
 
     await profile.save();
 
-    if (Number.isFinite(data.currentWeight) && Number(data.currentWeight) > 0) {
+    if (typeof data.currentWeight === "number" && data.currentWeight > 0) {
       const latestKnown = [...(profile.weight_measures ?? [])]
         .map((item) => ({
           measuredAt: item.measured_at ?? new Date(0),
           weight: toNumber(item.weight),
         }))
         .sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime())[0];
-      const nextWeight = Number(data.currentWeight);
+      const nextWeight = data.currentWeight;
 
       if (!latestKnown || Math.abs(latestKnown.weight - nextWeight) > 0.01) {
         const weightMeasure = Weight_Measure.create({
