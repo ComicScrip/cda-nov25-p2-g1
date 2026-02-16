@@ -276,11 +276,11 @@ export default class UserDataResolver {
             consumedAt,
             mealType: meal.mealType,
             photoUrl: dish.photoUrl,
-            calories: toNumber(analysis?.calories),
-            proteins: toNumber(analysis?.proteins),
-            carbs: toNumber(analysis?.carbohydrates),
-            fats: toNumber(analysis?.lipids),
-            score: toNumber(analysis?.mealHealthScore),
+            calories: analysis?.calories ?? 0,
+            proteins: analysis?.proteins ?? 0,
+            carbs: analysis?.carbohydrates ?? 0,
+            fats: analysis?.lipids ?? 0,
+            score: analysis?.mealHealthScore ?? 0,
           };
         }),
       )
