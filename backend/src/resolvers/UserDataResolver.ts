@@ -584,8 +584,8 @@ export default class UserDataResolver {
           : [];
 
         const fallbackBenefits = [
-          `Apport proteique: ${Math.round(toNumber(recipe.proteinsPerServing))} g par portion.`,
-          `Fibres: ${Math.round(toNumber(recipe.fiberPerServing))} g pour la satiete.`,
+          `Apport proteique: ${toNumber(recipe.proteinsPerServing)} g par portion.`,
+          `Fibres: ${toNumber(recipe.fiberPerServing)} g pour la satiete.`,
           "Recette equilibree pour soutenir la regularite alimentaire.",
         ];
 
@@ -597,11 +597,11 @@ export default class UserDataResolver {
           prepTime: `${recipe.preparationTime ?? 0} min`,
           servings: recipe.servings ?? 1,
           difficulty: recipe.difficultyLevel ?? "Facile",
-          calories: Math.round(toNumber(recipe.caloriesPerServing)),
-          protein: Math.round(toNumber(recipe.proteinsPerServing)),
-          carbs: Math.round(toNumber(recipe.carbohydratesPerServing)),
-          fat: Math.round(toNumber(recipe.lipidsPerServing)),
-          fiber: Math.round(toNumber(recipe.fiberPerServing)),
+          calories: toNumber(recipe.caloriesPerServing),
+          protein: toNumber(recipe.proteinsPerServing),
+          carbs: toNumber(recipe.carbohydratesPerServing),
+          fat: toNumber(recipe.lipidsPerServing),
+          fiber: toNumber(recipe.fiberPerServing),
           description: recipe.description ?? "",
           prepSteps,
           benefits: benefits.length > 0 ? benefits : fallbackBenefits,

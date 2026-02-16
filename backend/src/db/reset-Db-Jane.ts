@@ -642,24 +642,32 @@ async function seedEvolutionData(user: User, profile: User_profile) {
 
 async function seedRecipes(user: User) {
   for (const recipeSeed of recipeSeeds) {
+    const preparationTime = Math.max(0, Math.round(recipeSeed.prepTimeMinutes));
+    const servings = Math.max(1, Math.round(recipeSeed.servings));
+    const caloriesPerServing = Math.round(recipeSeed.calories);
+    const proteinsPerServing = Math.round(recipeSeed.protein);
+    const carbohydratesPerServing = Math.round(recipeSeed.carbs);
+    const lipidsPerServing = Math.round(recipeSeed.fat);
+    const fiberPerServing = Math.round(recipeSeed.fiber);
+
     const recipe = Recipe.create({
       title: recipeSeed.title,
       photoUrl: recipeSeed.photo,
       description: recipeSeed.description,
       instructions: recipeSeed.prepSteps.join("\n"),
-      preparationTime: recipeSeed.prepTimeMinutes,
+      preparationTime,
       cookingTime: 10,
-      servings: recipeSeed.servings,
+      servings,
       difficultyLevel: recipeSeed.difficulty,
       status: recipeSeed.source === "coach" ? Status.Publie : Status.Brouillon,
       mealType: recipeSeed.mealType,
       chefTips: recipeSeed.coachNote,
       benefits: recipeSeed.benefits,
-      caloriesPerServing: recipeSeed.calories,
-      proteinsPerServing: recipeSeed.protein,
-      carbohydratesPerServing: recipeSeed.carbs,
-      lipidsPerServing: recipeSeed.fat,
-      fiberPerServing: recipeSeed.fiber,
+      caloriesPerServing,
+      proteinsPerServing,
+      carbohydratesPerServing,
+      lipidsPerServing,
+      fiberPerServing,
     });
     await recipe.save();
 
