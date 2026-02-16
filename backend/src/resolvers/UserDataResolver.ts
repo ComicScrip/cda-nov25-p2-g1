@@ -296,7 +296,7 @@ export default class UserDataResolver {
 
   private async buildUserProfilePayload(
     userId: string,
-    fallbackEmail: string,
+    userEmail: string,
   ): Promise<UserProfileData> {
     const profile = await User_profile.findOne({
       where: { user: { id: userId } },
@@ -305,7 +305,7 @@ export default class UserDataResolver {
 
     if (!profile) {
       return {
-        firstName: fallbackEmail.split("@")[0] ?? "Utilisateur",
+        firstName: userEmail.split("@")[0] ?? "Utilisateur",
         lastName: "",
         dateOfBirth: undefined,
         gender: undefined,
@@ -353,15 +353,11 @@ export default class UserDataResolver {
     data: UserProfileUpdateInput,
     @Ctx() context: GraphQLContext,
   ): Promise<UserProfileData | null> {
-    let currentUserId = "";
-    let fallbackEmail = "";
-    try {
-      const currentUser = await getCurrentUser(context);
-      currentUserId = currentUser.id;
-      fallbackEmail = currentUser.email;
-    } catch (_e) {
+    const currentUser = await getCurrentUser(context).catch(() => null);
+    if (!currentUser) {
       return null;
     }
+    const currentUserId = currentUser.id;
 
     let profile = await User_profile.findOne({
       where: { user: { id: currentUserId } },
@@ -382,10 +378,7 @@ export default class UserDataResolver {
       : undefined;
 
     profile.first_name =
-      firstName ||
-      profile.first_name ||
-      fallbackEmail.split("@")[0] ||
-      "Utilisateur";
+      firstName || profile.first_name || currentUser.email.split("@")[0];
     profile.last_name = lastName || profile.last_name || "";
     profile.date_of_birth = parsedDate ?? profile.date_of_birth;
     profile.gender = data.gender?.trim() || profile.gender || "";
@@ -440,7 +433,7 @@ export default class UserDataResolver {
       }
     }
 
-    return this.buildUserProfilePayload(currentUserId, fallbackEmail);
+    return this.buildUserProfilePayload(currentUserId, currentUser.email);
   }
 
   @Query(() => DashboardData, { nullable: true })
