@@ -610,6 +610,7 @@ export default class UserDataResolver {
       });
   }
 
+  @Authorized()
   @Query(() => [EvolutionDataPoint])
   async userEvolutionData(
     @Ctx() context: GraphQLContext,
