@@ -1,3 +1,4 @@
+import { IsDateString, IsOptional } from "class-validator";
 import {
   Arg,
   Ctx,
@@ -186,6 +187,8 @@ class UserProfileUpdateInput {
   lastName!: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
   dateOfBirth?: string;
 
   @Field(() => String, { nullable: true })
@@ -346,7 +349,8 @@ export default class UserDataResolver {
 
   @Mutation(() => UserProfileData, { nullable: true })
   async updateUserProfileData(
-    @Arg("data", () => UserProfileUpdateInput) data: UserProfileUpdateInput,
+    @Arg("data", () => UserProfileUpdateInput, { validate: true })
+    data: UserProfileUpdateInput,
     @Ctx() context: GraphQLContext,
   ): Promise<UserProfileData | null> {
     let currentUserId = "";
@@ -373,10 +377,9 @@ export default class UserDataResolver {
 
     const firstName = data.firstName.trim();
     const lastName = data.lastName.trim();
-    const dateOfBirth = data.dateOfBirth?.trim();
-    const parsedDate = dateOfBirth
-      ? new Date(`${dateOfBirth}T00:00:00.000Z`)
-      : null;
+    const parsedDate = data.dateOfBirth
+      ? new Date(`${data.dateOfBirth}T00:00:00.000Z`)
+      : undefined;
 
     profile.first_name =
       firstName ||
@@ -384,10 +387,7 @@ export default class UserDataResolver {
       fallbackEmail.split("@")[0] ||
       "Utilisateur";
     profile.last_name = lastName || profile.last_name || "";
-    profile.date_of_birth =
-      parsedDate && !Number.isNaN(parsedDate.getTime())
-        ? parsedDate
-        : profile.date_of_birth;
+    profile.date_of_birth = parsedDate ?? profile.date_of_birth;
     profile.gender = data.gender?.trim() || profile.gender || "";
     profile.height = Number.isFinite(data.height)
       ? Number(data.height)
