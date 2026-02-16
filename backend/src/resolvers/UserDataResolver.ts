@@ -30,8 +30,6 @@ import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
 
-const BENEFITS_SEPARATOR = "\n##BENEFITS##\n";
-
 @ObjectType()
 class DashboardMealData {
   @Field(() => String)
@@ -563,34 +561,11 @@ export default class UserDataResolver {
       return [];
     }
 
-    const [userRecipes, dishes] = await Promise.all([
-      User_Recipe.find({
-        where: { user: { id: currentUserId } },
-        relations: ["recipe"],
-      }),
-      this.loadUserDishEntries(currentUserId),
-    ]);
-
-    const dishesWithPhoto = dishes
-      .map((dish) => ({
-        photoUrl: dish.photoUrl?.trim(),
-        mealType: dish.mealType,
-      }))
-      .filter((dish) => Boolean(dish.photoUrl));
-
-    const fallbackPhoto =
-      dishesWithPhoto[0]?.photoUrl ?? "/MyDietChef_image.webp";
-    const mealTypePhotoMap = new Map<string, string>();
-
-    for (const dish of dishesWithPhoto) {
-      if (
-        !dish.photoUrl ||
-        !dish.mealType ||
-        mealTypePhotoMap.has(dish.mealType)
-      )
-        continue;
-      mealTypePhotoMap.set(dish.mealType, dish.photoUrl);
-    }
+    const userRecipes = await User_Recipe.find({
+      where: { user: { id: currentUserId } },
+      relations: ["recipe"],
+    });
+    const fallbackPhoto = "/MyDietChef_image.webp";
 
     return userRecipes
       .map((link) => link.recipe)
@@ -598,24 +573,15 @@ export default class UserDataResolver {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .map((recipe) => {
         const source = recipe.status === Status.Publie ? "coach" : "favori";
-        const photo =
-          (recipe.mealType
-            ? mealTypePhotoMap.get(recipe.mealType)
-            : undefined) ?? fallbackPhoto;
+        const photo = recipe.photoUrl?.trim() || fallbackPhoto;
         const prepSteps = (recipe.instructions ?? "")
           .split("\n")
           .map((step) => step.trim())
           .filter(Boolean);
 
-        const tips = recipe.chefTips ?? "";
-        const [coachNoteRaw, benefitsRaw] = tips.includes(BENEFITS_SEPARATOR)
-          ? tips.split(BENEFITS_SEPARATOR)
-          : [tips, ""];
-
-        const benefits = benefitsRaw
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean);
+        const benefits = Array.isArray(recipe.benefits)
+          ? recipe.benefits.map((line) => line.trim()).filter(Boolean)
+          : [];
 
         const fallbackBenefits = [
           `Apport proteique: ${Math.round(toNumber(recipe.proteinsPerServing))} g par portion.`,
@@ -639,7 +605,7 @@ export default class UserDataResolver {
           description: recipe.description ?? "",
           prepSteps,
           benefits: benefits.length > 0 ? benefits : fallbackBenefits,
-          coachNote: coachNoteRaw.trim(),
+          coachNote: recipe.chefTips?.trim() ?? "",
         };
       });
   }

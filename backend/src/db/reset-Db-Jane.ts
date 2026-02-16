@@ -12,7 +12,6 @@ import db from "./index";
 
 const JANE_EMAIL = "jane.doe@app.com";
 const JANE_PASSWORD = "SuperP@ssW0rd!";
-const BENEFITS_SEPARATOR = "\n##BENEFITS##\n";
 
 type MealSeed = {
   name: string;
@@ -31,6 +30,7 @@ type MealSeed = {
 
 type RecipeSeed = {
   title: string;
+  photo: string;
   source: "favori" | "coach";
   prepTimeMinutes: number;
   servings: number;
@@ -283,6 +283,7 @@ const evolutionSeeds = [
 const recipeSeeds: RecipeSeed[] = [
   {
     title: "Bowl quinoa, poulet et legumes verts",
+    photo: "https://i.ibb.co/trmHDr7/quinoapoulet.jpg",
     source: "favori",
     prepTimeMinutes: 20,
     servings: 1,
@@ -311,6 +312,7 @@ const recipeSeeds: RecipeSeed[] = [
   },
   {
     title: "Saumon, riz complet et brocoli",
+    photo: "https://i.ibb.co/s91VB246/saumonrizcomplet.webp",
     source: "coach",
     prepTimeMinutes: 25,
     servings: 1,
@@ -339,6 +341,7 @@ const recipeSeeds: RecipeSeed[] = [
   },
   {
     title: "Wrap dinde, crudites et sauce yaourt",
+    photo: "https://i.ibb.co/6cKNXC6y/wrapdinde.jpg",
     source: "favori",
     prepTimeMinutes: 15,
     servings: 1,
@@ -367,6 +370,7 @@ const recipeSeeds: RecipeSeed[] = [
   },
   {
     title: "Omelette epinards et feta",
+    photo: "https://i.ibb.co/q3FT9XH7/recette-frittata-epinards-feta.jpg",
     source: "coach",
     prepTimeMinutes: 18,
     servings: 1,
@@ -395,6 +399,7 @@ const recipeSeeds: RecipeSeed[] = [
   },
   {
     title: "Poke bowl tofu, avocat et graines",
+    photo: "https://i.ibb.co/FLphFzdz/pkebawltofu.webp",
     source: "coach",
     prepTimeMinutes: 20,
     servings: 1,
@@ -423,6 +428,8 @@ const recipeSeeds: RecipeSeed[] = [
   },
   {
     title: "Yaourt grec, granola et fruits rouges",
+    photo:
+      "https://i.ibb.co/rRbRvfdC/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
     source: "favori",
     prepTimeMinutes: 8,
     servings: 1,
@@ -637,6 +644,7 @@ async function seedRecipes(user: User) {
   for (const recipeSeed of recipeSeeds) {
     const recipe = Recipe.create({
       title: recipeSeed.title,
+      photoUrl: recipeSeed.photo,
       description: recipeSeed.description,
       instructions: recipeSeed.prepSteps.join("\n"),
       preparationTime: recipeSeed.prepTimeMinutes,
@@ -645,7 +653,8 @@ async function seedRecipes(user: User) {
       difficultyLevel: recipeSeed.difficulty,
       status: recipeSeed.source === "coach" ? Status.Publie : Status.Brouillon,
       mealType: recipeSeed.mealType,
-      chefTips: `${recipeSeed.coachNote}${BENEFITS_SEPARATOR}${recipeSeed.benefits.join("\n")}`,
+      chefTips: recipeSeed.coachNote,
+      benefits: recipeSeed.benefits,
       caloriesPerServing: recipeSeed.calories,
       proteinsPerServing: recipeSeed.protein,
       carbohydratesPerServing: recipeSeed.carbs,

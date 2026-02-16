@@ -27,6 +27,10 @@ export class Recipe extends BaseEntity {
   description?: string;
 
   @Field({ nullable: true })
+  @Column({ name: "photo_url", type: "text", nullable: true })
+  photoUrl?: string;
+
+  @Field({ nullable: true })
   @Column({ type: "text", nullable: true })
   instructions?: string;
 
@@ -57,6 +61,10 @@ export class Recipe extends BaseEntity {
   @Field({ nullable: true })
   @Column({ name: "chef_tips", type: "text", nullable: true })
   chefTips?: string;
+
+  @Field(() => [String], { nullable: true })
+  @Column({ type: "jsonb", nullable: true })
+  benefits?: string[];
 
   @Field()
   @CreateDateColumn({ name: "created_at" })
