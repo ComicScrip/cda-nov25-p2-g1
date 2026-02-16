@@ -1,11 +1,12 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
+import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 
 const USER_DASHBOARD_QUERY = gql`
-  query UserDashboardData {
-    userDashboardData {
+  query UserDashboardData($limit: Int, $offset: Int) {
+    userDashboardData(limit: $limit, offset: $offset) {
       firstName
       daysOfUse
       healthScore
@@ -19,6 +20,7 @@ const USER_DASHBOARD_QUERY = gql`
       todayProtein
       todayCarbs
       todayFat
+      hasMoreMeals
       recentMeals {
         name
         calories
@@ -39,7 +41,7 @@ type DashboardMeal = {
 };
 
 type DashboardPayload = {
-  firstName: string;
+  firstName?: string | null;
   daysOfUse: number;
   healthScore: number;
   scannedMeals: number;
@@ -52,6 +54,7 @@ type DashboardPayload = {
   todayProtein: number;
   todayCarbs: number;
   todayFat: number;
+  hasMoreMeals: boolean;
   recentMeals: DashboardMeal[];
 };
 
@@ -59,12 +62,25 @@ type DashboardQueryData = {
   userDashboardData: DashboardPayload | null;
 };
 
+type DashboardQueryVariables = {
+  limit?: number;
+  offset?: number;
+};
+
+const PAGE_SIZE = 10;
+
 export default function DashboardPage() {
-  const { data, loading, error } = useQuery<DashboardQueryData>(USER_DASHBOARD_QUERY, {
-    fetchPolicy: "cache-and-network",
-  });
+  const [offset, setOffset] = useState(0);
+  const { data, loading, error } = useQuery<DashboardQueryData, DashboardQueryVariables>(
+    USER_DASHBOARD_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      variables: { limit: PAGE_SIZE, offset },
+    },
+  );
 
   const dashboard = data?.userDashboardData;
+  const hasMoreMeals = Boolean(dashboard?.hasMoreMeals);
   const stats = [
     {
       value: String(dashboard?.daysOfUse ?? 0),
@@ -231,7 +247,7 @@ export default function DashboardPage() {
                         .join(" ");
 
                       return (
-                        <div key={meal.name} className={dividerClasses}>
+                        <div key={`${offset}-${index}-${meal.name}`} className={dividerClasses}>
                           <div className="font-semibold">{meal.name}</div>
                           <div>{meal.calories} kcal</div>
                           <div>
@@ -240,6 +256,26 @@ export default function DashboardPage() {
                         </div>
                       );
                     })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOffset((currentOffset) => Math.max(0, currentOffset - PAGE_SIZE))
+                      }
+                      disabled={offset === 0}
+                      className="rounded-md bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1f3d1f] shadow-[0_2px_4px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Repas précédents
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOffset((currentOffset) => currentOffset + PAGE_SIZE)}
+                      disabled={!hasMoreMeals}
+                      className="rounded-md bg-black px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Repas suivants
+                    </button>
                   </div>
                 </div>
 

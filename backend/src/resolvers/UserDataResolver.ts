@@ -1,6 +1,15 @@
-import { IsDateString, IsNumber, IsOptional, Min } from "class-validator";
+import {
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+} from "class-validator";
 import {
   Arg,
+  Args,
+  ArgsType,
   Authorized,
   Ctx,
   Field,
@@ -84,6 +93,9 @@ class DashboardData {
 
   @Field(() => [DashboardMealData])
   recentMeals!: DashboardMealData[];
+
+  @Field(() => Boolean)
+  hasMoreMeals!: boolean;
 }
 
 @ObjectType()
@@ -209,6 +221,20 @@ class UserProfileUpdateInput {
 
   @Field(() => [String])
   medicalTags!: string[];
+}
+
+@ArgsType()
+class DashboardPaginationArgs {
+  @Field(() => Int, { defaultValue: 10 })
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit = 10;
+
+  @Field(() => Int, { defaultValue: 0 })
+  @IsInt()
+  @Min(0)
+  offset = 0;
 }
 
 function toNumber(value: unknown): number {
@@ -443,27 +469,29 @@ export default class UserDataResolver {
   @Query(() => DashboardData, { nullable: true })
   @Authorized()
   async userDashboardData(
+    @Args(() => DashboardPaginationArgs, { validate: true })
+    pagination: DashboardPaginationArgs,
     @Ctx() context: GraphQLContext,
   ): Promise<DashboardData | null> {
     const currentUser = await getCurrentUser(context);
     const currentUserId = currentUser.id;
+    const { limit, offset } = pagination;
 
     const [profile, dishes] = await Promise.all([
       User_profile.findOne({ where: { user: { id: currentUserId } } }),
       this.loadUserDishEntries(currentUserId),
     ]);
 
-    const latestTenDishes = dishes.slice(0, 10);
+    const paginatedDishes = dishes.slice(offset, offset + limit);
+    const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const todayKey = latestTenDishes[0]
-      ? toDateKey(latestTenDishes[0].consumedAt)
-      : null;
+    const todayKey = dishes[0] ? toDateKey(dishes[0].consumedAt) : null;
     let todayProtein = 0;
     let todayCarbs = 0;
     let todayFat = 0;
     let todayCalories = 0;
 
-    for (const dish of latestTenDishes) {
+    for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
       if (todayKey && dayKey === todayKey) {
@@ -474,20 +502,12 @@ export default class UserDataResolver {
       }
     }
 
-    const totalCalories = latestTenDishes.reduce(
-      (sum, dish) => sum + dish.calories,
-      0,
-    );
-    const totalScore = latestTenDishes.reduce(
-      (sum, dish) => sum + dish.score,
-      0,
-    );
+    const totalCalories = dishes.reduce((sum, dish) => sum + dish.calories, 0);
+    const totalScore = dishes.reduce((sum, dish) => sum + dish.score, 0);
     const averageCalories =
       dailyTotals.size > 0 ? Math.round(totalCalories / dailyTotals.size) : 0;
     const healthScore =
-      latestTenDishes.length > 0
-        ? Math.round(totalScore / latestTenDishes.length)
-        : 0;
+      dishes.length > 0 ? Math.round(totalScore / dishes.length) : 0;
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
@@ -501,7 +521,7 @@ export default class UserDataResolver {
       firstName: profile?.first_name?.trim() || null,
       daysOfUse: dailyTotals.size,
       healthScore,
-      scannedMeals: latestTenDishes.length,
+      scannedMeals: dishes.length,
       averageCalories,
       targetCalories,
       targetProgress,
@@ -511,8 +531,8 @@ export default class UserDataResolver {
       todayProtein: Math.round(todayProtein),
       todayCarbs: Math.round(todayCarbs),
       todayFat: Math.round(todayFat),
-      recentMeals: latestTenDishes.slice(0, 4).map((dish, index) => {
-        const fallbackName = `Repas ${index + 1}`;
+      recentMeals: paginatedDishes.map((dish, index) => {
+        const fallbackName = `Repas ${offset + index + 1}`;
         const name = formatMealTypeLabel(dish.mealType) ?? fallbackName;
 
         return {
@@ -523,6 +543,7 @@ export default class UserDataResolver {
           fat: Math.round(dish.fats),
         };
       }),
+      hasMoreMeals,
     };
   }
 
