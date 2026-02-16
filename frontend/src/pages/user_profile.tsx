@@ -1,7 +1,7 @@
 import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 
 const USER_PROFILE_QUERY = gql`
@@ -66,6 +66,19 @@ type UpdateUserProfileMutationVariables = {
   };
 };
 
+type UserProfileDraft = {
+  firstName?: string;
+  lastName?: string;
+  birthDay?: number;
+  birthMonth?: number;
+  birthYear?: number;
+  heightInput?: string;
+  weightInput?: string;
+  goal?: string;
+  gender?: "homme" | "femme";
+  medicalTags?: string[];
+};
+
 const navItems = [
   { label: "Mon Dashboard", active: false, href: "/dashboard_user" },
   { label: "Mon profil", active: true },
@@ -111,6 +124,10 @@ function toNumber(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function normalizeGender(gender?: string | null): "homme" | "femme" {
+  return gender?.toLowerCase() === "homme" ? "homme" : "femme";
+}
+
 export default function UserProfilePage() {
   const { data, loading, error } = useQuery<UserProfileQueryData>(USER_PROFILE_QUERY, {
     fetchPolicy: "cache-and-network",
@@ -121,49 +138,31 @@ export default function UserProfilePage() {
     UpdateUserProfileMutationVariables
   >(UPDATE_USER_PROFILE_MUTATION);
 
-  const [firstName, setFirstName] = useState("Jane");
-  const [lastName, setLastName] = useState("Doe");
-  const [birthDay, setBirthDay] = useState(12);
-  const [birthMonth, setBirthMonth] = useState(6);
-  const [birthYear, setBirthYear] = useState(1984);
-  const [heightInput, setHeightInput] = useState("");
-  const [weightInput, setWeightInput] = useState("");
-  const [goal, setGoal] = useState("");
-  const [gender, setGender] = useState("femme");
-  const [medicalTags, setMedicalTags] = useState<string[]>([]);
+  const profile = data?.userProfileData;
+  const parsedBirthDate = parseDate(profile?.dateOfBirth);
+  const [draft, setDraft] = useState<UserProfileDraft>({});
   const [medicalInfoInput, setMedicalInfoInput] = useState("");
   const [saveFeedback, setSaveFeedback] = useState("");
 
-  useEffect(() => {
-    const profile = data?.userProfileData;
-    if (!profile) {
-      return;
-    }
-
-    const parsedDate = parseDate(profile.dateOfBirth);
-    setFirstName(profile.firstName || "Jane");
-    setLastName(profile.lastName || "Doe");
-    setBirthDay(parsedDate.day);
-    setBirthMonth(parsedDate.month);
-    setBirthYear(parsedDate.year);
-    setHeightInput(
-      profile.height !== null && profile.height !== undefined ? String(profile.height) : "",
-    );
-    setWeightInput(
-      profile.currentWeight !== null && profile.currentWeight !== undefined
-        ? String(profile.currentWeight)
-        : "",
-    );
-    setGoal(profile.goal ?? "");
-    setGender((profile.gender || "femme").toLowerCase());
-    setMedicalTags(profile.medicalTags ?? []);
-  }, [data]);
+  const firstName = draft.firstName ?? profile?.firstName ?? "Jane";
+  const lastName = draft.lastName ?? profile?.lastName ?? "Doe";
+  const birthDay = draft.birthDay ?? parsedBirthDate.day;
+  const birthMonth = draft.birthMonth ?? parsedBirthDate.month;
+  const birthYear = draft.birthYear ?? parsedBirthDate.year;
+  const heightInput =
+    draft.heightInput ??
+    (profile?.height !== null && profile?.height !== undefined ? String(profile.height) : "");
+  const weightInput =
+    draft.weightInput ??
+    (profile?.currentWeight !== null && profile?.currentWeight !== undefined
+      ? String(profile.currentWeight)
+      : "");
+  const goal = draft.goal ?? profile?.goal ?? "";
+  const gender = draft.gender ?? normalizeGender(profile?.gender);
+  const medicalTags = draft.medicalTags ?? profile?.medicalTags ?? [];
 
   const formattedBirthDate = `${String(birthDay).padStart(2, "0")}/${String(birthMonth).padStart(2, "0")}/${birthYear}`;
-
-  const profileName = useMemo(() => {
-    return firstName.trim() || "Utilisateur";
-  }, [firstName]);
+  const profileName = firstName.trim() || "Utilisateur";
 
   const handleAddMedicalTag = () => {
     const nextTag = medicalInfoInput.trim();
@@ -171,14 +170,21 @@ export default function UserProfilePage() {
       return;
     }
 
-    setMedicalTags((previousTags) =>
-      previousTags.includes(nextTag) ? previousTags : [...previousTags, nextTag],
-    );
+    setDraft((previousDraft) => {
+      const currentTags = previousDraft.medicalTags ?? profile?.medicalTags ?? [];
+      if (currentTags.includes(nextTag)) {
+        return previousDraft;
+      }
+      return { ...previousDraft, medicalTags: [...currentTags, nextTag] };
+    });
     setMedicalInfoInput("");
   };
 
   const handleRemoveMedicalTag = (tagToRemove: string) => {
-    setMedicalTags((previousTags) => previousTags.filter((tag) => tag !== tagToRemove));
+    setDraft((previousDraft) => {
+      const currentTags = previousDraft.medicalTags ?? profile?.medicalTags ?? [];
+      return { ...previousDraft, medicalTags: currentTags.filter((tag) => tag !== tagToRemove) };
+    });
   };
 
   const handleSave = async () => {
@@ -279,7 +285,12 @@ export default function UserProfilePage() {
                           id="firstName"
                           type="text"
                           value={firstName}
-                          onChange={(event) => setFirstName(event.target.value)}
+                          onChange={(event) =>
+                            setDraft((previousDraft) => ({
+                              ...previousDraft,
+                              firstName: event.target.value,
+                            }))
+                          }
                           className="mt-1 w-full rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -289,7 +300,12 @@ export default function UserProfilePage() {
                           id="lastName"
                           type="text"
                           value={lastName}
-                          onChange={(event) => setLastName(event.target.value)}
+                          onChange={(event) =>
+                            setDraft((previousDraft) => ({
+                              ...previousDraft,
+                              lastName: event.target.value,
+                            }))
+                          }
                           className="mt-1 w-full rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -307,7 +323,12 @@ export default function UserProfilePage() {
                           />
                           <select
                             value={birthDay}
-                            onChange={(event) => setBirthDay(Number(event.target.value))}
+                            onChange={(event) =>
+                              setDraft((previousDraft) => ({
+                                ...previousDraft,
+                                birthDay: Number(event.target.value),
+                              }))
+                            }
                             className="h-9 rounded-md border border-[#bdbdbd] bg-white px-2 text-xs text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]"
                           >
                             {dayOptions.map((day) => (
@@ -318,7 +339,12 @@ export default function UserProfilePage() {
                           </select>
                           <select
                             value={birthMonth}
-                            onChange={(event) => setBirthMonth(Number(event.target.value))}
+                            onChange={(event) =>
+                              setDraft((previousDraft) => ({
+                                ...previousDraft,
+                                birthMonth: Number(event.target.value),
+                              }))
+                            }
                             className="h-9 rounded-md border border-[#bdbdbd] bg-white px-2 text-xs text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]"
                           >
                             {monthOptions.map((month) => (
@@ -329,7 +355,12 @@ export default function UserProfilePage() {
                           </select>
                           <select
                             value={birthYear}
-                            onChange={(event) => setBirthYear(Number(event.target.value))}
+                            onChange={(event) =>
+                              setDraft((previousDraft) => ({
+                                ...previousDraft,
+                                birthYear: Number(event.target.value),
+                              }))
+                            }
                             className="h-9 rounded-md border border-[#bdbdbd] bg-white px-2 text-xs text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]"
                           >
                             {yearOptions.map((year) => (
@@ -353,7 +384,12 @@ export default function UserProfilePage() {
                             id="height"
                             type="text"
                             value={heightInput}
-                            onChange={(event) => setHeightInput(event.target.value)}
+                            onChange={(event) =>
+                              setDraft((previousDraft) => ({
+                                ...previousDraft,
+                                heightInput: event.target.value,
+                              }))
+                            }
                             className="w-full rounded-l-md bg-transparent px-3 py-2 text-sm text-[#2c2c2c] focus:outline-none"
                           />
                           <span className="px-3 text-xs text-[#4b5a4b]">Cm</span>
@@ -366,7 +402,12 @@ export default function UserProfilePage() {
                             id="weight"
                             type="text"
                             value={weightInput}
-                            onChange={(event) => setWeightInput(event.target.value)}
+                            onChange={(event) =>
+                              setDraft((previousDraft) => ({
+                                ...previousDraft,
+                                weightInput: event.target.value,
+                              }))
+                            }
                             className="w-full rounded-l-md bg-transparent px-3 py-2 text-sm text-[#2c2c2c] focus:outline-none"
                           />
                           <span className="px-3 text-xs text-[#4b5a4b]">Kg</span>
@@ -383,7 +424,12 @@ export default function UserProfilePage() {
                         <textarea
                           id="goal"
                           value={goal}
-                          onChange={(event) => setGoal(event.target.value)}
+                          onChange={(event) =>
+                            setDraft((previousDraft) => ({
+                              ...previousDraft,
+                              goal: event.target.value,
+                            }))
+                          }
                           className="mt-1 min-h-[110px] w-full resize-none rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                         />
                       </label>
@@ -436,7 +482,9 @@ export default function UserProfilePage() {
                             type="radio"
                             name="gender"
                             checked={gender === "homme"}
-                            onChange={() => setGender("homme")}
+                            onChange={() =>
+                              setDraft((previousDraft) => ({ ...previousDraft, gender: "homme" }))
+                            }
                             className="accent-[#7a9378]"
                           />
                           Homme
@@ -446,7 +494,9 @@ export default function UserProfilePage() {
                             type="radio"
                             name="gender"
                             checked={gender === "femme"}
-                            onChange={() => setGender("femme")}
+                            onChange={() =>
+                              setDraft((previousDraft) => ({ ...previousDraft, gender: "femme" }))
+                            }
                             className="accent-[#7a9378]"
                           />
                           Femme
