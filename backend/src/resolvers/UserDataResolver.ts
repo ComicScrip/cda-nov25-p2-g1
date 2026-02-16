@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional } from "class-validator";
+import { IsDateString, IsNumber, IsOptional, Min } from "class-validator";
 import {
   Arg,
   Ctx,
@@ -198,6 +198,9 @@ class UserProfileUpdateInput {
   height?: number;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
   currentWeight?: number;
 
   @Field(() => String, { nullable: true })
@@ -412,7 +415,7 @@ export default class UserDataResolver {
 
     await profile.save();
 
-    if (typeof data.currentWeight === "number" && data.currentWeight > 0) {
+    if (data.currentWeight !== undefined) {
       const latestKnown = [...(profile.weight_measures ?? [])]
         .map((item) => ({
           measuredAt: item.measured_at ?? new Date(0),
