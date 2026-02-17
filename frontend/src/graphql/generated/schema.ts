@@ -25,6 +25,13 @@ export type LoginInput = {
   password: Scalars['String']['input'];
 };
 
+export type Meal = {
+  __typename?: 'Meal';
+  consumedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  id: Scalars['String']['output'];
+  mealType?: Maybe<Scalars['String']['output']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   login: Scalars['String']['output'];
@@ -42,6 +49,12 @@ export type MutationSignupArgs = {
   data: SignupInput;
 };
 
+export type Pathology = {
+  __typename?: 'Pathology';
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   me?: Maybe<User>;
@@ -55,10 +68,47 @@ export type SignupInput = {
 
 export type User = {
   __typename?: 'User';
-  createdAt: Scalars['DateTimeISO']['output'];
+  created_at: Scalars['DateTimeISO']['output'];
   email: Scalars['String']['output'];
-  id: Scalars['Int']['output'];
-  role: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  last_login_at?: Maybe<Scalars['DateTimeISO']['output']>;
+  meals?: Maybe<Array<Meal>>;
+  profile?: Maybe<User_Profile>;
+  recipes?: Maybe<Array<User_Recipe>>;
+  role: UserRole;
+  uploaded_at: Scalars['DateTimeISO']['output'];
+};
+
+export enum UserRole {
+  Admin = 'Admin',
+  Coach = 'Coach',
+  Coachee = 'Coachee'
+}
+
+export type User_Recipe = {
+  __typename?: 'User_Recipe';
+  id: Scalars['String']['output'];
+};
+
+export type User_Profile = {
+  __typename?: 'User_profile';
+  date_of_birth?: Maybe<Scalars['DateTimeISO']['output']>;
+  first_name: Scalars['String']['output'];
+  gender?: Maybe<Scalars['String']['output']>;
+  goal?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['String']['output'];
+  last_name: Scalars['String']['output'];
+  pathologies: Array<Pathology>;
+  user: User;
+  weight_measures: Array<Weight_Measure>;
+};
+
+export type Weight_Measure = {
+  __typename?: 'Weight_Measure';
+  id: Scalars['String']['output'];
+  measured_at: Scalars['DateTimeISO']['output'];
+  weight: Scalars['Float']['output'];
 };
 
 export type LoginMutationVariables = Exact<{
@@ -78,12 +128,12 @@ export type SignupMutationVariables = Exact<{
 }>;
 
 
-export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: number, email: string, createdAt: any } };
+export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: string, email: string, created_at: any } };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, createdAt: any, role: string } | null };
+export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, email: string, created_at: any, role: UserRole } | null };
 
 
 export const LoginDocument = gql`
@@ -152,7 +202,7 @@ export const SignupDocument = gql`
   signup(data: $data) {
     id
     email
-    createdAt
+    created_at
   }
 }
     `;
@@ -187,7 +237,7 @@ export const ProfileDocument = gql`
   me {
     id
     email
-    createdAt
+    created_at
     role
   }
 }
