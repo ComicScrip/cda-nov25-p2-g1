@@ -74,7 +74,7 @@ export default function Login() {
           if (updatedProfile?.me?.role === "Coach") {
             router.push("/coach/dashboard");
           } else {
-            router.push("/my-dashboard");
+            router.push("/dashboard_user");
           }
         }
       } else {
