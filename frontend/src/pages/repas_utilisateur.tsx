@@ -1,13 +1,15 @@
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 
 type MealHistoryEntry = {
-  id: number;
+  id: string;
   name: string;
-  scanDate: string;
-  scanTime: string;
+  consumedAt: string;
   calories: number;
   protein: number;
   carbs: number;
@@ -19,6 +21,29 @@ type MealHistoryEntry = {
   coachName: string;
 };
 
+type MealsQueryData = {
+  userMealsData: MealHistoryEntry[];
+};
+
+const USER_MEALS_QUERY = gql`
+  query UserMealsData {
+    userMealsData {
+      id
+      name
+      consumedAt
+      calories
+      protein
+      carbs
+      fat
+      aiScore
+      photo
+      aiInsights
+      coachComment
+      coachName
+    }
+  }
+`;
+
 const navItems = [
   { label: "Dashboard", href: "/dashboard_user", active: false },
   { label: "Mes repas", href: "/repas_utilisateur", active: true },
@@ -27,229 +52,127 @@ const navItems = [
   { label: "Mon Profile", href: "/user_profile", active: false },
 ];
 
-const mealPhotos = {
-  quinoapoulet: "https://i.ibb.co/trmHDr7/quinoapoulet.jpg",
-  saladecesar: "https://i.ibb.co/XfSWKQQZ/saladecesar.webp",
-  saumonrizcomplet: "https://i.ibb.co/s91VB246/saumonrizcomplet.webp",
-  wrapdinde: "https://i.ibb.co/6cKNXC6y/wrapdinde.jpg",
-  patebolo: "https://i.ibb.co/PGZC28f9/patebolo.jpg",
-  soupelegumetartine: "https://i.ibb.co/jxrSHnq/soupelegumetartine.webp",
-  recetteFrittata: "https://i.ibb.co/q3FT9XH7/recette-frittata-epinards-feta.jpg",
-  burgerpatate: "https://i.ibb.co/LXYpct9j/burgerpatate.jpg",
-  pkebawltofu: "https://i.ibb.co/FLphFzdz/pkebawltofu.webp",
-  yaourtGranola: "https://i.ibb.co/rRbRvfdC/Recette-Yaourt-au-granola-framboises-et-myrtilles.webp",
-} as const;
+const getFirstQueryValue = (value: string | string[] | undefined): string | undefined => {
+  return Array.isArray(value) ? value[0] : value;
+};
 
-const mealHistory: MealHistoryEntry[] = [
-  {
-    id: 1,
-    name: "Bowl quinoa & poulet",
-    scanDate: "Lundi 10 février 2026",
-    scanTime: "12h22",
-    calories: 410,
-    protein: 31,
-    carbs: 38,
-    fat: 14,
-    aiScore: 89,
-    photo: mealPhotos.quinoapoulet,
-    aiInsights: [
-      "Bon ratio protéines / glucides pour le déjeuner.",
-      "Fibres estimées correctes, légumes présents en quantité suffisante.",
-      "Sodium modéré, pas d'alerte particulière détectée.",
-    ],
-    coachComment:
-      "Très bon choix avant une après-midi active. La prochaine fois, ajoute une source de bons lipides (avocat ou noix).",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 2,
-    name: "Salade césar",
-    scanDate: "Lundi 10 février 2026",
-    scanTime: "19h48",
-    calories: 390,
-    protein: 24,
-    carbs: 20,
-    fat: 24,
-    aiScore: 78,
-    photo: mealPhotos.saladecesar,
-    aiInsights: [
-      "Protéines correctes mais sauce assez riche en matières grasses.",
-      "Apport en fibres moyen, quantité de verdure correcte.",
-      "Repas rassasiant mais densité calorique un peu élevée.",
-    ],
-    coachComment:
-      "Garde cette salade, mais demande la sauce à part. Tu contrôles mieux les quantités.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 3,
-    name: "Saumon, riz complet et brocoli",
-    scanDate: "Mardi 11 février 2026",
-    scanTime: "12h06",
-    calories: 505,
-    protein: 35,
-    carbs: 46,
-    fat: 17,
-    aiScore: 92,
-    photo: mealPhotos.saumonrizcomplet,
-    aiInsights: [
-      "Excellent équilibre global avec une protéine de qualité.",
-      "Bon apport en oméga-3 lié au saumon.",
-      "Quantité de glucides adaptée à une journée active.",
-    ],
-    coachComment: "Parfait. Ce type d'assiette est exactement ce qu'on vise sur la semaine.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 4,
-    name: "Wrap dinde crudités",
-    scanDate: "Mardi 11 février 2026",
-    scanTime: "20h11",
-    calories: 360,
-    protein: 23,
-    carbs: 34,
-    fat: 11,
-    aiScore: 84,
-    photo: mealPhotos.wrapdinde,
-    aiInsights: [
-      "Repas léger et bien réparti en macronutriments.",
-      "Niveau calorique adapté à un dîner.",
-      "Attention à la sauce du wrap qui peut varier fortement.",
-    ],
-    coachComment:
-      "Bonne option du soir. Si faim après, complète avec un fruit plutôt qu'un snack salé.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 5,
-    name: "Pâtes complètes bolognaise",
-    scanDate: "Mercredi 12 février 2026",
-    scanTime: "13h03",
-    calories: 560,
-    protein: 29,
-    carbs: 66,
-    fat: 18,
-    aiScore: 74,
-    photo: mealPhotos.patebolo,
-    aiInsights: [
-      "Charge glucidique élevée, utile avant entraînement.",
-      "Portion généreuse, potentielle surconsommation calorique.",
-      "Protéines suffisantes mais légumes peu représentés.",
-    ],
-    coachComment:
-      "Rien d'interdit, mais vise une portion de pâtes légèrement plus petite et ajoute une salade.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 6,
-    name: "Soupe légumes + tartine chèvre",
-    scanDate: "Mercredi 12 février 2026",
-    scanTime: "20h00",
-    calories: 320,
-    protein: 14,
-    carbs: 32,
-    fat: 12,
-    aiScore: 80,
-    photo: mealPhotos.soupelegumetartine,
-    aiInsights: [
-      "Repas léger, hydratant et adapté au dîner.",
-      "Apport en protéines un peu faible.",
-      "Index glycémique global modéré.",
-    ],
-    coachComment:
-      "Très bien pour un soir calme. Ajoute une portion de protéines maigres si tu as encore faim.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 7,
-    name: "Omelette épinards & feta",
-    scanDate: "Jeudi 13 février 2026",
-    scanTime: "12h35",
-    calories: 430,
-    protein: 28,
-    carbs: 9,
-    fat: 29,
-    aiScore: 83,
-    photo: mealPhotos.recetteFrittata,
-    aiInsights: [
-      "Très bonne densité en protéines.",
-      "Glucides faibles, pense à ajouter une petite source féculente si besoin d'énergie.",
-      "Lipides un peu hauts selon la portion de feta.",
-    ],
-    coachComment:
-      "Belle assiette. Un morceau de pain complet en plus aurait rendu le repas encore plus complet.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 8,
-    name: "Burger maison + patates rôties",
-    scanDate: "Jeudi 13 février 2026",
-    scanTime: "20h27",
-    calories: 690,
-    protein: 33,
-    carbs: 58,
-    fat: 35,
-    aiScore: 66,
-    photo: mealPhotos.burgerpatate,
-    aiInsights: [
-      "Repas calorique et riche en matières grasses.",
-      "Protéines correctes, mais sodium élevé probable.",
-      "Pertinent ponctuellement, à équilibrer sur la journée.",
-    ],
-    coachComment:
-      "On garde ce repas plaisir, mais limite la sauce et augmente la part de légumes à côté.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 9,
-    name: "Poké bowl tofu",
-    scanDate: "Vendredi 14 février 2026",
-    scanTime: "12h18",
-    calories: 470,
-    protein: 25,
-    carbs: 49,
-    fat: 18,
-    aiScore: 87,
-    photo: mealPhotos.pkebawltofu,
-    aiInsights: [
-      "Bon repas complet avec apport végétal intéressant.",
-      "Qualité lipidique correcte (graines, avocat).",
-      "Portion cohérente pour un déjeuner actif.",
-    ],
-    coachComment:
-      "Très bonne option. Pense juste à varier les sources de protéines végétales sur la semaine.",
-    coachName: "Coach Lucie",
-  },
-  {
-    id: 10,
-    name: "Yaourt grec, granola et fruits",
-    scanDate: "Vendredi 14 février 2026",
-    scanTime: "19h40",
-    calories: 340,
-    protein: 19,
-    carbs: 37,
-    fat: 12,
-    aiScore: 82,
-    photo: mealPhotos.yaourtGranola,
-    aiInsights: [
-      "Repas rapide mais bien structuré pour une soirée légère.",
-      "Attention au sucre ajouté dans le granola.",
-      "Bonne satiété grâce aux protéines du yaourt grec.",
-    ],
-    coachComment:
-      "Très pratique quand tu manques de temps. Choisis un granola sans sucre ajouté autant que possible.",
-    coachName: "Coach Lucie",
-  },
-];
+const getNumericQueryValue = (value: string | string[] | undefined): number | null => {
+  const parsed = Number(getFirstQueryValue(value));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatMealDate = (consumedAt: string): string => {
+  const date = new Date(consumedAt);
+  if (Number.isNaN(date.getTime())) {
+    return "Date inconnue";
+  }
+
+  const label = date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const formatMealTime = (consumedAt: string): string => {
+  const date = new Date(consumedAt);
+  if (Number.isNaN(date.getTime())) {
+    return "--h--";
+  }
+
+  return date
+    .toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    .replace(":", "h");
+};
 
 export default function RepasUtilisateurPage() {
-  const [selectedMeal, setSelectedMeal] = useState(mealHistory[0]);
+  const router = useRouter();
+  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+
+  const { data, loading, error } = useQuery<MealsQueryData>(USER_MEALS_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+
+  const mealHistory = data?.userMealsData ?? [];
+
+  useEffect(() => {
+    setSelectedMealId((currentSelectedMealId) => {
+      if (mealHistory.length === 0) {
+        return null;
+      }
+
+      if (currentSelectedMealId && mealHistory.some((meal) => meal.id === currentSelectedMealId)) {
+        return currentSelectedMealId;
+      }
+
+      return mealHistory[0].id;
+    });
+  }, [mealHistory]);
+
+  useEffect(() => {
+    if (!router.isReady || mealHistory.length === 0) {
+      return;
+    }
+
+    const mealName = getFirstQueryValue(router.query.mealName)?.trim().toLocaleLowerCase();
+    if (!mealName) {
+      return;
+    }
+
+    const calories = getNumericQueryValue(router.query.calories);
+    const protein = getNumericQueryValue(router.query.protein);
+    const carbs = getNumericQueryValue(router.query.carbs);
+    const fat = getNumericQueryValue(router.query.fat);
+
+    const matchedMeal = mealHistory.find((meal) => {
+      const hasSameName = meal.name.toLocaleLowerCase() === mealName;
+      const hasSameCalories = calories === null || meal.calories === calories;
+      const hasSameProtein = protein === null || meal.protein === protein;
+      const hasSameCarbs = carbs === null || meal.carbs === carbs;
+      const hasSameFat = fat === null || meal.fat === fat;
+
+      return hasSameName && hasSameCalories && hasSameProtein && hasSameCarbs && hasSameFat;
+    });
+
+    if (matchedMeal) {
+      setSelectedMealId((currentSelectedMealId) => {
+        return currentSelectedMealId === matchedMeal.id ? currentSelectedMealId : matchedMeal.id;
+      });
+    }
+  }, [
+    router.isReady,
+    router.query.mealName,
+    router.query.calories,
+    router.query.protein,
+    router.query.carbs,
+    router.query.fat,
+    mealHistory,
+  ]);
+
+  const selectedMeal = useMemo(() => {
+    if (mealHistory.length === 0) {
+      return null;
+    }
+
+    return mealHistory.find((meal) => meal.id === selectedMealId) ?? mealHistory[0];
+  }, [mealHistory, selectedMealId]);
 
   const averageCalories = Math.round(
-    mealHistory.reduce((sum, meal) => sum + meal.calories, 0) / mealHistory.length,
+    mealHistory.length > 0
+      ? mealHistory.reduce((sum, meal) => sum + meal.calories, 0) / mealHistory.length
+      : 0,
   );
+
   const averageScore = Math.round(
-    mealHistory.reduce((sum, meal) => sum + meal.aiScore, 0) / mealHistory.length,
+    mealHistory.length > 0
+      ? mealHistory.reduce((sum, meal) => sum + meal.aiScore, 0) / mealHistory.length
+      : 0,
   );
 
   return (
@@ -289,11 +212,23 @@ export default function RepasUtilisateurPage() {
               </aside>
 
               <div className="bg-[#f5fbf1] px-5 py-6 md:px-8 lg:flex lg:min-h-0 lg:flex-col">
+                {loading && (
+                  <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+                    Chargement de vos repas...
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md bg-[#f7e1e1] px-3 py-2 text-xs text-[#7b2222]">
+                    Donnees indisponibles. Verifie que vous etes bien connecte(e).
+                  </div>
+                )}
+
                 <div className="max-w-4xl text-[#2c2c2c]">
                   <h1 className="text-lg font-semibold">Historique des repas scannés</h1>
                   <p className="mt-1 text-xs text-[#555]">
-                    10 repas enregistrés. Clique sur un repas pour voir les indications de l&apos;IA
-                    et le commentaire de ton coach.
+                    {mealHistory.length} repas enregistrés. Clique sur un repas pour voir les
+                    indications de l&apos;IA et le commentaire de ton coach.
                   </p>
                 </div>
 
@@ -317,12 +252,12 @@ export default function RepasUtilisateurPage() {
                     <h2 className="text-sm font-semibold text-[#2e3a2d]">Mes 10 derniers repas</h2>
                     <div className="mt-3 space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable] lg:min-h-0 lg:flex-1">
                       {mealHistory.map((meal) => {
-                        const isSelected = meal.id === selectedMeal.id;
+                        const isSelected = meal.id === selectedMeal?.id;
                         return (
                           <button
                             key={meal.id}
                             type="button"
-                            onClick={() => setSelectedMeal(meal)}
+                            onClick={() => setSelectedMealId(meal.id)}
                             className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
                               isSelected
                                 ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
@@ -331,12 +266,14 @@ export default function RepasUtilisateurPage() {
                           >
                             <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[#5a6758]">
                               <span className="rounded-full bg-[#edf4ea] px-2 py-0.5 font-medium">
-                                {meal.scanDate}
+                                {formatMealDate(meal.consumedAt)}
                               </span>
-                              <span className="font-semibold">{meal.scanTime}</span>
+                              <span className="font-semibold">
+                                {formatMealTime(meal.consumedAt)}
+                              </span>
                             </div>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:items-start">
-                              <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
+                            <div className="flex items-start gap-3">
+                              <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
                                 <Image
                                   src={meal.photo}
                                   alt={meal.name}
@@ -345,7 +282,7 @@ export default function RepasUtilisateurPage() {
                                   className="object-cover"
                                 />
                               </div>
-                              <div className="min-w-0 overflow-hidden">
+                              <div className="min-w-0 flex-1 overflow-hidden">
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="truncate text-sm font-semibold text-[#2b3a2a]">
                                     {meal.name}
@@ -367,66 +304,80 @@ export default function RepasUtilisateurPage() {
                   </section>
 
                   <aside className="rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:min-h-0 lg:overflow-y-auto">
-                    <div className="mb-3 rounded-md bg-[#eef4e8] px-3 py-2 text-[#3d4e3c]">
-                      <p className="text-[10px] uppercase tracking-wide text-[#5a6758]">
-                        Prise du repas
-                      </p>
-                      <p className="mt-1 text-xs font-semibold">
-                        {selectedMeal.scanDate} à {selectedMeal.scanTime}
-                      </p>
-                    </div>
+                    {selectedMeal ? (
+                      <>
+                        <div className="mb-3 rounded-md bg-[#eef4e8] px-3 py-2 text-[#3d4e3c]">
+                          <p className="text-[10px] uppercase tracking-wide text-[#5a6758]">
+                            Prise du repas
+                          </p>
+                          <p className="mt-1 text-xs font-semibold">
+                            {formatMealDate(selectedMeal.consumedAt)} à{" "}
+                            {formatMealTime(selectedMeal.consumedAt)}
+                          </p>
+                        </div>
 
-                    <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">
-                      <Image
-                        src={selectedMeal.photo}
-                        alt={selectedMeal.name}
-                        width={1200}
-                        height={650}
-                        sizes="(min-width: 1024px) 360px, 100vw"
-                        className="h-44 w-full object-cover"
-                      />
-                    </div>
+                        <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">
+                          <Image
+                            src={selectedMeal.photo}
+                            alt={selectedMeal.name}
+                            width={1200}
+                            height={650}
+                            sizes="(min-width: 1024px) 360px, 100vw"
+                            className="h-44 w-full object-cover"
+                          />
+                        </div>
 
-                    <div className="mt-3">
-                      <h2 className="text-sm font-semibold text-[#2e3a2d]">{selectedMeal.name}</h2>
-                    </div>
+                        <div className="mt-3">
+                          <h2 className="text-sm font-semibold text-[#2e3a2d]">
+                            {selectedMeal.name}
+                          </h2>
+                        </div>
 
-                    <div className="mt-3 rounded-md bg-[#f7faf4] p-3 text-[11px] text-[#3b4a3a]">
-                      <div>
-                        <span className="font-semibold">Calories:</span> {selectedMeal.calories}{" "}
-                        kcal
+                        <div className="mt-3 rounded-md bg-[#f7faf4] p-3 text-[11px] text-[#3b4a3a]">
+                          <div>
+                            <span className="font-semibold">Calories:</span> {selectedMeal.calories}{" "}
+                            kcal
+                          </div>
+                          <div>
+                            <span className="font-semibold">Protéines:</span> {selectedMeal.protein}{" "}
+                            g
+                          </div>
+                          <div>
+                            <span className="font-semibold">Glucides:</span> {selectedMeal.carbs} g
+                          </div>
+                          <div>
+                            <span className="font-semibold">Lipides:</span> {selectedMeal.fat} g
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-wide text-[#3f5a3e]">
+                            Indications IA
+                          </h3>
+                          <ul className="mt-2 space-y-2 text-[11px] text-[#445443]">
+                            {selectedMeal.aiInsights.map((insight) => (
+                              <li key={insight} className="rounded-md bg-[#eef4e8] px-2 py-1.5">
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mt-4 rounded-md bg-[#dcefd9] p-3 text-[11px] text-[#274427]">
+                          <h3 className="text-xs font-semibold uppercase tracking-wide">
+                            Commentaire coach
+                          </h3>
+                          <p className="mt-2">{selectedMeal.coachComment}</p>
+                          <p className="mt-2 text-[10px] text-[#416741]">
+                            {selectedMeal.coachName}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-md bg-[#eef4e8] p-3 text-[11px] text-[#445443]">
+                        Aucun repas disponible pour le moment.
                       </div>
-                      <div>
-                        <span className="font-semibold">Protéines:</span> {selectedMeal.protein} g
-                      </div>
-                      <div>
-                        <span className="font-semibold">Glucides:</span> {selectedMeal.carbs} g
-                      </div>
-                      <div>
-                        <span className="font-semibold">Lipides:</span> {selectedMeal.fat} g
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-[#3f5a3e]">
-                        Indications IA
-                      </h3>
-                      <ul className="mt-2 space-y-2 text-[11px] text-[#445443]">
-                        {selectedMeal.aiInsights.map((insight) => (
-                          <li key={insight} className="rounded-md bg-[#eef4e8] px-2 py-1.5">
-                            {insight}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="mt-4 rounded-md bg-[#dcefd9] p-3 text-[11px] text-[#274427]">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide">
-                        Commentaire coach
-                      </h3>
-                      <p className="mt-2">{selectedMeal.coachComment}</p>
-                      <p className="mt-2 text-[10px] text-[#416741]">{selectedMeal.coachName}</p>
-                    </div>
+                    )}
                   </aside>
                 </div>
               </div>

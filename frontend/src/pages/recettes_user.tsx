@@ -183,8 +183,8 @@ export default function RecettesUserPage() {
                       <span>|</span>
                       <span>{recipe.difficulty}</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:items-start">
-                      <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
+                    <div className="flex items-start gap-3">
+                      <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
                         <Image
                           src={recipe.photo}
                           alt={recipe.title}
@@ -193,7 +193,7 @@ export default function RecettesUserPage() {
                           className="object-cover"
                         />
                       </div>
-                      <div className="min-w-0 overflow-hidden">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <div className="truncate text-sm font-semibold text-[#2b3a2a]">
                           {recipe.title}
                         </div>

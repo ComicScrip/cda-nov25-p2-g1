@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
@@ -130,13 +131,26 @@ export default function DashboardPage() {
                 .join(" ");
 
               return (
-                <div key={`${offset}-${index}-${meal.name}`} className={dividerClasses}>
+                <Link
+                  key={`${offset}-${index}-${meal.name}`}
+                  href={{
+                    pathname: "/repas_utilisateur",
+                    query: {
+                      mealName: meal.name,
+                      calories: String(meal.calories),
+                      protein: String(meal.protein),
+                      carbs: String(meal.carbs),
+                      fat: String(meal.fat),
+                    },
+                  }}
+                  className={`${dividerClasses} block rounded-sm transition hover:bg-[#1f3d1f]/10`}
+                >
                   <div className="font-semibold">{meal.name}</div>
                   <div>{meal.calories} kcal</div>
                   <div>
                     P: {meal.protein}g | G: {meal.carbs}g | L: {meal.fat}g
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -153,7 +167,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => setOffset((currentOffset) => currentOffset + PAGE_SIZE)}
               disabled={!hasMoreMeals}
-              className="rounded-md bg-black px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md bg-[#2596be] px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Repas suivants
             </button>

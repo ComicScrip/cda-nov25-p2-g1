@@ -546,7 +546,7 @@ async function clearJaneData(user: User, profile: User_profile) {
   }
 
   const existingWeights = await Weight_Measure.find({
-    where: { user_profiles: { id: profile.id } as never } as never,
+    where: { user_profile: { id: profile.id } as never } as never,
   });
   if (existingWeights.length > 0) {
     await Weight_Measure.remove(existingWeights);
@@ -558,6 +558,7 @@ async function seedMeals(user: User) {
     const consumedAt = new Date(mealSeed.consumedAt);
 
     const meal = Meal.create({
+      name: mealSeed.name,
       mealType: toMealType(consumedAt),
       consumedAt,
       user,
@@ -600,12 +601,12 @@ async function seedEvolutionData(user: User, profile: User_profile) {
       measured_at: measuredAt,
       weight: evolutionSeed.weight,
     });
-    (
-      weightMeasure as unknown as { user_profiles: User_profile }
-    ).user_profiles = profile;
+    (weightMeasure as unknown as { user_profile: User_profile }).user_profile =
+      profile;
     await weightMeasure.save();
 
     const meal = Meal.create({
+      name: `Point hebdomadaire ${evolutionSeed.measuredAt.slice(0, 10)}`,
       mealType: MealType.Dejeuner,
       consumedAt: measuredAt,
       user,

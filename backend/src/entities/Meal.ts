@@ -20,6 +20,10 @@ export class Meal extends BaseEntity {
   id!: string;
 
   @Field({ nullable: true })
+  @Column({ name: "name", type: "text", nullable: true })
+  name?: string;
+
+  @Field({ nullable: true })
   @Column({ name: "meal_type", type: "enum", enum: MealType, nullable: true })
   mealType?: MealType;
 

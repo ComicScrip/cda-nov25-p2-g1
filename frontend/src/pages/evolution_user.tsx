@@ -11,17 +11,6 @@ const USER_EVOLUTION_QUERY = gql`
       calories
       score
     }
-    userEvolutionSummaryData {
-      startWeight
-      currentWeight
-      totalLoss
-      averageScore
-      averageCalories
-      weeksCount
-      targetWeight
-      targetProgress
-      remainingToGoal
-    }
   }
 `;
 
@@ -34,7 +23,7 @@ type EvolutionPoint = {
 
 type EvolutionQueryData = {
   userEvolutionData: EvolutionPoint[];
-  userEvolutionSummaryData: EvolutionSummary | null;
+  userEvolutionSummaryData?: EvolutionSummary | null;
 };
 
 type EvolutionSummary = {

@@ -97,6 +97,45 @@ class DashboardData {
 }
 
 @ObjectType()
+class UserMealData {
+  @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => String)
+  consumedAt!: string;
+
+  @Field(() => Int)
+  calories!: number;
+
+  @Field(() => Int)
+  protein!: number;
+
+  @Field(() => Int)
+  carbs!: number;
+
+  @Field(() => Int)
+  fat!: number;
+
+  @Field(() => Int)
+  aiScore!: number;
+
+  @Field(() => String)
+  photo!: string;
+
+  @Field(() => [String])
+  aiInsights!: string[];
+
+  @Field(() => String)
+  coachComment!: string;
+
+  @Field(() => String)
+  coachName!: string;
+}
+
+@ObjectType()
 class RecipeData {
   @Field(() => String)
   id!: string;
@@ -275,8 +314,37 @@ function formatMealTypeLabel(mealType?: string): string | undefined {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
+function parseCoachSuggestion(suggestion?: string): {
+  coachName?: string;
+  coachComment?: string;
+} {
+  if (!suggestion) {
+    return {};
+  }
+
+  const normalized = suggestion.trim();
+  if (!normalized) {
+    return {};
+  }
+
+  const separatorIndex = normalized.indexOf(":");
+  if (separatorIndex <= 0) {
+    return { coachComment: normalized };
+  }
+
+  const coachName = normalized.slice(0, separatorIndex).trim();
+  const coachComment = normalized.slice(separatorIndex + 1).trim();
+
+  return {
+    coachName: coachName || undefined,
+    coachComment: coachComment || undefined,
+  };
+}
+
 type DishEntry = {
+  id: string;
   consumedAt: Date;
+  mealName?: string;
   mealType?: string;
   photoUrl?: string;
   calories: number;
@@ -284,6 +352,9 @@ type DishEntry = {
   carbs: number;
   fats: number;
   score: number;
+  aiInsights: string[];
+  coachName?: string;
+  coachComment?: string;
 };
 
 @Resolver()
@@ -303,8 +374,16 @@ export default class UserDataResolver {
             safeDate(dish.uploadedAt) ??
             new Date();
           const analysis = dish.analysis;
+          const aiInsights = (analysis?.warnings ?? "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+          const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
+
           return {
+            id: dish.id,
             consumedAt,
+            mealName: meal.name?.trim() || undefined,
             mealType: meal.mealType,
             photoUrl: dish.photoUrl,
             calories: analysis?.calories ?? 0,
@@ -312,6 +391,9 @@ export default class UserDataResolver {
             carbs: analysis?.carbohydrates ?? 0,
             fats: analysis?.lipids ?? 0,
             score: analysis?.mealHealthScore ?? 0,
+            aiInsights,
+            coachName: coachSuggestion.coachName,
+            coachComment: coachSuggestion.coachComment,
           };
         }),
       )
@@ -455,8 +537,8 @@ export default class UserDataResolver {
           weight: nextWeight,
         });
         (
-          weightMeasure as unknown as { user_profiles: User_profile }
-        ).user_profiles = profile;
+          weightMeasure as unknown as { user_profile: User_profile }
+        ).user_profile = profile;
         await weightMeasure.save();
       }
     }
@@ -536,7 +618,10 @@ export default class UserDataResolver {
       todayFat: Math.round(latestDayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
-        const name = formatMealTypeLabel(dish.mealType) ?? fallbackName;
+        const name =
+          dish.mealName?.trim() ||
+          formatMealTypeLabel(dish.mealType) ||
+          fallbackName;
 
         return {
           name,
@@ -548,6 +633,44 @@ export default class UserDataResolver {
       }),
       hasMoreMeals,
     };
+  }
+
+  @Query(() => [UserMealData])
+  @Authorized()
+  async userMealsData(@Ctx() context: GraphQLContext): Promise<UserMealData[]> {
+    const currentUser = await getCurrentUser(context);
+    const dishes = await this.loadUserDishEntries(currentUser.id);
+    const fallbackPhoto = "/MyDietChef_image.webp";
+    const mealHistory = dishes.slice(0, 10);
+
+    return mealHistory.map((dish, index) => {
+      const fallbackName = `Repas ${index + 1}`;
+      const name =
+        dish.mealName?.trim() ||
+        formatMealTypeLabel(dish.mealType) ||
+        fallbackName;
+      const aiInsights =
+        dish.aiInsights.length > 0
+          ? dish.aiInsights
+          : ["Aucune indication IA disponible pour ce repas."];
+
+      return {
+        id: dish.id,
+        name,
+        consumedAt: dish.consumedAt.toISOString(),
+        calories: Math.round(dish.calories),
+        protein: Math.round(dish.proteins),
+        carbs: Math.round(dish.carbs),
+        fat: Math.round(dish.fats),
+        aiScore: Math.round(dish.score),
+        photo: dish.photoUrl?.trim() || fallbackPhoto,
+        aiInsights,
+        coachComment:
+          dish.coachComment?.trim() ||
+          "Continue sur cette dynamique pour garder des repas equilibres.",
+        coachName: dish.coachName?.trim() || "Coach",
+      };
+    });
   }
 
   @Query(() => [RecipeData])
