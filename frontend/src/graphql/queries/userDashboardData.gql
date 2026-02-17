@@ -1,0 +1,25 @@
+query UserDashboardData($limit: Int, $offset: Int) {
+  userDashboardData(limit: $limit, offset: $offset) {
+    firstName
+    daysOfUse
+    healthScore
+    scannedMeals
+    averageCalories
+    targetCalories
+    targetProgress
+    targetProtein
+    targetCarbs
+    targetLipids
+    todayProtein
+    todayCarbs
+    todayFat
+    hasMoreMeals
+    recentMeals {
+      name
+      calories
+      protein
+      carbs
+      fat
+    }
+  }
+}

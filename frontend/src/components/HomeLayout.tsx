@@ -18,7 +18,7 @@ export default function HomeLayout({ children, pageTitle }: HomeLayoutProps) {
           content="Plateforme conçue pour vous aider à atteindre vos objectifs diététiques"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/Logo_MDC.ico" />
       </Head>
       <Header />
       <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">{children}</main>
