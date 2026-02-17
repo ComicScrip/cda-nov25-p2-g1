@@ -20,6 +20,42 @@ export type Scalars = {
   DateTimeISO: { input: any; output: any; }
 };
 
+export type DashboardData = {
+  __typename?: 'DashboardData';
+  averageCalories: Scalars['Int']['output'];
+  daysOfUse: Scalars['Int']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  hasMoreMeals: Scalars['Boolean']['output'];
+  healthScore: Scalars['Int']['output'];
+  recentMeals: Array<DashboardMealData>;
+  scannedMeals: Scalars['Int']['output'];
+  targetCalories: Scalars['Int']['output'];
+  targetCarbs: Scalars['Int']['output'];
+  targetLipids: Scalars['Int']['output'];
+  targetProgress: Scalars['Int']['output'];
+  targetProtein: Scalars['Int']['output'];
+  todayCarbs: Scalars['Int']['output'];
+  todayFat: Scalars['Int']['output'];
+  todayProtein: Scalars['Int']['output'];
+};
+
+export type DashboardMealData = {
+  __typename?: 'DashboardMealData';
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  fat: Scalars['Int']['output'];
+  name: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
+};
+
+export type EvolutionDataPoint = {
+  __typename?: 'EvolutionDataPoint';
+  calories: Scalars['Int']['output'];
+  score: Scalars['Int']['output'];
+  week: Scalars['String']['output'];
+  weight: Scalars['Float']['output'];
+};
+
 export type LoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -30,6 +66,7 @@ export type Meal = {
   consumedAt?: Maybe<Scalars['DateTimeISO']['output']>;
   id: Scalars['String']['output'];
   mealType?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
 };
 
 export type Mutation = {
@@ -37,6 +74,7 @@ export type Mutation = {
   login: Scalars['String']['output'];
   logout: Scalars['Boolean']['output'];
   signup: User;
+  updateUserProfileData?: Maybe<UserProfileData>;
 };
 
 
@@ -49,6 +87,11 @@ export type MutationSignupArgs = {
   data: SignupInput;
 };
 
+
+export type MutationUpdateUserProfileDataArgs = {
+  data: UserProfileUpdateInput;
+};
+
 export type Pathology = {
   __typename?: 'Pathology';
   id: Scalars['String']['output'];
@@ -58,7 +101,38 @@ export type Pathology = {
 export type Query = {
   __typename?: 'Query';
   me?: Maybe<User>;
+  userDashboardData?: Maybe<DashboardData>;
+  userEvolutionData: Array<EvolutionDataPoint>;
+  userMealsData: Array<UserMealData>;
+  userProfileData?: Maybe<UserProfileData>;
+  userRecipesData: Array<RecipeData>;
   users: Array<User>;
+};
+
+
+export type QueryUserDashboardDataArgs = {
+  limit?: Scalars['Int']['input'];
+  offset?: Scalars['Int']['input'];
+};
+
+export type RecipeData = {
+  __typename?: 'RecipeData';
+  benefits: Array<Scalars['String']['output']>;
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  coachNote: Scalars['String']['output'];
+  description: Scalars['String']['output'];
+  difficulty: Scalars['String']['output'];
+  fat: Scalars['Int']['output'];
+  fiber: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  photo: Scalars['String']['output'];
+  prepSteps: Array<Scalars['String']['output']>;
+  prepTime: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
+  servings: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  title: Scalars['String']['output'];
 };
 
 export type SignupInput = {
@@ -68,7 +142,7 @@ export type SignupInput = {
 
 export type User = {
   __typename?: 'User';
-  created_at: Scalars['DateTimeISO']['output'];
+  createdAt: Scalars['DateTimeISO']['output'];
   email: Scalars['String']['output'];
   id: Scalars['String']['output'];
   last_login_at?: Maybe<Scalars['DateTimeISO']['output']>;
@@ -77,6 +151,45 @@ export type User = {
   recipes?: Maybe<Array<User_Recipe>>;
   role: UserRole;
   uploaded_at: Scalars['DateTimeISO']['output'];
+};
+
+export type UserMealData = {
+  __typename?: 'UserMealData';
+  aiInsights: Array<Scalars['String']['output']>;
+  aiScore: Scalars['Int']['output'];
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  coachComment: Scalars['String']['output'];
+  coachName: Scalars['String']['output'];
+  consumedAt: Scalars['String']['output'];
+  fat: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  photo: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
+};
+
+export type UserProfileData = {
+  __typename?: 'UserProfileData';
+  currentWeight?: Maybe<Scalars['Float']['output']>;
+  dateOfBirth?: Maybe<Scalars['String']['output']>;
+  firstName: Scalars['String']['output'];
+  gender?: Maybe<Scalars['String']['output']>;
+  goal?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Float']['output']>;
+  lastName: Scalars['String']['output'];
+  medicalTags: Array<Scalars['String']['output']>;
+};
+
+export type UserProfileUpdateInput = {
+  currentWeight?: InputMaybe<Scalars['Float']['input']>;
+  dateOfBirth?: InputMaybe<Scalars['String']['input']>;
+  firstName: Scalars['String']['input'];
+  gender?: InputMaybe<Scalars['String']['input']>;
+  goal?: InputMaybe<Scalars['String']['input']>;
+  height?: InputMaybe<Scalars['Float']['input']>;
+  lastName: Scalars['String']['input'];
+  medicalTags: Array<Scalars['String']['input']>;
 };
 
 export enum UserRole {
@@ -128,12 +241,20 @@ export type SignupMutationVariables = Exact<{
 }>;
 
 
-export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: string, email: string, created_at: any } };
+export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: string, email: string, createdAt: any } };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, email: string, created_at: any, role: UserRole } | null };
+export type ProfileQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, email: string, createdAt: any, role: UserRole } | null };
+
+export type UserDashboardDataQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type UserDashboardDataQuery = { __typename?: 'Query', userDashboardData?: { __typename?: 'DashboardData', firstName?: string | null, daysOfUse: number, healthScore: number, scannedMeals: number, averageCalories: number, targetCalories: number, targetProgress: number, targetProtein: number, targetCarbs: number, targetLipids: number, todayProtein: number, todayCarbs: number, todayFat: number, hasMoreMeals: boolean, recentMeals: Array<{ __typename?: 'DashboardMealData', name: string, calories: number, protein: number, carbs: number, fat: number }> } | null };
 
 
 export const LoginDocument = gql`
@@ -202,7 +323,7 @@ export const SignupDocument = gql`
   signup(data: $data) {
     id
     email
-    created_at
+    createdAt
   }
 }
     `;
@@ -237,7 +358,7 @@ export const ProfileDocument = gql`
   me {
     id
     email
-    created_at
+    createdAt
     role
   }
 }
@@ -277,3 +398,67 @@ export type ProfileQueryHookResult = ReturnType<typeof useProfileQuery>;
 export type ProfileLazyQueryHookResult = ReturnType<typeof useProfileLazyQuery>;
 export type ProfileSuspenseQueryHookResult = ReturnType<typeof useProfileSuspenseQuery>;
 export type ProfileQueryResult = ApolloReactCommon.QueryResult<ProfileQuery, ProfileQueryVariables>;
+export const UserDashboardDataDocument = gql`
+    query UserDashboardData($limit: Int, $offset: Int) {
+  userDashboardData(limit: $limit, offset: $offset) {
+    firstName
+    daysOfUse
+    healthScore
+    scannedMeals
+    averageCalories
+    targetCalories
+    targetProgress
+    targetProtein
+    targetCarbs
+    targetLipids
+    todayProtein
+    todayCarbs
+    todayFat
+    hasMoreMeals
+    recentMeals {
+      name
+      calories
+      protein
+      carbs
+      fat
+    }
+  }
+}
+    `;
+
+/**
+ * __useUserDashboardDataQuery__
+ *
+ * To run a query within a React component, call `useUserDashboardDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useUserDashboardDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useUserDashboardDataQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useUserDashboardDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+      }
+export function useUserDashboardDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+        }
+// @ts-ignore
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<UserDashboardDataQuery, UserDashboardDataQueryVariables>;
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<UserDashboardDataQuery | undefined, UserDashboardDataQueryVariables>;
+export function useUserDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserDashboardDataQuery, UserDashboardDataQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<UserDashboardDataQuery, UserDashboardDataQueryVariables>(UserDashboardDataDocument, options);
+        }
+export type UserDashboardDataQueryHookResult = ReturnType<typeof useUserDashboardDataQuery>;
+export type UserDashboardDataLazyQueryHookResult = ReturnType<typeof useUserDashboardDataLazyQuery>;
+export type UserDashboardDataSuspenseQueryHookResult = ReturnType<typeof useUserDashboardDataSuspenseQuery>;
+export type UserDashboardDataQueryResult = ApolloReactCommon.QueryResult<UserDashboardDataQuery, UserDashboardDataQueryVariables>;

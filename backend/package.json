@@ -6,6 +6,7 @@
     "dev": "ts-node-dev src/index.ts",
     "seed": "ts-node src/db/run-seed.ts",
     "resetDB": "ts-node src/db/reset.ts",
+    "resetDB:jane": "ts-node src/db/reset-Db-Jane.ts",
     "build": "tsc",
     "start": "node build/index.js",
     "lint": "biome check",

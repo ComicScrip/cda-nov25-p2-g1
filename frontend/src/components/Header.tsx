@@ -1,8 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { UserRole, useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,6 +14,10 @@ export default function Header() {
 
   const [logout] = useLogoutMutation();
   const router = useRouter();
+
+  const getDashboardHref = () => {
+    return user?.role === UserRole.Admin ? "/admin" : "/dashboard_user";
+  };
 
   const handleLogout = async () => {
     try {
@@ -33,8 +38,15 @@ export default function Header() {
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="logo-circle logo-circle-hover w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm">
-            <span className="text-gray-800 text-2xl font-semi-bold logo-letter">M</span>
+          <div className="logo-circle logo-circle-hover w-12 h-12 overflow-hidden rounded-full bg-white shadow-sm">
+            <Image
+              src="/Logo_MDC.png"
+              alt="MyDietChef"
+              width={48}
+              height={48}
+              className="h-12 w-12 object-cover"
+              priority
+            />
           </div>
         </Link>
 
@@ -44,10 +56,20 @@ export default function Header() {
             (user ? (
               <>
                 <div className="flex items-center gap-2 mr-2">
-                  <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
-                    {getUserInitial(user.email)}
-                  </div>
+                  <Link href={getDashboardHref()} className="flex items-center">
+                    <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
+                      {getUserInitial(user.email)}
+                    </div>
+                  </Link>
                 </div>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-gray-300 hover:bg-gray-700"
+                >
+                  <Link href={getDashboardHref()}>Dashboard</Link>
+                </Button>
                 <Button
                   type="button"
                   onClick={handleLogout}
@@ -57,7 +79,7 @@ export default function Header() {
                 >
                   Déconnexion
                 </Button>
-                {user.role === "admin" && (
+                {user.role === UserRole.Admin && (
                   <Button
                     asChild
                     variant="ghost"
@@ -116,11 +138,23 @@ export default function Header() {
               (user ? (
                 <>
                   <div className="flex items-center gap-2 pb-2 border-b border-gray-700">
-                    <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
-                      {getUserInitial(user.email)}
-                    </div>
+                    <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
+                      <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
+                        {getUserInitial(user.email)}
+                      </div>
+                    </Link>
                     <span className="text-white text-sm">{user.email}</span>
                   </div>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                  >
+                    <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
+                      Dashboard
+                    </Link>
+                  </Button>
                   <Button
                     type="button"
                     onClick={handleLogout}
@@ -130,7 +164,7 @@ export default function Header() {
                   >
                     Déconnexion
                   </Button>
-                  {user.role === "admin" && (
+                  {user.role === UserRole.Admin && (
                     <Button
                       asChild
                       variant="ghost"

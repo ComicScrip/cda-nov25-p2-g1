@@ -48,7 +48,7 @@ export class User extends BaseEntity {
 
   @Field(() => Date)
   @CreateDateColumn({ name: "created_at" })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Field(() => Date, { nullable: true })
   @Column({ name: "last_login_at", type: "timestamp", nullable: true })

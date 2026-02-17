@@ -2,6 +2,6 @@ mutation Signup($data: SignupInput!) {
   signup(data: $data) {
     id
     email
-    created_at
+    createdAt
   }
 }
