@@ -38,13 +38,13 @@ export default function Header() {
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="logo-circle logo-circle-hover w-12 h-12 overflow-hidden rounded-full bg-white shadow-sm">
+          <div className="logo-circle-hover w-12 h-12 overflow-hidden rounded-full">
             <Image
               src="/Logo_MDC.png"
               alt="MyDietChef"
               width={48}
               height={48}
-              className="h-12 w-12 object-cover"
+              className="h-12 w-12 object-contain"
               priority
             />
           </div>

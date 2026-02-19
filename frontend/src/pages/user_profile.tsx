@@ -225,12 +225,12 @@ export default function UserProfilePage() {
 
   return (
     <HomeLayout pageTitle="Profil">
-      <section className="flex-1 bg-[#f3f7ee] py-6">
-        <div className="mx-auto w-full max-w-5xl px-4">
-          <div className="overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]">
+      <section className="flex-1 bg-[#f3f7ee]">
+        <div className="w-full">
+          <div className="bg-white">
             <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]">
               <aside className="border-r border-[#c1c1c1] bg-[#e2e5e0]">
-                <nav className="p-4">
+                <nav className="p-4 md:sticky md:top-4">
                   <ul className="space-y-3 text-sm text-[#3c3c3c]">
                     {navItems.map((item) => (
                       <li key={item.label}>

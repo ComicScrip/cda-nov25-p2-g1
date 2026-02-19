@@ -117,7 +117,8 @@ export default function RecettesUserPage() {
     <HomeLayout pageTitle="Mes recettes">
       <UserPageLayout
         activeNav="recipes"
-        maxWidthClassName="max-w-6xl"
+        maxWidthClassName="max-w-none"
+        frameClassName="bg-white"
         contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8 lg:flex lg:min-h-0 lg:flex-col"
       >
         {loading && (

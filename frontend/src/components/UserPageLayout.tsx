@@ -16,21 +16,23 @@ interface UserPageLayoutProps {
   children: ReactNode;
   maxWidthClassName?: string;
   contentClassName?: string;
+  frameClassName?: string;
 }
 
 export default function UserPageLayout({
   activeNav,
   children,
-  maxWidthClassName = "max-w-5xl",
+  maxWidthClassName = "max-w-5xl xl:max-w-none",
   contentClassName = "bg-[#f5fbf1] px-5 py-6 md:px-8",
+  frameClassName = "rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]",
 }: UserPageLayoutProps) {
   return (
-    <section className="flex-1 bg-[#f3f7ee] py-6">
-      <div className={`mx-auto w-full ${maxWidthClassName} px-4`}>
-        <div className="overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]">
+    <section className="flex-1 bg-[#f3f7ee]">
+      <div className={`mx-auto w-full xl:mx-0 ${maxWidthClassName}`}>
+        <div className={frameClassName}>
           <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]">
             <aside className="border-r border-[#c1c1c1] bg-[#d8d8d8]">
-              <nav className="p-4">
+              <nav className="p-4 md:sticky md:top-4">
                 <ul className="space-y-3 text-sm text-[#3c3c3c]">
                   {USER_NAV_ITEMS.map((item) => (
                     <li key={item.id}>
