@@ -1,18 +1,17 @@
-import { useRouter } from "next/router";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import Field from "@/components/Field";
 import HomeLayout from "@/components/HomeLayout";
-import { type SignupInput, useSignupMutation } from "@/graphql/generated/schema";
-
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
+import { type SignupInput, useSignupMutation } from "@/graphql/generated/schema";
 
 export default function Signup() {
   const router = useRouter();
@@ -52,10 +51,7 @@ export default function Signup() {
           </CardHeader>
 
           <CardContent>
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
               {/* EMAIL */}
               <Field
                 label="Email"
@@ -63,8 +59,7 @@ export default function Signup() {
                   ...register("email", {
                     required: "L'email est requis",
                     pattern: {
-                      value:
-                        /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                       message: "L'email n'est pas valide",
                     },
                   }),
@@ -83,17 +78,14 @@ export default function Signup() {
                     required: "Le mot de passe est requis",
                     minLength: {
                       value: 8,
-                      message:
-                        "Le mot de passe doit contenir au moins 8 caractères",
+                      message: "Le mot de passe doit contenir au moins 8 caractères",
                     },
                     maxLength: {
                       value: 128,
-                      message:
-                        "Le mot de passe ne peut pas dépasser 128 caractères",
+                      message: "Le mot de passe ne peut pas dépasser 128 caractères",
                     },
                     pattern: {
-                      value:
-                        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
                       message:
                         "Le mot de passe doit contenir au moins une minuscule, une majuscule, un chiffre et un caractère spécial",
                     },
@@ -110,8 +102,7 @@ export default function Signup() {
                 label="Confirmer le mot de passe"
                 inputProps={{
                   ...register("confirmPassword", {
-                    required:
-                      "La confirmation du mot de passe est requise",
+                    required: "La confirmation du mot de passe est requise",
                     validate: (value) =>
                       value === passwordValue ||
                       "Les 2 saisies de mot de passe doivent être identiques",
@@ -129,15 +120,12 @@ export default function Signup() {
                   disabled={isSubmitting}
                   className="w-full h-10 text-sm bg-dark-header text-white hover:bg-dark-footer"
                 >
-                  {isSubmitting
-                    ? "Inscription..."
-                    : "S'inscrire"}
+                  {isSubmitting ? "Inscription..." : "S'inscrire"}
                 </button>
 
                 {error && (
                   <p className="text-red-500 text-center text-sm">
-                    {error.message ||
-                      "Une erreur est survenue lors de l'inscription"}
+                    {error.message || "Une erreur est survenue lors de l'inscription"}
                   </p>
                 )}
 
