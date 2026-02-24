@@ -343,7 +343,7 @@ export default function ScannerRepasPage() {
           </div>
 
           <div className="mt-6 grid gap-5 lg:gap-10 xl:gap-14 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
-            <div className="space-y-4 lg:w-full lg:max-w-[34rem] lg:justify-self-start">
+            <div className="space-y-4 lg:w-full lg:max-w-136 lg:justify-self-start">
               <section className="rounded-md border border-[#b6c7ac] bg-[#edf4e7] p-4 shadow-[0_2px_5px_rgba(0,0,0,0.12)]">
                 <h2 className="text-sm font-semibold text-[#2f4a2f]">1) Importer une image</h2>
                 <input

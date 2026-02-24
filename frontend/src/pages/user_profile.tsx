@@ -282,7 +282,7 @@ export default function UserProfilePage() {
                     readOnly
                     tabIndex={-1}
                     aria-readonly="true"
-                    className="pointer-events-none min-w-[160px] flex-1 select-none rounded-md border border-[#bdbdbd] bg-[#f7f7f7] px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
+                    className="pointer-events-none min-w-40 flex-1 select-none rounded-md border border-[#bdbdbd] bg-[#f7f7f7] px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
                   />
                   <select
                     value={birthDay}
@@ -393,7 +393,7 @@ export default function UserProfilePage() {
                       goal: event.target.value,
                     }))
                   }
-                  className="mt-1 min-h-[110px] w-full resize-none rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
+                  className="mt-1 min-h-27.5 w-full resize-none rounded-md border border-[#bdbdbd] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9bb59a]"
                 />
               </label>
 

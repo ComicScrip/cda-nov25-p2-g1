@@ -300,7 +300,7 @@ export default function DashboardCoachTestPage() {
     const rows = data?.coachScannerSubmissionsTestData ?? [];
 
     return rows
-      .map((row) => {
+      .map((row): CoachSubmissionRecord | null => {
         const payload = parseCoachSubmissionPayload(row.payloadJson);
         if (!payload) {
           return null;
@@ -315,7 +315,7 @@ export default function DashboardCoachTestPage() {
           source: "db" as const,
         };
       })
-      .filter((row): row is CoachSubmissionRecord => Boolean(row));
+      .filter((row): row is CoachSubmissionRecord => row !== null);
   }, [data?.coachScannerSubmissionsTestData]);
 
   const localRecord = useMemo<CoachSubmissionRecord | null>(() => {
@@ -697,7 +697,7 @@ export default function DashboardCoachTestPage() {
                   <h2 className="text-sm font-semibold text-[#2d412d]">
                     Informations facultatives
                   </h2>
-                  <div className="mt-2 space-y-2 text-xs text-[#2d2d2d]">
+                  <div className="mt-2 space-y-2 text-xs text-dark-header">
                     <p>
                       <span className="font-medium">Nom du plat:</span>{" "}
                       {details?.dishName?.trim() || "non renseigné"}
@@ -725,7 +725,7 @@ export default function DashboardCoachTestPage() {
                   <h2 className="text-sm font-semibold text-[#7a5a18]">
                     Réponses utilisateur au coach
                   </h2>
-                  <div className="mt-2 space-y-2 text-xs text-[#2d2d2d]">
+                  <div className="mt-2 space-y-2 text-xs text-dark-header">
                     <p>
                       <span className="font-medium">Réponse incertitudes:</span>{" "}
                       {payload?.reponseIncertitudes?.trim() || "aucune"}
@@ -757,7 +757,7 @@ export default function DashboardCoachTestPage() {
 
                   <div className="mt-4 rounded-md border border-[#d8e3d2] bg-[#f9fcf8] p-3">
                     <p className="text-[11px] text-[#516451]">Portion estimée</p>
-                    <p className="mt-1 text-xs text-[#2d2d2d]">
+                    <p className="mt-1 text-xs text-dark-header">
                       {analysis?.portion_estimee?.trim() || "Non renseigné"}
                     </p>
                   </div>
@@ -765,31 +765,31 @@ export default function DashboardCoachTestPage() {
                   <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
                       <p className="text-[11px] text-[#516451]">Calories</p>
-                      <p className="text-xs font-semibold text-[#2d2d2d]">
+                      <p className="text-xs font-semibold text-dark-header">
                         {metricRangeLabel(analysis?.nutrition_estimee?.calories_kcal, "kcal")}
                       </p>
                     </div>
                     <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
                       <p className="text-[11px] text-[#516451]">Protéines</p>
-                      <p className="text-xs font-semibold text-[#2d2d2d]">
+                      <p className="text-xs font-semibold text-dark-header">
                         {metricRangeLabel(analysis?.nutrition_estimee?.proteines_g, "g")}
                       </p>
                     </div>
                     <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
                       <p className="text-[11px] text-[#516451]">Glucides</p>
-                      <p className="text-xs font-semibold text-[#2d2d2d]">
+                      <p className="text-xs font-semibold text-dark-header">
                         {metricRangeLabel(analysis?.nutrition_estimee?.glucides_g, "g")}
                       </p>
                     </div>
                     <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
                       <p className="text-[11px] text-[#516451]">Lipides</p>
-                      <p className="text-xs font-semibold text-[#2d2d2d]">
+                      <p className="text-xs font-semibold text-dark-header">
                         {metricRangeLabel(analysis?.nutrition_estimee?.lipides_g, "g")}
                       </p>
                     </div>
                     <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
                       <p className="text-[11px] text-[#516451]">Fibres</p>
-                      <p className="text-xs font-semibold text-[#2d2d2d]">
+                      <p className="text-xs font-semibold text-dark-header">
                         {metricRangeLabel(analysis?.nutrition_estimee?.fibres_g, "g")}
                       </p>
                     </div>
@@ -800,7 +800,7 @@ export default function DashboardCoachTestPage() {
                   <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
                     <h2 className="text-sm font-semibold text-[#2d412d]">Plats probables</h2>
                     {listOrEmpty(analysis?.plats_probables).length > 0 ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                         {listOrEmpty(analysis?.plats_probables).map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -813,7 +813,7 @@ export default function DashboardCoachTestPage() {
                   <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
                     <h2 className="text-sm font-semibold text-[#2d412d]">Ingrédients visibles</h2>
                     {listOrEmpty(analysis?.ingredients_visibles).length > 0 ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                         {listOrEmpty(analysis?.ingredients_visibles).map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -830,7 +830,7 @@ export default function DashboardCoachTestPage() {
                       Avertissements pathologies
                     </h2>
                     {listOrEmpty(analysis?.avertissement_pathologies).length > 0 ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                         {listOrEmpty(analysis?.avertissement_pathologies).map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -843,7 +843,7 @@ export default function DashboardCoachTestPage() {
                   <section className="rounded-lg border border-[#eadfbe] bg-[#fffdf4] p-4">
                     <h2 className="text-sm font-semibold text-[#6f5d28]">Incertitudes</h2>
                     {listOrEmpty(analysis?.incertitudes).length > 0 ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                         {listOrEmpty(analysis?.incertitudes).map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -857,7 +857,7 @@ export default function DashboardCoachTestPage() {
                 <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
                   <h2 className="text-sm font-semibold text-[#2d412d]">Questions de suivi</h2>
                   {listOrEmpty(analysis?.questions_suivi).length > 0 ? (
-                    <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                    <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                       {listOrEmpty(analysis?.questions_suivi).map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -885,7 +885,7 @@ export default function DashboardCoachTestPage() {
                             className="h-32 w-full object-cover"
                           />
                         </div>
-                        <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-[#2d2d2d]">
+                        <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-dark-header">
                           <p>
                             <span className="font-medium">Utilisateur:</span>{" "}
                             {selectedMealHistory.userEmail || selectedMealHistory.userId}
@@ -945,7 +945,7 @@ export default function DashboardCoachTestPage() {
                         <p className="text-[11px] font-semibold text-[#3f6448]">
                           Insights IA (historique)
                         </p>
-                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
                           {selectedMealHistory.aiInsights.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
@@ -963,17 +963,17 @@ export default function DashboardCoachTestPage() {
                   <summary className="cursor-pointer text-sm font-semibold text-[#38477d]">
                     Prompt envoyé à l’IA (aperçu)
                   </summary>
-                  <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-3 text-[11px] text-[#2d2d2d]">
+                  <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-3 text-[11px] text-dark-header">
                     {payload?.promptAnalyse || "Aucun prompt enregistré dans le payload."}
                   </pre>
                 </details>
 
                 <section className="rounded-lg border border-[#d6d6d6] bg-[#fafafa] p-4">
-                  <h2 className="text-sm font-semibold text-[#2d2d2d]">JSON stocké (aperçu)</h2>
+                  <h2 className="text-sm font-semibold text-dark-header">JSON stocké (aperçu)</h2>
                   <p className="mt-1 text-[11px] text-[#666]">
                     Les longues chaînes (ex: image base64) sont tronquées dans cet aperçu.
                   </p>
-                  <pre className="mt-3 max-h-[34rem] overflow-auto rounded-md bg-[#1e2428] p-4 text-[11px] text-[#d8f2d2]">
+                  <pre className="mt-3 max-h-136 overflow-auto rounded-md bg-[#1e2428] p-4 text-[11px] text-[#d8f2d2]">
                     {jsonPreview}
                   </pre>
                 </section>
