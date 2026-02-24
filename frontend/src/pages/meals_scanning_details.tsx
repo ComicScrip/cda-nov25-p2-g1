@@ -315,7 +315,10 @@ const formatFileNameHintForPrompt = (fileName?: string): string | null => {
     return null;
   }
 
-  const normalized = trimmed.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
+  const normalized = trimmed
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
   if (!normalized) {
     return null;
   }
