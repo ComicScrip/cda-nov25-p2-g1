@@ -67,11 +67,11 @@ export class User_profile extends BaseEntity {
   @JoinTable({
     name: "user_pathologies",
     joinColumn: {
-      name: "id",
+      name: "user_profile_id",
       referencedColumnName: "id",
     },
     inverseJoinColumn: {
-      name: "id",
+      name: "pathology_id",
       referencedColumnName: "id",
     },
   })

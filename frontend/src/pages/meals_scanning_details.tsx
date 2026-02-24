@@ -309,17 +309,33 @@ const formatMealMomentForPrompt = (mealMoment: ScannerMealDetails["mealMoment"])
   }
 };
 
+const formatFileNameHintForPrompt = (fileName?: string): string | null => {
+  const trimmed = fileName?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return `${trimmed} (nom interprété: ${normalized})`;
+};
+
 const buildScannerAnalysisPrompt = (
   profile: UserProfilePromptPayload | null | undefined,
   details: ScannerMealDetails,
+  fileName?: string,
 ): string => {
   const dishName = details.dishName.trim();
   const estimatedPortions = details.estimatedPortions.trim();
   const ingredients = details.ingredients.trim();
   const notes = details.notes.trim();
   const mealMoment = formatMealMomentForPrompt(details.mealMoment);
+  const fileNameHint = formatFileNameHintForPrompt(fileName);
 
-  const providedUserContextParts = [
+  const providedTextContextParts = [
     dishName ? `Nom du plat : (${dishName})` : null,
     mealMoment ? `Moment du repas: (${mealMoment})` : null,
     estimatedPortions ? `Portions estimées: (${estimatedPortions})` : null,
@@ -327,15 +343,20 @@ const buildScannerAnalysisPrompt = (
     notes ? `Notes complémentaires: (${notes})` : null,
   ].filter(Boolean) as string[];
 
-  const detailsContext =
-    providedUserContextParts.length === 0
+  const textDetailsContext =
+    providedTextContextParts.length === 0
       ? "Contexte utilisateur: aucun détail texte n’a été saisi (nom du plat, portions, ingrédients, notes vides)."
-      : providedUserContextParts.length < 5
-        ? `Contexte utilisateur: L'utilisateur n'a fourni que c'est informations ${providedUserContextParts.join(" ")}`
-        : `Contexte utilisateur: ${providedUserContextParts.join(" ")}`;
+      : providedTextContextParts.length < 5
+        ? `Contexte utilisateur: L'utilisateur n'a fourni que ces informations ${providedTextContextParts.join(" ")}`
+        : `Contexte utilisateur: ${providedTextContextParts.join(" ")}`;
+
+  const fileNameContext = fileNameHint
+    ? `Indice additionnel (nom de fichier image, potentiellement imprécis): (${fileNameHint}). Utilise-le seulement comme hypothèse faible et confirme avec le visuel.`
+    : "";
 
   return `Tu es un assistant de nutrition. Analyse uniquement la photo fournie.
-${detailsContext}
+${textDetailsContext}
+${fileNameContext}
 
 Objectifs:
 1) Identifier le(s) plat(s) probable(s) et les ingrédients visibles.
@@ -705,7 +726,11 @@ export default function ScannerRepasDetailsPage() {
 
       const payloadWithPrompt = {
         ...payload,
-        prompt: buildScannerAnalysisPrompt(userProfilePromptData?.userProfileData, payload.details),
+        prompt: buildScannerAnalysisPrompt(
+          userProfilePromptData?.userProfileData,
+          payload.details,
+          draft.fileName,
+        ),
       };
 
       console.info("[MealsScanning] Prompt analyse IA envoyé:", payloadWithPrompt.prompt);
