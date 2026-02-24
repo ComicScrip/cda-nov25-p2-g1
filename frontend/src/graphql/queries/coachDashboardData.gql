@@ -1,0 +1,34 @@
+query CoachDashboardData {
+  coachDashboardData {
+    stats {
+      users {
+        count
+        evolution
+      }
+      publishedRecipes {
+        count
+        evolution
+      }
+      scannedMeals {
+        count
+        evolution
+      }
+      averageScore {
+        count
+        evolution
+      }
+    }
+    recentUsers {
+      name
+      email
+      score
+    }
+    recentRecipes {
+      name
+      calories
+      proteins
+      carbs
+      lipids
+    }
+  }
+}
