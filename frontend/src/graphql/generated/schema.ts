@@ -66,6 +66,7 @@ export type Meal = {
   consumedAt?: Maybe<Scalars['DateTimeISO']['output']>;
   id: Scalars['String']['output'];
   mealType?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
 };
 
 export type Mutation = {
@@ -102,6 +103,7 @@ export type Query = {
   me?: Maybe<User>;
   userDashboardData?: Maybe<DashboardData>;
   userEvolutionData: Array<EvolutionDataPoint>;
+  userMealsData: Array<UserMealData>;
   userProfileData?: Maybe<UserProfileData>;
   userRecipesData: Array<RecipeData>;
   users: Array<User>;
@@ -149,6 +151,22 @@ export type User = {
   recipes?: Maybe<Array<User_Recipe>>;
   role: UserRole;
   uploaded_at: Scalars['DateTimeISO']['output'];
+};
+
+export type UserMealData = {
+  __typename?: 'UserMealData';
+  aiInsights: Array<Scalars['String']['output']>;
+  aiScore: Scalars['Int']['output'];
+  calories: Scalars['Int']['output'];
+  carbs: Scalars['Int']['output'];
+  coachComment: Scalars['String']['output'];
+  coachName: Scalars['String']['output'];
+  consumedAt: Scalars['String']['output'];
+  fat: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  photo: Scalars['String']['output'];
+  protein: Scalars['Int']['output'];
 };
 
 export type UserProfileData = {
