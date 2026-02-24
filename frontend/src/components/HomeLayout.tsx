@@ -2,13 +2,21 @@ import Head from "next/head";
 import type { ReactNode } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
+import UserFooterSlim from "./UserFooterSlim";
+
+type FooterVariant = "default" | "userSlim";
 
 interface HomeLayoutProps {
   children: ReactNode;
   pageTitle: string;
+  footerVariant?: FooterVariant;
 }
 
-export default function HomeLayout({ children, pageTitle }: HomeLayoutProps) {
+export default function HomeLayout({
+  children,
+  pageTitle,
+  footerVariant = "default",
+}: HomeLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Head>
@@ -22,7 +30,7 @@ export default function HomeLayout({ children, pageTitle }: HomeLayoutProps) {
       </Head>
       <Header />
       <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">{children}</main>
-      <Footer />
+      {footerVariant === "userSlim" ? <UserFooterSlim /> : <Footer />}
     </div>
   );
 }

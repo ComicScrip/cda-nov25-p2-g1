@@ -65,7 +65,7 @@ export class User_profile extends BaseEntity {
     },
   )
   @JoinTable({
-    name: "User_pathologies",
+    name: "user_pathologies",
     joinColumn: {
       name: "id",
       referencedColumnName: "id",

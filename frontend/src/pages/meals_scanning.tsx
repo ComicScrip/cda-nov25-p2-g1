@@ -5,6 +5,8 @@ import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 import {
   type ImageSource,
+  SCANNER_ANALYSIS_REQUEST_KEY,
+  SCANNER_ANALYSIS_RESPONSE_KEY,
   SCANNER_MEAL_DRAFT_KEY,
   type ScannerMealDraft,
 } from "@/lib/scannerDraft";
@@ -50,10 +52,26 @@ const readFileAsDataUrl = (file: File): Promise<string> => {
   });
 };
 
+const getFileNameFromUrl = (value: string): string | null => {
+  try {
+    const parsedUrl = new URL(value);
+    const segments = parsedUrl.pathname.split("/").filter(Boolean);
+    if (segments.length === 0) {
+      return null;
+    }
+
+    const name = decodeURIComponent(segments[segments.length - 1]);
+    return name || null;
+  } catch {
+    return null;
+  }
+};
+
 export default function ScannerRepasPage() {
   const router = useRouter();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [source, setSource] = useState<ImageSource | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -104,6 +122,7 @@ export default function ScannerRepasPage() {
       imageFileRef.current = file;
       setPreviewUrl(nextObjectUrl);
       setSource(imageSource);
+      setFileName(file.name || null);
       setUrlError(null);
       setSaveError(null);
     },
@@ -115,6 +134,7 @@ export default function ScannerRepasPage() {
     imageFileRef.current = null;
     setPreviewUrl(null);
     setSource(null);
+    setFileName(null);
     setUrlError(null);
     setSaveError(null);
   }, [releaseObjectUrl]);
@@ -161,6 +181,7 @@ export default function ScannerRepasPage() {
     imageFileRef.current = null;
     setPreviewUrl(trimmedUrl);
     setSource("url");
+    setFileName(getFileNameFromUrl(trimmedUrl));
     setUrlError(null);
     setSaveError(null);
   }, [releaseObjectUrl, urlInput]);
@@ -217,6 +238,7 @@ export default function ScannerRepasPage() {
     imageFileRef.current = null;
     setPreviewUrl(dataUrl);
     setSource("camera");
+    setFileName("capture-camera.jpg");
     setUrlError(null);
     setSaveError(null);
   }, [cameraReady, releaseObjectUrl]);
@@ -246,24 +268,29 @@ export default function ScannerRepasPage() {
         throw new Error("Image indisponible");
       }
 
+      const cleanedFileName = fileName?.trim();
+
       const draft: ScannerMealDraft = {
         imageUrl: imageToStore,
         source,
         savedAt: new Date().toISOString(),
+        fileName: cleanedFileName || undefined,
       };
 
       if (typeof window === "undefined") {
         throw new Error("Storage indisponible");
       }
 
+      window.sessionStorage.removeItem(SCANNER_ANALYSIS_REQUEST_KEY);
+      window.sessionStorage.removeItem(SCANNER_ANALYSIS_RESPONSE_KEY);
       window.sessionStorage.setItem(SCANNER_MEAL_DRAFT_KEY, JSON.stringify(draft));
-      await router.push("/scanner_repas_details");
+      await router.push("/meals_scanning_details");
     } catch {
       setSaveError("Impossible d'enregistrer cette image. Réessayez avec une autre photo.");
     } finally {
       setIsSaving(false);
     }
-  }, [previewUrl, router, source]);
+  }, [fileName, previewUrl, router, source]);
 
   useEffect(() => {
     const handleGlobalPaste = (event: ClipboardEvent) => {
@@ -304,8 +331,8 @@ export default function ScannerRepasPage() {
   }, [cameraActive]);
 
   return (
-    <HomeLayout pageTitle="Scanner un repas">
-      <UserPageLayout activeNav="dashboard">
+    <HomeLayout pageTitle="Scanner un repas" footerVariant="userSlim">
+      <UserPageLayout activeNav="aiAssist">
         <div className="mx-auto w-full max-w-6xl">
           <div className="max-w-3xl text-[#2c2c2c]">
             <h1 className="text-lg font-semibold">Scanner un repas</h1>
@@ -465,6 +492,25 @@ export default function ScannerRepasPage() {
               {saveError && <p className="mt-2 text-xs text-[#8a2a2a]">{saveError}</p>}
             </aside>
           </div>
+
+          <section className="mt-6 rounded-md border border-[#c8d9c7] bg-white p-4 shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+            <h2 className="text-sm font-semibold text-[#2c2c2c]">Conseils pour un bon scan</h2>
+            <p className="mt-2 text-xs text-[#4f5e4f]">
+              Cadre l&apos;assiette en entier, garde une bonne lumière, puis ajoute le nom du plat
+              et les ingrédients si tu les connais.
+            </p>
+            <div className="mt-3 grid gap-2 text-[11px] text-[#3f4d3f] sm:grid-cols-3">
+              <div className="rounded border border-[#d8e3d2] bg-[#f8fbf6] px-2 py-2">
+                Photo nette et centrée
+              </div>
+              <div className="rounded border border-[#d8e3d2] bg-[#f8fbf6] px-2 py-2">
+                Eviter les filtres/contre-jour
+              </div>
+              <div className="rounded border border-[#d8e3d2] bg-[#f8fbf6] px-2 py-2">
+                Portions visibles au maximum
+              </div>
+            </div>
+          </section>
         </div>
       </UserPageLayout>
     </HomeLayout>

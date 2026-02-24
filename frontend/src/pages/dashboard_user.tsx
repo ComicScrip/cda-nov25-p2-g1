@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 className="mx-auto h-auto w-full max-w-47.5 rounded-md"
               />
               <Link
-                href="/scanner_repas"
+                href="/meals_scanning"
                 className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
               >
                 Scanner un repas
@@ -91,11 +91,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-6 mx-auto max-w-2xl text-center text-[#2c2c2c]">
+        <div className="mt-6 max-w-2xl  mx-auto text-[#2c2c2c]">
           <h1 className="text-2xl font-bold md:text-3xl">
             Bienvenue dans ta tour de controle {dashboard?.firstName ?? "Utilisateur"}
           </h1>
-          <p className="mx-auto mt-2 max-w-xl text-xs text-[#555]">
+          <p className="mt-1 text-xs  text-[#555]">
             Ici, vous avez un resume en chiffres de votre activite nutritionnelle
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                 <Link
                   key={`${offset}-${index}-${meal.name}`}
                   href={{
-                    pathname: "/repas_utilisateur",
+                    pathname: "/user_meals",
                     query: {
                       mealName: meal.name,
                       calories: String(meal.calories),

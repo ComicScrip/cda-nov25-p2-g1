@@ -4,6 +4,7 @@ export type ScannerMealDraft = {
   imageUrl: string;
   source: ImageSource;
   savedAt: string;
+  fileName?: string;
 };
 
 export type ScannerMealDetails = {
@@ -22,3 +23,4 @@ export type ScannerAnalysisRequest = {
 
 export const SCANNER_MEAL_DRAFT_KEY = "scannerMealDraftV1";
 export const SCANNER_ANALYSIS_REQUEST_KEY = "scannerMealPendingAnalysisV1";
+export const SCANNER_ANALYSIS_RESPONSE_KEY = "scannerMealMockAnalysisResponseV1";

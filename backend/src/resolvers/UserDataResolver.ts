@@ -25,6 +25,8 @@ import { getCurrentUser } from "../auth";
 import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
+import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
+import { UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
@@ -226,6 +228,24 @@ class UserProfileData {
 
   @Field(() => [String])
   medicalTags!: string[];
+}
+
+@ObjectType()
+class CoachScannerSubmissionTestData {
+  @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
+  userId!: string;
+
+  @Field(() => String, { nullable: true })
+  userEmail?: string | null;
+
+  @Field(() => String)
+  createdAt!: string;
+
+  @Field(() => String)
+  payloadJson!: string;
 }
 
 @InputType()
@@ -544,6 +564,63 @@ export default class UserDataResolver {
     }
 
     return this.buildUserProfilePayload(currentUserId, currentUser.email);
+  }
+
+  @Authorized()
+  @Mutation(() => Boolean)
+  async saveScannerCoachSubmission(
+    @Arg("payloadJson", () => String)
+    payloadJson: string,
+    @Ctx() context: GraphQLContext,
+  ): Promise<boolean> {
+    const currentUser = await getCurrentUser(context);
+
+    let parsedPayload: unknown;
+    try {
+      parsedPayload = JSON.parse(payloadJson);
+    } catch (_e) {
+      return false;
+    }
+
+    if (!parsedPayload || typeof parsedPayload !== "object") {
+      return false;
+    }
+
+    const submission = Scanner_Coach_Submission.create({
+      payload: parsedPayload as Record<string, unknown>,
+    });
+    (submission as unknown as { user: { id: string } }).user = {
+      id: currentUser.id,
+    };
+
+    await submission.save();
+    return true;
+  }
+
+  @Authorized()
+  @Query(() => [CoachScannerSubmissionTestData])
+  async coachScannerSubmissionsTestData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<CoachScannerSubmissionTestData[]> {
+    const currentUser = await getCurrentUser(context);
+    const canSeeAllUsers =
+      currentUser.role === UserRole.Coach ||
+      currentUser.role === UserRole.Admin;
+
+    const submissions = await Scanner_Coach_Submission.find({
+      where: canSeeAllUsers ? undefined : { user: { id: currentUser.id } },
+      relations: ["user"],
+      order: { createdAt: "DESC" },
+    });
+
+    return submissions.map((submission) => ({
+      id: submission.id,
+      userId: submission.user?.id ?? currentUser.id,
+      userEmail: submission.user?.email ?? null,
+      createdAt:
+        submission.createdAt?.toISOString?.() ?? new Date().toISOString(),
+      payloadJson: JSON.stringify(submission.payload ?? {}),
+    }));
   }
 
   @Query(() => DashboardData, { nullable: true })

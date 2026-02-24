@@ -5,6 +5,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UserRole, useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
 
+const USER_MOBILE_NAV_LINKS = [
+  { href: "/dashboard_user", label: "Dashboard" },
+  { href: "/user_meals", label: "Mes Repas" },
+  { href: "/user_recipe", label: "Mes Recettes" },
+  { href: "/evolution_user", label: "Mon Evolution" },
+  { href: "/user_profile", label: "Mon Profile" },
+  { href: "/meals_scanning", label: "IA Assiste" },
+] as const;
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data, loading, refetch } = useProfileQuery({
@@ -145,16 +154,32 @@ export default function Header() {
                     </Link>
                     <span className="text-white text-sm">{user.email}</span>
                   </div>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
-                  >
-                    <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
-                      Dashboard
-                    </Link>
-                  </Button>
+                  {user.role === UserRole.Admin ? (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                    >
+                      <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
+                        Dashboard
+                      </Link>
+                    </Button>
+                  ) : (
+                    USER_MOBILE_NAV_LINKS.map((item) => (
+                      <Button
+                        key={item.href}
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                      >
+                        <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))
+                  )}
                   <Button
                     type="button"
                     onClick={handleLogout}

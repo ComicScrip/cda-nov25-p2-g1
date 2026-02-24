@@ -114,11 +114,9 @@ export default function RecettesUserPage() {
   );
 
   return (
-    <HomeLayout pageTitle="Mes recettes">
+    <HomeLayout pageTitle="Mes recettes" footerVariant="userSlim">
       <UserPageLayout
         activeNav="recipes"
-        maxWidthClassName="max-w-none"
-        frameClassName="bg-white"
         contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8 lg:flex lg:min-h-0 lg:flex-col"
       >
         {loading && (

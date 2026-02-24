@@ -38,10 +38,10 @@ type EvolutionSummary = {
   remainingToGoal?: number | null;
 };
 
-const chartWidth = 560;
-const chartHeight = 230;
+const chartWidth = 760;
+const chartHeight = 170;
 const paddingX = 34;
-const paddingY = 24;
+const paddingY = 20;
 
 export default function EvolutionUserPage() {
   const { data, loading, error } = useQuery<EvolutionQueryData>(USER_EVOLUTION_QUERY, {
@@ -59,8 +59,22 @@ export default function EvolutionUserPage() {
     summary?.totalLoss ?? (hasData ? Number((startWeight - currentWeight).toFixed(1)) : 0);
   const totalLossDisplay =
     totalLoss > 0 ? `-${totalLoss}` : totalLoss < 0 ? `+${Math.abs(totalLoss)}` : "0";
-  const averageScore = summary?.averageScore ?? 0;
-  const averageCalories = summary?.averageCalories ?? 0;
+  const averageScore =
+    summary?.averageScore ??
+    (hasData
+      ? Math.round(
+          evolutionData.reduce((total, point: EvolutionPoint) => total + point.score, 0) /
+            evolutionData.length,
+        )
+      : 72);
+  const averageCalories =
+    summary?.averageCalories ??
+    (hasData
+      ? Math.round(
+          evolutionData.reduce((total, point: EvolutionPoint) => total + point.calories, 0) /
+            evolutionData.length,
+        )
+      : 1850);
   const weeksCount = summary?.weeksCount ?? evolutionData.length;
   const targetWeight = summary?.targetWeight ?? null;
   const remainingToGoal = summary?.remainingToGoal ?? null;
@@ -95,7 +109,7 @@ export default function EvolutionUserPage() {
   });
 
   return (
-    <HomeLayout pageTitle="Mon evolution">
+    <HomeLayout pageTitle="Mon evolution" footerVariant="userSlim">
       <UserPageLayout activeNav="evolution">
         {loading && (
           <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
@@ -143,7 +157,7 @@ export default function EvolutionUserPage() {
             <h2 className="text-sm font-semibold text-[#2c2c2c]">Evolution du poids (kg)</h2>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 w-full">
             <svg
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               role="img"
