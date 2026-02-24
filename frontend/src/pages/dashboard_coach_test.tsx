@@ -54,6 +54,27 @@ type CoachScannerSubmissionsTestQueryData = {
   coachScannerSubmissionsTestData: CoachScannerSubmissionTestRow[];
 };
 
+type CoachUserMealTestRow = {
+  id: string;
+  userId: string;
+  userEmail?: string | null;
+  name: string;
+  consumedAt: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  aiScore: number;
+  photo: string;
+  aiInsights: string[];
+  coachComment: string;
+  coachName: string;
+};
+
+type CoachUserMealsTestQueryData = {
+  coachUserMealsTestData: CoachUserMealTestRow[];
+};
+
 type CoachSubmissionRecord = {
   id: string;
   userId: string;
@@ -71,6 +92,27 @@ const COACH_SCANNER_SUBMISSIONS_TEST_QUERY = gql`
       userEmail
       createdAt
       payloadJson
+    }
+  }
+`;
+
+const COACH_USER_MEALS_TEST_QUERY = gql`
+  query CoachUserMealsTestData {
+    coachUserMealsTestData {
+      id
+      userId
+      userEmail
+      name
+      consumedAt
+      calories
+      protein
+      carbs
+      fat
+      aiScore
+      photo
+      aiInsights
+      coachComment
+      coachName
     }
   }
 `;
@@ -196,12 +238,22 @@ function getSubmissionTitle(payload: CoachSubmissionPayload, submissionId: strin
 }
 
 export default function DashboardCoachTestPage() {
-  const { data, loading, error, refetch } = useQuery<CoachScannerSubmissionsTestQueryData>(
-    COACH_SCANNER_SUBMISSIONS_TEST_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-    },
-  );
+  const {
+    data,
+    loading,
+    error,
+    refetch: refetchScannerSubmissions,
+  } = useQuery<CoachScannerSubmissionsTestQueryData>(COACH_SCANNER_SUBMISSIONS_TEST_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+  const {
+    data: mealsData,
+    loading: mealsLoading,
+    error: mealsError,
+    refetch: refetchCoachMeals,
+  } = useQuery<CoachUserMealsTestQueryData>(COACH_USER_MEALS_TEST_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
   const [localPayload, setLocalPayload] = useState<CoachSubmissionPayload | null>(null);
   const [localSourceLabel, setLocalSourceLabel] = useState<"session" | "fallback" | "error">(
     "fallback",
@@ -209,6 +261,7 @@ export default function DashboardCoachTestPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
+  const [selectedMealHistoryId, setSelectedMealHistoryId] = useState<string | null>(null);
 
   const loadPayload = useCallback(() => {
     if (typeof window === "undefined") {
@@ -280,32 +333,64 @@ export default function DashboardCoachTestPage() {
     };
   }, [localPayload, localSourceLabel]);
 
+  const coachMealRows = useMemo(() => {
+    return (mealsData?.coachUserMealsTestData ?? []).slice().sort((a, b) => {
+      return new Date(b.consumedAt).getTime() - new Date(a.consumedAt).getTime();
+    });
+  }, [mealsData?.coachUserMealsTestData]);
+
   const hasDbRecords = dbRecords.length > 0;
+  const hasMealHistoryRows = coachMealRows.length > 0;
+  const hasAnyDbData = hasDbRecords || hasMealHistoryRows;
 
   const users = useMemo(() => {
-    if (!hasDbRecords) {
+    if (!hasAnyDbData) {
       return [];
     }
 
-    const map = new Map<string, { userId: string; userEmail: string; count: number }>();
+    const map = new Map<
+      string,
+      { userId: string; userEmail: string; scannerCount: number; mealsCount: number }
+    >();
 
     for (const record of dbRecords) {
       const existing = map.get(record.userId);
       const userEmail = record.userEmail?.trim() || `Utilisateur ${record.userId.slice(0, 8)}`;
       if (existing) {
-        existing.count += 1;
+        existing.scannerCount += 1;
       } else {
-        map.set(record.userId, { userId: record.userId, userEmail, count: 1 });
+        map.set(record.userId, {
+          userId: record.userId,
+          userEmail,
+          scannerCount: 1,
+          mealsCount: 0,
+        });
+      }
+    }
+
+    for (const mealRow of coachMealRows) {
+      const existing = map.get(mealRow.userId);
+      const userEmail = mealRow.userEmail?.trim() || `Utilisateur ${mealRow.userId.slice(0, 8)}`;
+      if (existing) {
+        existing.mealsCount += 1;
+      } else {
+        map.set(mealRow.userId, {
+          userId: mealRow.userId,
+          userEmail,
+          scannerCount: 0,
+          mealsCount: 1,
+        });
       }
     }
 
     return Array.from(map.values()).sort((a, b) => a.userEmail.localeCompare(b.userEmail));
-  }, [dbRecords, hasDbRecords]);
+  }, [coachMealRows, dbRecords, hasAnyDbData]);
 
   useEffect(() => {
-    if (!hasDbRecords) {
+    if (!hasAnyDbData) {
       setSelectedUserId(null);
       setSelectedSubmissionId(null);
+      setSelectedMealHistoryId(null);
       return;
     }
 
@@ -316,7 +401,7 @@ export default function DashboardCoachTestPage() {
 
       return users[0]?.userId ?? null;
     });
-  }, [hasDbRecords, users]);
+  }, [hasAnyDbData, users]);
 
   const recordsForSelectedUser = useMemo(() => {
     if (!hasDbRecords || !selectedUserId) {
@@ -325,6 +410,14 @@ export default function DashboardCoachTestPage() {
 
     return dbRecords.filter((record) => record.userId === selectedUserId);
   }, [dbRecords, hasDbRecords, selectedUserId]);
+
+  const mealHistoryForSelectedUser = useMemo(() => {
+    if (!selectedUserId) {
+      return [];
+    }
+
+    return coachMealRows.filter((record) => record.userId === selectedUserId);
+  }, [coachMealRows, selectedUserId]);
 
   useEffect(() => {
     if (!hasDbRecords) {
@@ -339,6 +432,21 @@ export default function DashboardCoachTestPage() {
       return recordsForSelectedUser[0]?.id ?? null;
     });
   }, [hasDbRecords, recordsForSelectedUser]);
+
+  useEffect(() => {
+    if (!hasMealHistoryRows) {
+      setSelectedMealHistoryId(null);
+      return;
+    }
+
+    setSelectedMealHistoryId((current) => {
+      if (current && mealHistoryForSelectedUser.some((meal) => meal.id === current)) {
+        return current;
+      }
+
+      return mealHistoryForSelectedUser[0]?.id ?? null;
+    });
+  }, [hasMealHistoryRows, mealHistoryForSelectedUser]);
 
   const selectedRecord = useMemo(() => {
     if (hasDbRecords) {
@@ -358,6 +466,13 @@ export default function DashboardCoachTestPage() {
     [payload],
   );
   const sourceLabel = selectedRecord?.source ?? localSourceLabel;
+  const selectedMealHistory = useMemo(() => {
+    return (
+      mealHistoryForSelectedUser.find((meal) => meal.id === selectedMealHistoryId) ??
+      mealHistoryForSelectedUser[0] ??
+      null
+    );
+  }, [mealHistoryForSelectedUser, selectedMealHistoryId]);
 
   const analysis = payload?.analysis;
   const details = payload?.details;
@@ -401,11 +516,12 @@ export default function DashboardCoachTestPage() {
                   type="button"
                   onClick={() => {
                     loadPayload();
-                    void refetch();
+                    void refetchScannerSubmissions();
+                    void refetchCoachMeals();
                   }}
                   className="rounded-md bg-[#2f5f8f] px-3 py-2 text-xs font-semibold text-white"
                 >
-                  {loading ? "Chargement..." : "Rafraîchir"}
+                  {loading || mealsLoading ? "Chargement..." : "Rafraîchir"}
                 </button>
               </div>
             </div>
@@ -413,6 +529,12 @@ export default function DashboardCoachTestPage() {
             {error && (
               <div className="mt-3 rounded-md border border-[#efc9c9] bg-[#fff3f3] px-3 py-2 text-xs text-[#8d3333]">
                 Impossible de charger les soumissions depuis la base. Affichage local/fallback.
+              </div>
+            )}
+            {mealsError && (
+              <div className="mt-3 rounded-md border border-[#efc9c9] bg-[#fff3f3] px-3 py-2 text-xs text-[#8d3333]">
+                Impossible de charger les repas existants (DB). La section des repas historiques
+                peut être incomplète.
               </div>
             )}
 
@@ -423,13 +545,13 @@ export default function DashboardCoachTestPage() {
             )}
 
             <div className="mt-5 grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-              <aside className="space-y-4">
-                {hasDbRecords && (
+              <aside className="flex flex-col gap-4">
+                {hasAnyDbData && (
                   <>
-                    <section className="rounded-lg border border-[#d5dcf0] bg-[#f6f8ff] p-4">
+                    <section className="order-1 rounded-lg border border-[#d5dcf0] bg-[#f6f8ff] p-4">
                       <h2 className="text-sm font-semibold text-[#334273]">Utilisateurs</h2>
                       <p className="mt-1 text-[11px] text-[#5f6d97]">
-                        {users.length} utilisateur{users.length > 1 ? "s" : ""} avec soumissions.
+                        {users.length} utilisateur{users.length > 1 ? "s" : ""} avec données coach.
                       </p>
                       <div className="mt-3 space-y-2">
                         {users.map((user) => {
@@ -447,7 +569,12 @@ export default function DashboardCoachTestPage() {
                             >
                               <div className="font-semibold">{user.userEmail}</div>
                               <div className="mt-0.5 text-[11px]">
-                                {user.count} repas enregistré{user.count > 1 ? "s" : ""}
+                                {user.scannerCount} soumission
+                                {user.scannerCount > 1 ? "s" : ""} scanner
+                              </div>
+                              <div className="mt-0.5 text-[11px]">
+                                {user.mealsCount} repas DB
+                                {user.mealsCount > 1 ? "s" : ""}
                               </div>
                             </button>
                           );
@@ -455,7 +582,7 @@ export default function DashboardCoachTestPage() {
                       </div>
                     </section>
 
-                    <section className="rounded-lg border border-[#d5dcf0] bg-[#fbfcff] p-4">
+                    <section className="order-3 rounded-lg border border-[#d5dcf0] bg-[#fbfcff] p-4">
                       <h2 className="text-sm font-semibold text-[#334273]">Repas / soumissions</h2>
                       <p className="mt-1 text-[11px] text-[#5f6d97]">
                         Sélectionne un repas pour afficher le détail envoyé au coach.
@@ -492,10 +619,48 @@ export default function DashboardCoachTestPage() {
                         )}
                       </div>
                     </section>
+
+                    <section className="order-6 rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
+                      <h2 className="text-sm font-semibold text-[#2c5c38]">
+                        Repas existants en DB (ex: reset-Db-Jane)
+                      </h2>
+                      <p className="mt-1 text-[11px] text-[#5d7b63]">
+                        Repas déjà présents dans les tables `meal` / `dish` /
+                        `nutritional_analysis`.
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {mealHistoryForSelectedUser.map((meal) => {
+                          const isActive = meal.id === selectedMealHistoryId;
+                          return (
+                            <button
+                              key={meal.id}
+                              type="button"
+                              onClick={() => setSelectedMealHistoryId(meal.id)}
+                              className={`w-full rounded-md border px-3 py-2 text-left text-xs ${
+                                isActive
+                                  ? "border-[#6cb07a] bg-[#ebf9ee] text-[#23492c]"
+                                  : "border-[#d5ead8] bg-white text-[#35523b]"
+                              }`}
+                            >
+                              <div className="font-semibold">{meal.name}</div>
+                              <div className="mt-0.5 text-[11px]">
+                                {formatDate(meal.consumedAt)} • {meal.calories} kcal • score{" "}
+                                {meal.aiScore}/100
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {mealHistoryForSelectedUser.length === 0 && (
+                          <p className="text-xs text-[#627162]">
+                            Aucun repas historique pour cet utilisateur.
+                          </p>
+                        )}
+                      </div>
+                    </section>
                   </>
                 )}
 
-                <section className="rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
+                <section className="order-2 rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
                   <h2 className="text-sm font-semibold text-[#2d412d]">Scan enregistré</h2>
                   <div className="mt-2 space-y-1 text-xs text-[#495849]">
                     <p>
@@ -528,7 +693,7 @@ export default function DashboardCoachTestPage() {
                   )}
                 </section>
 
-                <section className="rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
+                <section className="order-4 rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
                   <h2 className="text-sm font-semibold text-[#2d412d]">
                     Informations facultatives
                   </h2>
@@ -556,7 +721,7 @@ export default function DashboardCoachTestPage() {
                   </div>
                 </section>
 
-                <section className="rounded-lg border border-[#eddab6] bg-[#fff8ea] p-4">
+                <section className="order-5 rounded-lg border border-[#eddab6] bg-[#fff8ea] p-4">
                   <h2 className="text-sm font-semibold text-[#7a5a18]">
                     Réponses utilisateur au coach
                   </h2>
@@ -699,6 +864,98 @@ export default function DashboardCoachTestPage() {
                     </ul>
                   ) : (
                     <p className="mt-2 text-xs text-[#657365]">Aucune question de suivi.</p>
+                  )}
+                </section>
+
+                <section className="rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
+                  <h2 className="text-sm font-semibold text-[#2c5c38]">
+                    Détail repas DB sélectionné (historique existant)
+                  </h2>
+                  {selectedMealHistory ? (
+                    <div className="mt-3 space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
+                        <div className="overflow-hidden rounded-md border border-[#d5ead8] bg-white">
+                          <Image
+                            src={selectedMealHistory.photo}
+                            alt={selectedMealHistory.name}
+                            width={800}
+                            height={600}
+                            unoptimized
+                            loader={({ src }) => src}
+                            className="h-32 w-full object-cover"
+                          />
+                        </div>
+                        <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-[#2d2d2d]">
+                          <p>
+                            <span className="font-medium">Utilisateur:</span>{" "}
+                            {selectedMealHistory.userEmail || selectedMealHistory.userId}
+                          </p>
+                          <p>
+                            <span className="font-medium">Repas:</span> {selectedMealHistory.name}
+                          </p>
+                          <p>
+                            <span className="font-medium">Date:</span>{" "}
+                            {formatDate(selectedMealHistory.consumedAt)}
+                          </p>
+                          <p>
+                            <span className="font-medium">Coach:</span>{" "}
+                            {selectedMealHistory.coachName}
+                          </p>
+                          <p className="mt-1">
+                            <span className="font-medium">Commentaire coach:</span>{" "}
+                            {selectedMealHistory.coachComment}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-5">
+                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
+                          <p className="text-[11px] text-[#516451]">Calories</p>
+                          <p className="font-semibold text-[#243124]">
+                            {selectedMealHistory.calories} kcal
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
+                          <p className="text-[11px] text-[#516451]">Protéines</p>
+                          <p className="font-semibold text-[#243124]">
+                            {selectedMealHistory.protein} g
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
+                          <p className="text-[11px] text-[#516451]">Glucides</p>
+                          <p className="font-semibold text-[#243124]">
+                            {selectedMealHistory.carbs} g
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
+                          <p className="text-[11px] text-[#516451]">Lipides</p>
+                          <p className="font-semibold text-[#243124]">
+                            {selectedMealHistory.fat} g
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
+                          <p className="text-[11px] text-[#516451]">Score IA</p>
+                          <p className="font-semibold text-[#243124]">
+                            {selectedMealHistory.aiScore}/100
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-[#d5ead8] bg-white p-3">
+                        <p className="text-[11px] font-semibold text-[#3f6448]">
+                          Insights IA (historique)
+                        </p>
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#2d2d2d]">
+                          {selectedMealHistory.aiInsights.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-[#627162]">
+                      Aucun repas DB sélectionné pour cet utilisateur.
+                    </p>
                   )}
                 </section>
 

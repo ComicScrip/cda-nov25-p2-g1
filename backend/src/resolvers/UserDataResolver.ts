@@ -248,6 +248,51 @@ class CoachScannerSubmissionTestData {
   payloadJson!: string;
 }
 
+@ObjectType()
+class CoachUserMealTestData {
+  @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
+  userId!: string;
+
+  @Field(() => String, { nullable: true })
+  userEmail?: string | null;
+
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => String)
+  consumedAt!: string;
+
+  @Field(() => Int)
+  calories!: number;
+
+  @Field(() => Int)
+  protein!: number;
+
+  @Field(() => Int)
+  carbs!: number;
+
+  @Field(() => Int)
+  fat!: number;
+
+  @Field(() => Int)
+  aiScore!: number;
+
+  @Field(() => String)
+  photo!: string;
+
+  @Field(() => [String])
+  aiInsights!: string[];
+
+  @Field(() => String)
+  coachComment!: string;
+
+  @Field(() => String)
+  coachName!: string;
+}
+
 @InputType()
 class UserProfileUpdateInput {
   @Field(() => String)
@@ -621,6 +666,72 @@ export default class UserDataResolver {
         submission.createdAt?.toISOString?.() ?? new Date().toISOString(),
       payloadJson: JSON.stringify(submission.payload ?? {}),
     }));
+  }
+
+  @Authorized()
+  @Query(() => [CoachUserMealTestData])
+  async coachUserMealsTestData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<CoachUserMealTestData[]> {
+    const currentUser = await getCurrentUser(context);
+    const canSeeAllUsers =
+      currentUser.role === UserRole.Coach ||
+      currentUser.role === UserRole.Admin;
+
+    const meals = await Meal.find({
+      where: canSeeAllUsers ? undefined : { user: { id: currentUser.id } },
+      relations: ["user", "dishes", "dishes.analysis"],
+      order: { consumedAt: "DESC" },
+    });
+
+    const fallbackPhoto = "/MyDietChef_image.webp";
+
+    return meals
+      .flatMap((meal) =>
+        (meal.dishes ?? []).map((dish, index) => {
+          const analysis = dish.analysis;
+          const consumedAt =
+            safeDate(meal.consumedAt) ??
+            safeDate(dish.uploadedAt) ??
+            new Date();
+          const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
+          const aiInsights = (analysis?.warnings ?? "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+          const fallbackName = `Repas ${index + 1}`;
+          const name =
+            meal.name?.trim() ||
+            formatMealTypeLabel(meal.mealType) ||
+            fallbackName;
+
+          return {
+            id: dish.id,
+            userId: meal.user?.id ?? currentUser.id,
+            userEmail: meal.user?.email ?? null,
+            name,
+            consumedAt: consumedAt.toISOString(),
+            calories: Math.round(analysis?.calories ?? 0),
+            protein: Math.round(analysis?.proteins ?? 0),
+            carbs: Math.round(analysis?.carbohydrates ?? 0),
+            fat: Math.round(analysis?.lipids ?? 0),
+            aiScore: Math.round(analysis?.mealHealthScore ?? 0),
+            photo: dish.photoUrl?.trim() || fallbackPhoto,
+            aiInsights:
+              aiInsights.length > 0
+                ? aiInsights
+                : ["Aucune indication IA disponible pour ce repas."],
+            coachComment:
+              coachSuggestion.coachComment?.trim() ||
+              "Continue sur cette dynamique pour garder des repas equilibres.",
+            coachName: coachSuggestion.coachName?.trim() || "Coach",
+          };
+        }),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.consumedAt).getTime() - new Date(a.consumedAt).getTime(),
+      );
   }
 
   @Query(() => DashboardData, { nullable: true })
