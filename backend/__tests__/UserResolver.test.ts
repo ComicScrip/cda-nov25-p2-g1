@@ -5,10 +5,12 @@ import { User } from "../src/entities/User";
 describe("Tags Resolver", () => {
   it("should read user from DB", async () => {
     await User.create({
+      id: "578db86e-c0a4-41c8-9eba-4095bffb5b83",
       email: "Test@mail.com",
       hashedPassword: "Test587412%",
     }).save();
     await User.create({
+      id: "13e35f29-dd03-4be9-86f4-132b1454d67f",
       email: "Testfinal@mail.com",
       hashedPassword: "Test587412%",
     }).save();
