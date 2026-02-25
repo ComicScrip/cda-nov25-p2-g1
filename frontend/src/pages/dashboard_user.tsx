@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const meals: DashboardMeal[] = dashboard?.recentMeals ?? [];
 
   return (
-    <HomeLayout pageTitle="Dashboard">
+    <HomeLayout pageTitle="Dashboard" footerVariant="userSlim">
       <UserPageLayout activeNav="dashboard">
         {loading && (
           <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">

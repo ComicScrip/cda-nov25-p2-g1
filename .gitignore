@@ -1,1 +1,4 @@
 .env.production
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
