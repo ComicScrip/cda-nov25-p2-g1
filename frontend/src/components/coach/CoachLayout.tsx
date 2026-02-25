@@ -142,16 +142,10 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
 
         {/* Overlay for mobile */}
         {isMenuOpen && (
-          <div
+          <button
+            type="button"
             className="fixed inset-0 bg-black/50 z-10 md:hidden"
             onClick={() => setIsMenuOpen(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                setIsMenuOpen(false);
-              }
-            }}
-            role="button"
-            tabIndex={0}
             aria-label="Close menu"
           />
         )}
