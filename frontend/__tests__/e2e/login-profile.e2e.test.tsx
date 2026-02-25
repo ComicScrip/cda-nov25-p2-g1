@@ -15,7 +15,7 @@ const mockUseQuery = jest.fn();
 const mockUseMutation = jest.fn();
 
 jest.mock("next/router", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, query: {} }),
 }));
 
 jest.mock("next/link", () => ({
