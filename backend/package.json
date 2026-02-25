@@ -12,7 +12,7 @@
     "lint": "biome check",
     "format": "biome format --write && biome check --write",
     "testDB": "docker compose -f docker-compose.integration-tests.yml up testDB --wait",
-    "test": "jest --runInBand",
+    "test": "jest",
     "test:watch": "jest --watch"
   },
   "repository": {
