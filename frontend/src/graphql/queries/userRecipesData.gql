@@ -1,0 +1,20 @@
+query UserRecipesData {
+  userRecipesData {
+    id
+    title
+    source
+    photo
+    prepTime
+    servings
+    difficulty
+    calories
+    protein
+    carbs
+    fat
+    fiber
+    description
+    prepSteps
+    benefits
+    coachNote
+  }
+}

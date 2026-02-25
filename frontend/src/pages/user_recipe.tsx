@@ -1,9 +1,8 @@
-import { gql } from "@apollo/client/core";
-import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
+import { useUserRecipesDataQuery } from "@/graphql/generated/schema";
 
 type RecipeSource = "favori" | "coach";
 
@@ -26,33 +25,6 @@ type RecipeEntry = {
   coachNote: string;
 };
 
-type RecipesQueryData = {
-  userRecipesData: RecipeEntry[];
-};
-
-const USER_RECIPES_QUERY = gql`
-  query UserRecipesData {
-    userRecipesData {
-      id
-      title
-      source
-      photo
-      prepTime
-      servings
-      difficulty
-      calories
-      protein
-      carbs
-      fat
-      fiber
-      description
-      prepSteps
-      benefits
-      coachNote
-    }
-  }
-`;
-
 const sourceLabel: Record<RecipeSource, string> = {
   favori: "Favori",
   coach: "Conseillee par le coach",
@@ -65,7 +37,7 @@ const sourceBadgeStyles: Record<RecipeSource, string> = {
 
 export default function RecettesUserPage() {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-  const { data, loading, error, observable } = useQuery<RecipesQueryData>(USER_RECIPES_QUERY, {
+  const { data, loading, error, observable } = useUserRecipesDataQuery({
     fetchPolicy: "cache-and-network",
   });
 
@@ -99,7 +71,7 @@ export default function RecettesUserPage() {
     };
   }, [handleRecipesLoaded, observable]);
 
-  const recipes = data?.userRecipesData ?? [];
+  const recipes = (data?.userRecipesData ?? []) as RecipeEntry[];
 
   const selectedRecipe = useMemo(
     () => recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null,

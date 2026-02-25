@@ -1,48 +1,9 @@
-import { gql } from "@apollo/client/core";
-import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
-
-type MealHistoryEntry = {
-  id: string;
-  name: string;
-  consumedAt: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  aiScore: number;
-  photo: string;
-  aiInsights: string[];
-  coachComment: string;
-  coachName: string;
-};
-
-type MealsQueryData = {
-  userMealsData: MealHistoryEntry[];
-};
-
-const USER_MEALS_QUERY = gql`
-  query UserMealsData {
-    userMealsData {
-      id
-      name
-      consumedAt
-      calories
-      protein
-      carbs
-      fat
-      aiScore
-      photo
-      aiInsights
-      coachComment
-      coachName
-    }
-  }
-`;
+import { useUserMealsDataQuery } from "@/graphql/generated/schema";
 
 const getFirstQueryValue = (value: string | string[] | undefined): string | undefined => {
   return Array.isArray(value) ? value[0] : value;
@@ -87,7 +48,7 @@ export default function RepasUtilisateurPage() {
   const router = useRouter();
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
 
-  const { data, loading, error } = useQuery<MealsQueryData>(USER_MEALS_QUERY, {
+  const { data, loading, error } = useUserMealsDataQuery({
     fetchPolicy: "cache-and-network",
   });
 

@@ -1,74 +1,14 @@
-import { gql } from "@apollo/client/core";
-import { useMutation, useQuery } from "@apollo/client/react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
+import {
+  useUpdateUserProfileDataMutation,
+  useUserProfileDataQuery,
+} from "@/graphql/generated/schema";
 
 dayjs.extend(customParseFormat);
-
-const USER_PROFILE_QUERY = gql`
-  query UserProfileData {
-    userProfileData {
-      firstName
-      lastName
-      dateOfBirth
-      gender
-      height
-      currentWeight
-      goal
-      medicalTags
-    }
-  }
-`;
-
-const UPDATE_USER_PROFILE_MUTATION = gql`
-  mutation UpdateUserProfileData($data: UserProfileUpdateInput!) {
-    updateUserProfileData(data: $data) {
-      firstName
-      lastName
-      dateOfBirth
-      gender
-      height
-      currentWeight
-      goal
-      medicalTags
-    }
-  }
-`;
-
-type UserProfilePayload = {
-  firstName: string;
-  lastName: string;
-  dateOfBirth?: string | null;
-  gender?: string | null;
-  height?: number | null;
-  currentWeight?: number | null;
-  goal?: string | null;
-  medicalTags: string[];
-};
-
-type UserProfileQueryData = {
-  userProfileData: UserProfilePayload | null;
-};
-
-type UpdateUserProfileMutationData = {
-  updateUserProfileData: UserProfilePayload | null;
-};
-
-type UpdateUserProfileMutationVariables = {
-  data: {
-    firstName: string;
-    lastName: string;
-    dateOfBirth?: string;
-    gender?: string;
-    height?: number;
-    currentWeight?: number;
-    goal?: string;
-    medicalTags: string[];
-  };
-};
 
 type UserProfileDraft = {
   firstName?: string;
@@ -126,16 +66,14 @@ function normalizeGender(gender?: string | null): "homme" | "femme" {
 }
 
 export default function UserProfilePage() {
-  const { data, loading, error } = useQuery<UserProfileQueryData>(USER_PROFILE_QUERY, {
+  const { data, loading, error } = useUserProfileDataQuery({
     fetchPolicy: "cache-and-network",
   });
 
-  const [updateProfile, { loading: isSaving, error: saveError }] = useMutation<
-    UpdateUserProfileMutationData,
-    UpdateUserProfileMutationVariables
-  >(UPDATE_USER_PROFILE_MUTATION);
+  const [updateProfile, { loading: isSaving, error: saveError }] =
+    useUpdateUserProfileDataMutation();
 
-  const profile = data?.userProfileData;
+  const profile = data?.userProfileData ?? null;
   const parsedBirthDate = parseDate(profile?.dateOfBirth);
   const [draft, setDraft] = useState<UserProfileDraft>({});
   const [medicalInfoInput, setMedicalInfoInput] = useState("");

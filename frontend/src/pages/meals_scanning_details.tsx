@@ -1,10 +1,13 @@
-import { gql } from "@apollo/client/core";
-import { useMutation, useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
+import {
+  type UserProfilePromptDataQuery,
+  useSaveScannerCoachSubmissionMutation,
+  useUserProfilePromptDataQuery,
+} from "@/graphql/generated/schema";
 import {
   type ImageSource,
   SCANNER_ANALYSIS_REQUEST_KEY,
@@ -56,43 +59,7 @@ type ScannerMockAnalysisResponse = {
 type NutritionMetricKey = keyof ScannerMockAnalysisResponse["nutrition_estimee"];
 type EditableListSection = "plats_probables" | "ingredients_visibles";
 
-type UserProfilePromptPayload = {
-  dateOfBirth?: string | null;
-  gender?: string | null;
-  height?: number | null;
-  currentWeight?: number | null;
-  medicalTags?: string[] | null;
-};
-
-type UserProfilePromptQueryData = {
-  userProfileData: UserProfilePromptPayload | null;
-};
-
-type SaveScannerCoachSubmissionMutationData = {
-  saveScannerCoachSubmission: boolean;
-};
-
-type SaveScannerCoachSubmissionMutationVariables = {
-  payloadJson: string;
-};
-
-const USER_PROFILE_PROMPT_QUERY = gql`
-  query UserProfilePromptData {
-    userProfileData {
-      dateOfBirth
-      gender
-      height
-      currentWeight
-      medicalTags
-    }
-  }
-`;
-
-const SAVE_SCANNER_COACH_SUBMISSION_MUTATION = gql`
-  mutation SaveScannerCoachSubmission($payloadJson: String!) {
-    saveScannerCoachSubmission(payloadJson: $payloadJson)
-  }
-`;
+type UserProfilePromptPayload = UserProfilePromptDataQuery["userProfileData"];
 
 const NUTRITION_METRICS: Array<{ key: NutritionMetricKey; label: string; unit: string }> = [
   { key: "calories_kcal", label: "Calories", unit: "kcal" },
@@ -410,16 +377,11 @@ Contraintes:
 };
 
 export default function ScannerRepasDetailsPage() {
-  const { data: userProfilePromptData } = useQuery<UserProfilePromptQueryData>(
-    USER_PROFILE_PROMPT_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-    },
-  );
-  const [saveScannerCoachSubmission, { loading: isSavingCoachSubmission }] = useMutation<
-    SaveScannerCoachSubmissionMutationData,
-    SaveScannerCoachSubmissionMutationVariables
-  >(SAVE_SCANNER_COACH_SUBMISSION_MUTATION);
+  const { data: userProfilePromptData } = useUserProfilePromptDataQuery({
+    fetchPolicy: "cache-and-network",
+  });
+  const [saveScannerCoachSubmission, { loading: isSavingCoachSubmission }] =
+    useSaveScannerCoachSubmissionMutation();
   const [draft, setDraft] = useState<ScannerMealDraft | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [details, setDetails] = useState<ScannerMealDetails>(DEFAULT_DETAILS);

@@ -1,42 +1,8 @@
-import { gql } from "@apollo/client/core";
-import { useQuery } from "@apollo/client/react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
+import { type UserEvolutionDataQuery, useUserEvolutionDataQuery } from "@/graphql/generated/schema";
 
-const USER_EVOLUTION_QUERY = gql`
-  query UserEvolutionData {
-    userEvolutionData {
-      week
-      weight
-      calories
-      score
-    }
-  }
-`;
-
-type EvolutionPoint = {
-  week: string;
-  weight: number;
-  calories: number;
-  score: number;
-};
-
-type EvolutionQueryData = {
-  userEvolutionData: EvolutionPoint[];
-  userEvolutionSummaryData?: EvolutionSummary | null;
-};
-
-type EvolutionSummary = {
-  startWeight: number;
-  currentWeight: number;
-  totalLoss: number;
-  averageScore: number;
-  averageCalories: number;
-  weeksCount: number;
-  targetWeight?: number | null;
-  targetProgress?: number | null;
-  remainingToGoal?: number | null;
-};
+type EvolutionPoint = UserEvolutionDataQuery["userEvolutionData"][number];
 
 const chartWidth = 760;
 const chartHeight = 170;
@@ -44,40 +10,34 @@ const paddingX = 34;
 const paddingY = 20;
 
 export default function EvolutionUserPage() {
-  const { data, loading, error } = useQuery<EvolutionQueryData>(USER_EVOLUTION_QUERY, {
+  const { data, loading, error } = useUserEvolutionDataQuery({
     fetchPolicy: "cache-and-network",
   });
 
   const evolutionData = data?.userEvolutionData ?? [];
   const hasData = evolutionData.length > 0;
-  const summary = data?.userEvolutionSummaryData;
   const firstPoint = evolutionData[0];
   const lastPoint = evolutionData[evolutionData.length - 1];
-  const startWeight = summary?.startWeight ?? firstPoint?.weight ?? 0;
-  const currentWeight = summary?.currentWeight ?? lastPoint?.weight ?? 0;
-  const totalLoss =
-    summary?.totalLoss ?? (hasData ? Number((startWeight - currentWeight).toFixed(1)) : 0);
+  const startWeight = firstPoint?.weight ?? 0;
+  const currentWeight = lastPoint?.weight ?? 0;
+  const totalLoss = hasData ? Number((startWeight - currentWeight).toFixed(1)) : 0;
   const totalLossDisplay =
     totalLoss > 0 ? `-${totalLoss}` : totalLoss < 0 ? `+${Math.abs(totalLoss)}` : "0";
-  const averageScore =
-    summary?.averageScore ??
-    (hasData
-      ? Math.round(
-          evolutionData.reduce((total, point: EvolutionPoint) => total + point.score, 0) /
-            evolutionData.length,
-        )
-      : 72);
-  const averageCalories =
-    summary?.averageCalories ??
-    (hasData
-      ? Math.round(
-          evolutionData.reduce((total, point: EvolutionPoint) => total + point.calories, 0) /
-            evolutionData.length,
-        )
-      : 1850);
-  const weeksCount = summary?.weeksCount ?? evolutionData.length;
-  const targetWeight = summary?.targetWeight ?? null;
-  const remainingToGoal = summary?.remainingToGoal ?? null;
+  const averageScore = hasData
+    ? Math.round(
+        evolutionData.reduce((total, point: EvolutionPoint) => total + point.score, 0) /
+          evolutionData.length,
+      )
+    : 72;
+  const averageCalories = hasData
+    ? Math.round(
+        evolutionData.reduce((total, point: EvolutionPoint) => total + point.calories, 0) /
+          evolutionData.length,
+      )
+    : 1850;
+  const weeksCount = evolutionData.length;
+  const targetWeight = null;
+  const remainingToGoal = null;
 
   const weights = hasData ? evolutionData.map((point: EvolutionPoint) => point.weight) : [0, 1];
   const minWeight = Math.min(...weights) - 0.4;
