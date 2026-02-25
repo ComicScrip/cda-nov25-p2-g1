@@ -7,8 +7,8 @@ export default load({
   NODE_ENV: ["development" as const, "production" as const, "test" as const],
   DB_HOST: String,
   DB_PORT: Number,
-  TEST_DB_PORT: Number,
   DB_USER: String,
   DB_PASS: String,
   DB_NAME: String,
+  TEST_DB_PORT: Number
 });
