@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write && biome check --write",
-    "codegen": "graphql-codegen --require dotenv/config --config codegen.ts --watch",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "codegen": "graphql-codegen --require dotenv/config --config codegen.ts --watch"
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",

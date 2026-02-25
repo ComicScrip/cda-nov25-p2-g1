@@ -1,0 +1,12 @@
+TOUCHER
+backend(script) frontend(command npm)
+.env, env.ts, db/index.ts, package.json
+clear.ts, jest.config.ts
+
+AJOUTER
+jest.setup.ts
+
+ACTUELMENT
+UserResolver.test.ts
+
+ajout  docker-compose.integration-tests.yml, jest.setup.ts
