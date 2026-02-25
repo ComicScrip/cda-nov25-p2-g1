@@ -10,9 +10,9 @@ import {
 } from "type-graphql";
 import { getCurrentUser } from "../auth";
 import { Dish } from "../entities/Dish";
+import { Status, UserRole } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Recipe } from "../entities/Recipe";
-import { Status, UserRole } from "../entities/enums";
 import { User } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import type { GraphQLContext } from "../types";
@@ -113,10 +113,7 @@ function calculateEvolution(current: number, previous: number): string {
 /**
  * Helper function to get user display name from profile or email
  */
-function getUserDisplayName(
-  user: User,
-  profile: User_profile | null,
-): string {
+function getUserDisplayName(user: User, profile: User_profile | null): string {
   if (profile?.first_name && profile?.last_name) {
     return `${profile.first_name} ${profile.last_name}`.trim();
   }
@@ -189,8 +186,7 @@ export default class CoachDashboardResolver {
 
     // Get dishes scanned in last 30 days and previous 30 days
     const recentDishes = dishesWithAnalysis.filter(
-      (dish) =>
-        dish.uploadedAt && new Date(dish.uploadedAt) >= thirtyDaysAgo,
+      (dish) => dish.uploadedAt && new Date(dish.uploadedAt) >= thirtyDaysAgo,
     );
     const previousDishes = dishesWithAnalysis.filter(
       (dish) =>
@@ -254,10 +250,7 @@ export default class CoachDashboardResolver {
       },
       averageScore: {
         count: Math.round(currentAverageScore),
-        evolution: calculateEvolution(
-          recentAverageScore,
-          previousAverageScore,
-        ),
+        evolution: calculateEvolution(recentAverageScore, previousAverageScore),
       },
     };
 

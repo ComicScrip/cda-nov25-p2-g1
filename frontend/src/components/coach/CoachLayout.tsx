@@ -1,14 +1,14 @@
+import { Menu, X } from "lucide-react";
 import Head from "next/head";
-import type { ReactNode } from "react";
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Menu, X } from "lucide-react";
+import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
 import Footer from "../Footer";
 
 interface CoachLayoutProps {
@@ -110,11 +110,7 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
             className="md:hidden text-white hover:bg-gray-700"
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </nav>
       </header>
@@ -141,9 +137,7 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
                   >
                     {item.label}
                   </Link>
-                  {index < menuItems.length - 1 && (
-                    <Separator className="my-2.5 bg-gray-600/50" />
-                  )}
+                  {index < menuItems.length - 1 && <Separator className="my-2.5 bg-gray-600/50" />}
                 </div>
               ))}
             </nav>
@@ -159,9 +153,7 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">{children}</main>
       </div>
 
       {/* Footer */}

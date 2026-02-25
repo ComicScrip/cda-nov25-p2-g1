@@ -1,9 +1,9 @@
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
-import CoachLayout from "@/components/coach/CoachLayout";
 import CoachDashboard from "@/components/coach/CoachDashboard";
-import { Loader2 } from "lucide-react";
+import CoachLayout from "@/components/coach/CoachLayout";
+import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function CoachDashboardPage() {
   const router = useRouter();
@@ -16,10 +16,7 @@ export default function CoachDashboardPage() {
     if (!loading) {
       if (!data?.me) {
         router.push("/login");
-      } else if (
-        data.me.role !== UserRole.Coach &&
-        data.me.role !== UserRole.Admin
-      ) {
+      } else if (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin) {
         // Redirect to appropriate dashboard based on role
         if (data.me.role === UserRole.Coachee) {
           router.push("/dashboard_user");
@@ -42,10 +39,7 @@ export default function CoachDashboardPage() {
   }
 
   // Don't render if user is not a coach or admin (redirect in progress)
-  if (
-    !data?.me ||
-    (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)
-  ) {
+  if (!data?.me || (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)) {
     return null;
   }
 

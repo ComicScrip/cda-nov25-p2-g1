@@ -10,7 +10,7 @@ export async function seedUsers() {
     role: UserRole.Coachee,
   }).save();
 
-    const coach = await User.create({
+  const coach = await User.create({
     email: "coach@app.com",
     hashedPassword: await hash("SuperP@ssW0rd!"),
     role: UserRole.Coach,

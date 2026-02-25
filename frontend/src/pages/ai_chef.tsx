@@ -1,10 +1,10 @@
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
+import CoachLayout from "@/components/coach/CoachLayout";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
-import CoachLayout from "@/components/coach/CoachLayout";
-import { Loader2 } from "lucide-react";
+import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function AiChefPage() {
   const router = useRouter();
@@ -35,17 +35,14 @@ export default function AiChefPage() {
     return null;
   }
 
-  const isCoachOrAdmin =
-    data.me.role === UserRole.Coach || data.me.role === UserRole.Admin;
+  const isCoachOrAdmin = data.me.role === UserRole.Coach || data.me.role === UserRole.Admin;
   const isCoachee = data.me.role === UserRole.Coachee;
 
   // Content component to avoid duplication
   const content = (
     <div className="bg-light-bg py-6 md:py-8 px-4 md:px-6 flex-1">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900">
-          AI Chef
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900">AI Chef</h1>
         <p className="text-gray-600">Coming soon...</p>
       </div>
     </div>
@@ -53,11 +50,7 @@ export default function AiChefPage() {
 
   // Render with CoachLayout for coaches/admins
   if (isCoachOrAdmin) {
-    return (
-      <CoachLayout pageTitle="Chef IA">
-        {content}
-      </CoachLayout>
-    );
+    return <CoachLayout pageTitle="Chef IA">{content}</CoachLayout>;
   }
 
   // Render with HomeLayout + UserPageLayout for coachees
@@ -67,9 +60,7 @@ export default function AiChefPage() {
         <UserPageLayout activeNav="dashboard">
           <div className="max-w-4xl text-[#2c2c2c]">
             <h1 className="text-lg font-semibold">AI Chef</h1>
-            <p className="mt-1 text-xs text-[#555]">
-              Coming soon...
-            </p>
+            <p className="mt-1 text-xs text-[#555]">Coming soon...</p>
           </div>
         </UserPageLayout>
       </HomeLayout>
@@ -77,9 +68,5 @@ export default function AiChefPage() {
   }
 
   // Fallback for other roles
-  return (
-    <HomeLayout pageTitle="AI Chef">
-      {content}
-    </HomeLayout>
-  );
+  return <HomeLayout pageTitle="AI Chef">{content}</HomeLayout>;
 }
