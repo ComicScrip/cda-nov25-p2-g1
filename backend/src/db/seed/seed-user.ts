@@ -34,7 +34,7 @@ export async function seedUsers() {
     role: UserRole.Admin,
   }).save();
 
-  users.push(dave, jane, admin, janette);
+  users.push(dave, jane, admin, janette, coach);
 
   return users;
 }

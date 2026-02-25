@@ -19,7 +19,7 @@ interface CoachLayoutProps {
 export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-  const { data, loading } = useProfileQuery({
+  const { data } = useProfileQuery({
     fetchPolicy: "cache-and-network",
   });
   const user = data?.me;
@@ -37,10 +37,6 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
   const getUserName = (email: string) => {
     const name = email.split("@")[0];
     return name.charAt(0).toUpperCase() + name.slice(1);
-  };
-
-  const getUserInitial = (email: string) => {
-    return email.charAt(0).toUpperCase();
   };
 
   const menuItems = [
@@ -149,6 +145,14 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
           <div
             className="fixed inset-0 bg-black/50 z-10 md:hidden"
             onClick={() => setIsMenuOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsMenuOpen(false);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close menu"
           />
         )}
 

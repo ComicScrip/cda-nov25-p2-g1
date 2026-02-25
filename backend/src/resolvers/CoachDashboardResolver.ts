@@ -9,7 +9,6 @@ import {
   Resolver,
 } from "type-graphql";
 import { getCurrentUser } from "../auth";
-import { Dish } from "../entities/Dish";
 import { Status, UserRole } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Recipe } from "../entities/Recipe";
@@ -67,6 +66,9 @@ class RecentUserData {
  */
 @ObjectType()
 class RecentRecipeData {
+  @Field(() => String)
+  id!: string;
+
   @Field(() => String)
   name!: string;
 
@@ -298,6 +300,7 @@ export default class CoachDashboardResolver {
 
     const recentRecipesData: RecentRecipeData[] = recentRecipesList.map(
       (recipe) => ({
+        id: recipe.id,
         name: recipe.title,
         calories: recipe.caloriesPerServing ?? 0,
         proteins: recipe.proteinsPerServing ?? 0,

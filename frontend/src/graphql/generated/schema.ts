@@ -135,6 +135,7 @@ export type RecentRecipeData = {
   __typename?: 'RecentRecipeData';
   calories: Scalars['Float']['output'];
   carbs: Scalars['Float']['output'];
+  id: Scalars['String']['output'];
   lipids: Scalars['Float']['output'];
   name: Scalars['String']['output'];
   proteins: Scalars['Float']['output'];
@@ -284,7 +285,7 @@ export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: '
 export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', name: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
+export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -423,6 +424,7 @@ export const CoachDashboardDataDocument = gql`
       score
     }
     recentRecipes {
+      id
       name
       calories
       proteins

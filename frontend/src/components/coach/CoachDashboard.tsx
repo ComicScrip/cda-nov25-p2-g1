@@ -1,6 +1,10 @@
 import { BookOpen, ChefHat, Loader2, TrendingUp, User, Users, UtensilsCrossed } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCoachDashboardDataQuery, useProfileQuery } from "@/graphql/generated/schema";
+import {
+  type RecentRecipeData,
+  useCoachDashboardDataQuery,
+  useProfileQuery,
+} from "@/graphql/generated/schema";
 
 export default function CoachDashboard() {
   const { data: profileData, loading: profileLoading } = useProfileQuery({
@@ -168,37 +172,28 @@ export default function CoachDashboard() {
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentUsers.length > 0 ? (
-                    recentUsers.map(
-                      (
-                        userItem: {
-                          name: string;
-                          email: string;
-                          score: number;
-                        },
-                        index: number,
-                      ) => (
-                        <Card key={index} className="bg-white/90 border-0 backdrop-blur-sm">
-                          <CardContent className="p-4 md:p-5">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
-                                  {userItem.name}
-                                </div>
-                                <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                                  {userItem.email}
-                                </CardDescription>
+                    recentUsers.map((userItem: { name: string; email: string; score: number }) => (
+                      <Card key={userItem.email} className="bg-white/90 border-0 backdrop-blur-sm">
+                        <CardContent className="p-4 md:p-5">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
+                                {userItem.name}
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
-                                <span className="font-bold text-[#2c2c2c] text-sm md:text-base">
-                                  {Math.round(userItem.score)}
-                                </span>
-                              </div>
+                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                                {userItem.email}
+                              </CardDescription>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ),
-                    )
+                            <div className="flex items-center gap-1.5">
+                              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
+                              <span className="font-bold text-[#2c2c2c] text-sm md:text-base">
+                                {Math.round(userItem.score)}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
                   ) : (
                     <Card className="bg-white/90 border-0 backdrop-blur-sm">
                       <CardContent className="p-4 md:p-5">
@@ -221,35 +216,24 @@ export default function CoachDashboard() {
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentRecipes.length > 0 ? (
-                    recentRecipes.map(
-                      (
-                        recipe: {
-                          name: string;
-                          calories: number;
-                          proteins: number;
-                          carbs: number;
-                          lipids: number;
-                        },
-                        index: number,
-                      ) => (
-                        <Card key={index} className="bg-white/90 border-0 backdrop-blur-sm">
-                          <CardContent className="p-4 md:p-5">
-                            <div className="flex justify-between items-start mb-1">
-                              <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
-                                {recipe.name}
-                              </div>
-                              <div className="font-bold text-[#2c2c2c] text-sm md:text-base">
-                                {Math.round(recipe.calories)} kcal
-                              </div>
+                    recentRecipes.map((recipe: RecentRecipeData) => (
+                      <Card key={recipe.id} className="bg-white/90 border-0 backdrop-blur-sm">
+                        <CardContent className="p-4 md:p-5">
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
+                              {recipe.name}
                             </div>
-                            <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                              P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g |
-                              L: {Math.round(recipe.lipids)}g
-                            </CardDescription>
-                          </CardContent>
-                        </Card>
-                      ),
-                    )
+                            <div className="font-bold text-[#2c2c2c] text-sm md:text-base">
+                              {Math.round(recipe.calories)} kcal
+                            </div>
+                          </div>
+                          <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                            P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g | L:{" "}
+                            {Math.round(recipe.lipids)}g
+                          </CardDescription>
+                        </CardContent>
+                      </Card>
+                    ))
                   ) : (
                     <Card className="bg-white/90 border-0 backdrop-blur-sm">
                       <CardContent className="p-4 md:p-5">

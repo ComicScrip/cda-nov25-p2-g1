@@ -24,6 +24,7 @@ query CoachDashboardData {
       score
     }
     recentRecipes {
+      id
       name
       calories
       proteins
