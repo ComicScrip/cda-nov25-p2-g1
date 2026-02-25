@@ -1,3 +1,5 @@
+import { registerEnumType } from "type-graphql";
+
 export enum DishType {
   Entree = "entree",
   Plat = "plat",
@@ -40,3 +42,31 @@ export enum Gender {
   Homme = "homme",
   Femme = "femme",
 }
+
+registerEnumType(DishType, {
+  name: "DishType",
+});
+
+registerEnumType(AnalysisStatus, {
+  name: "AnalysisStatus",
+});
+
+registerEnumType(Unit, {
+  name: "Unit",
+});
+
+registerEnumType(MealType, {
+  name: "MealType",
+});
+
+registerEnumType(Status, {
+  name: "Status",
+});
+
+registerEnumType(UserRole, {
+  name: "UserRoleEnum",
+});
+
+registerEnumType(Gender, {
+  name: "Gender",
+});
