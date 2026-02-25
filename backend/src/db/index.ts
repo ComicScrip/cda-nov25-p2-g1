@@ -1,4 +1,4 @@
-import { DataSource, Db } from "typeorm";
+import { DataSource } from "typeorm";
 import { Dish } from "../entities/Dish";
 import { Dish_Ingredient } from "../entities/Dish_Ingredient";
 import { Ingredient } from "../entities/Ingredient";
