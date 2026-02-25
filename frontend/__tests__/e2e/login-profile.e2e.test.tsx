@@ -7,6 +7,10 @@ import UserProfilePage from "@/pages/user_profile";
 const mockPush = jest.fn();
 const mockLogin = jest.fn();
 const mockUpdateProfile = jest.fn();
+const mockLogout = jest.fn();
+const mockProfileQuery = jest.fn();
+const mockUserProfileDataQuery = jest.fn();
+const mockRefetchProfile = jest.fn();
 const mockUseQuery = jest.fn();
 const mockUseMutation = jest.fn();
 
@@ -27,7 +31,16 @@ jest.mock("@/components/HomeLayout", () => ({
 }));
 
 jest.mock("@/graphql/generated/schema", () => ({
+  UserRole: {
+    Admin: "Admin",
+    Coach: "Coach",
+    Coachee: "Coachee",
+  },
   useLoginMutation: () => [mockLogin, { loading: false, error: undefined }],
+  useLogoutMutation: () => [mockLogout, { loading: false, error: undefined }],
+  useProfileQuery: (...args: unknown[]) => mockProfileQuery(...args),
+  useUserProfileDataQuery: (...args: unknown[]) => mockUserProfileDataQuery(...args),
+  useUpdateUserProfileDataMutation: () => [mockUpdateProfile, { loading: false, error: undefined }],
 }));
 
 jest.mock("@apollo/client/react", () => ({
@@ -48,13 +61,28 @@ describe("E2E flow - login and profile creation", () => {
     mockPush.mockReset();
     mockLogin.mockReset();
     mockUpdateProfile.mockReset();
+    mockLogout.mockReset();
+    mockProfileQuery.mockReset();
+    mockUserProfileDataQuery.mockReset();
+    mockRefetchProfile.mockReset();
     mockUseQuery.mockReset();
     mockUseMutation.mockReset();
 
     mockLogin.mockResolvedValue({ data: { login: true } });
     mockUpdateProfile.mockResolvedValue({ data: { updateUserProfileData: {} } });
+    mockLogout.mockResolvedValue({ data: { logout: true } });
+    mockRefetchProfile.mockResolvedValue({
+      data: { me: { role: "Coachee", email: "alice@example.com" }, profile: null },
+    });
 
-    mockUseQuery.mockReturnValue({
+    mockProfileQuery.mockReturnValue({
+      data: { me: null, profile: null },
+      loading: false,
+      error: undefined,
+      refetch: mockRefetchProfile,
+    });
+
+    mockUserProfileDataQuery.mockReturnValue({
       data: { userProfileData: null },
       loading: false,
       error: undefined,

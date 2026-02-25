@@ -85,8 +85,7 @@ export default function Signup() {
                       message: "Le mot de passe ne peut pas dépasser 128 caractères",
                     },
                     pattern: {
-                      value:
-                        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
                       message:
                         "Le mot de passe doit contenir au moins une minuscule, une majuscule, un chiffre et un caractère spécial",
                     },
