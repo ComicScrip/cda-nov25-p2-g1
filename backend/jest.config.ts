@@ -14,9 +14,6 @@ module.exports = {
   testPathIgnorePatterns: ["/node_modules/", "/__tests__/setup.ts"],
 };
 
-
-
-
 //@type {import('ts-jest').JestConfigWithTsJest}
 //module.exports = {
 //  preset: "ts-jest",

@@ -40,8 +40,8 @@ const db = new DataSource({
 
 export async function test_clearDB() {
   const runner = db.createQueryRunner();
-  const tableDroppings = db.entityMetadatas.map ((entity) => 
-    runner.query(`DROP TABLE IF EXISTS "${entity.tableName}" CASCADE`)
+  const tableDroppings = db.entityMetadatas.map((entity) =>
+    runner.query(`DROP TABLE IF EXISTS "${entity.tableName}" CASCADE`),
   );
   await Promise.all(tableDroppings);
   await runner.release();

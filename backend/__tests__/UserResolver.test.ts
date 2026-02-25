@@ -2,12 +2,17 @@ import gql from "graphql-tag";
 import { execute } from "../jest.setup";
 import { User } from "../src/entities/User";
 
-
 describe("Tags Resolver", () => {
-    it ("should read user from DB", async () => {
-        await User.create({ email: "Test@mail.com", hashedPassword: "Test587412%" }).save();
-        await User.create({ email: "Testfinal@mail.com", hashedPassword: "Test587412%" }).save();
-        const res = await execute(gql`
+  it("should read user from DB", async () => {
+    await User.create({
+      email: "Test@mail.com",
+      hashedPassword: "Test587412%",
+    }).save();
+    await User.create({
+      email: "Testfinal@mail.com",
+      hashedPassword: "Test587412%",
+    }).save();
+    const res = await execute(gql`
             query User {
               users{
                 id
@@ -16,7 +21,7 @@ describe("Tags Resolver", () => {
             }
         `);
 
-        expect(res).toMatchInlineSnapshot(`
+    expect(res).toMatchInlineSnapshot(`
 {
   "body": {
     "kind": "single",
@@ -44,5 +49,5 @@ describe("Tags Resolver", () => {
   },
 }
 `);
-    });
+  });
 });
