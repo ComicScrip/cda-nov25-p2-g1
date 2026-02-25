@@ -8,6 +8,8 @@ import {
   useSaveScannerCoachSubmissionMutation,
   useUserProfilePromptDataQuery,
 } from "@/graphql/generated/schema";
+import { requestMealScannerAnalysis } from "@/lib/mealScannerApi";
+import type { ScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 import {
   type ImageSource,
   SCANNER_ANALYSIS_REQUEST_KEY,
@@ -33,28 +35,7 @@ const SOURCE_LABELS: Record<ImageSource, string> = {
   camera: "Caméra",
 };
 
-type NutritionRange = {
-  min: number;
-  max: number;
-};
-
-type ScannerMockAnalysisResponse = {
-  plats_probables: string[];
-  ingredients_visibles: string[];
-  portion_estimee: string;
-  nutrition_estimee: {
-    calories_kcal: NutritionRange;
-    proteines_g: NutritionRange;
-    glucides_g: NutritionRange;
-    lipides_g: NutritionRange;
-    fibres_g: NutritionRange;
-  };
-  score_sante_100: number;
-  confiance_100: number;
-  incertitudes: string[];
-  questions_suivi: string[];
-  avertissement_pathologies: string[];
-};
+type ScannerMockAnalysisResponse = ScannerAnalysisResponse;
 
 type NutritionMetricKey = keyof ScannerMockAnalysisResponse["nutrition_estimee"];
 type EditableListSection = "plats_probables" | "ingredients_visibles";
@@ -705,6 +686,23 @@ export default function ScannerRepasDetailsPage() {
         JSON.stringify(payloadWithPrompt),
       );
 
+      setSubmitMessage("Demande envoyée. Analyse en cours.");
+
+      try {
+        const { analysis } = await requestMealScannerAnalysis({
+          prompt: payloadWithPrompt.prompt,
+          imageUrl: draft.imageUrl,
+        });
+
+        window.sessionStorage.setItem(SCANNER_ANALYSIS_RESPONSE_KEY, JSON.stringify(analysis));
+        setAnalysisResponse(analysis);
+        setEditableAnalysis(cloneAnalysisResponse(analysis));
+        setSubmitMessage("Analyse disponible.");
+        return;
+      } catch (apiError) {
+        console.error("[MealsScanning] API OpenAI indisponible, fallback mock:", apiError);
+      }
+
       const normalizedFileName = normalizeFileName(draft.fileName);
 
       if (normalizedFileName === MOCK_HUMAN_FILE_NAME) {
@@ -714,36 +712,35 @@ export default function ScannerRepasDetailsPage() {
         );
         setAnalysisResponse(MOCK_HUMAN_ANALYSIS_RESPONSE);
         setEditableAnalysis(cloneAnalysisResponse(MOCK_HUMAN_ANALYSIS_RESPONSE));
-        setSubmitMessage("Analyse disponible.");
+        setSubmitMessage("Analyse mock disponible (fallback).");
         return;
       }
 
-      if (normalizedFileName !== MOCK_TRIGGER_FILE_NAME) {
+      if (normalizedFileName === MOCK_TRIGGER_FILE_NAME) {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(() => resolve(), MOCK_ANALYSIS_DELAY_MS);
+        });
+
         window.sessionStorage.setItem(
           SCANNER_ANALYSIS_RESPONSE_KEY,
-          JSON.stringify(MOCK_FALLBACK_ANALYSIS_RESPONSE),
+          JSON.stringify(MOCK_ANALYSIS_RESPONSE),
         );
-        setAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE);
-        setEditableAnalysis(cloneAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE));
-        setSubmitMessage("Analyse disponible.");
+        setAnalysisResponse(MOCK_ANALYSIS_RESPONSE);
+        setEditableAnalysis(cloneAnalysisResponse(MOCK_ANALYSIS_RESPONSE));
+        setSubmitMessage("Réponse mock reçue après 10 secondes (fallback).");
         return;
       }
-
-      setSubmitMessage("Demande envoyée. Analyse en cours.");
-
-      await new Promise<void>((resolve) => {
-        window.setTimeout(() => resolve(), MOCK_ANALYSIS_DELAY_MS);
-      });
 
       window.sessionStorage.setItem(
         SCANNER_ANALYSIS_RESPONSE_KEY,
-        JSON.stringify(MOCK_ANALYSIS_RESPONSE),
+        JSON.stringify(MOCK_FALLBACK_ANALYSIS_RESPONSE),
       );
-      setAnalysisResponse(MOCK_ANALYSIS_RESPONSE);
-      setEditableAnalysis(cloneAnalysisResponse(MOCK_ANALYSIS_RESPONSE));
-      setSubmitMessage("Réponse reçue après 10 secondes.");
-    } catch {
-      setSubmitError("Impossible d'enregistrer la demande d'analyse.");
+      setAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE);
+      setEditableAnalysis(cloneAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE));
+      setSubmitMessage("Analyse mock générique disponible (fallback).");
+    } catch (error) {
+      console.error("[MealsScanning] Erreur analyse:", error);
+      setSubmitError("Impossible d'envoyer la demande d'analyse.");
     } finally {
       setIsSubmitting(false);
     }
