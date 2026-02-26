@@ -12,7 +12,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
-    "test:e2e:login-profile": "playwright test __tests__/login-profile.spec.test..ts"
+    "test:e2e:login-profile": "playwright test __tests__/login-profile.spec.test.ts"
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",

@@ -6,7 +6,7 @@ const baseURL = `http://${host}:${port}`;
 
 export default defineConfig({
   testDir: "./__tests__",
-  testMatch: "**/*.spec*.ts",
+  testMatch: "**/*.spec.test.ts",
   timeout: 30_000,
   expect: {
     timeout: 10_000,

@@ -40,7 +40,7 @@ async function installGraphQLMocks(page: Page) {
     profileData: null,
   };
 
-  await page.route("**/graphql", async (route) => {
+  await page.route("**/graphql", async (route: Route) => {
     const request = route.request();
     const body = parseGraphQLBody(request.postData());
     const operationName = body.operationName;
@@ -116,7 +116,7 @@ async function installGraphQLMocks(page: Page) {
   return state;
 }
 
-test("login + create profile in a real browser flow", async ({ page }) => {
+test("login + create profile in a real browser flow", async ({ page }: { page: Page }) => {
   const state = await installGraphQLMocks(page);
 
   await page.goto("/login");
