@@ -140,9 +140,7 @@ test("login + create profile in a real browser flow", async ({ page }) => {
   await page.locator("#height").fill("168");
   await page.locator("#weight").fill("62");
   await page.locator("#goal").fill(" Perdre du poids ");
-  await page
-    .getByPlaceholder("Ajouter une information medicale")
-    .fill("allergie");
+  await page.getByPlaceholder("Ajouter une information medicale").fill("allergie");
   await page.getByRole("button", { name: "Ajouter" }).click();
   await page.getByRole("radio", { name: "Homme" }).check();
   await page.getByRole("button", { name: "Enregistrer" }).click();
