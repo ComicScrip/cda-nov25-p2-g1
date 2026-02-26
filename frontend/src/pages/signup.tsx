@@ -56,7 +56,7 @@ export default function Signup() {
 
   return (
     <HomeLayout pageTitle="Inscription">
-      <div className="w-full flex items-center justify-center bg-linear-to-br from-background via-background to-primary/5 px-4 py-4 md:py-6 relative">
+      <div className="relative w-full min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-primary/5 px-4">
         {/* Background décoratif */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
