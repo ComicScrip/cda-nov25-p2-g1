@@ -19,6 +19,7 @@ import {
   type ScannerMealDetails,
   type ScannerMealDraft,
 } from "@/lib/scannerDraft";
+import { getScannerOriginalImage, readBlobAsDataUrl } from "@/lib/scannerOriginalImageStore";
 
 const DEFAULT_DETAILS: ScannerMealDetails = {
   dishName: "",
@@ -35,9 +36,7 @@ const SOURCE_LABELS: Record<ImageSource, string> = {
   camera: "Caméra",
 };
 
-type ScannerMockAnalysisResponse = ScannerAnalysisResponse;
-
-type NutritionMetricKey = keyof ScannerMockAnalysisResponse["nutrition_estimee"];
+type NutritionMetricKey = keyof ScannerAnalysisResponse["nutrition_estimee"];
 type EditableListSection = "plats_probables" | "ingredients_visibles";
 
 type UserProfilePromptPayload = UserProfilePromptDataQuery["userProfileData"];
@@ -51,105 +50,6 @@ const NUTRITION_METRICS: Array<{ key: NutritionMetricKey; label: string; unit: s
 ];
 
 const SCANNER_COACH_PAYLOAD_KEY = "scannerMealCoachPayloadV1";
-const MOCK_ANALYSIS_DELAY_MS = 10_000;
-const MOCK_TRIGGER_FILE_NAME = "patebolo.jpg";
-const MOCK_HUMAN_FILE_NAME = "humain.png";
-
-const MOCK_ANALYSIS_RESPONSE: ScannerMockAnalysisResponse = {
-  plats_probables: ["Spaghetti (ou pâtes longues) type bolognaise avec légumes en dés"],
-  ingredients_visibles: [
-    "pâtes longues (type spaghetti)",
-    "sauce tomate avec morceaux de tomate",
-    "viande hachée (probable)",
-    "courgette en dés",
-    "carotte en dés",
-  ],
-  portion_estimee:
-    "Moyenne à grande (bol presque plein) ~350–450 g au total (pâtes cuites ~200–280 g + sauce/viande/légumes ~150–200 g).",
-  nutrition_estimee: {
-    calories_kcal: { min: 550, max: 850 },
-    proteines_g: { min: 22, max: 40 },
-    glucides_g: { min: 60, max: 100 },
-    lipides_g: { min: 15, max: 35 },
-    fibres_g: { min: 6, max: 12 },
-  },
-  score_sante_100: 58,
-  confiance_100: 72,
-  incertitudes: [
-    "Type de pâtes (blé/complètes vs sans gluten) impossible à confirmer visuellement",
-    "Type de viande (bœuf/dinde/porc) et teneur en matières grasses non déterminables",
-    "Quantité d’huile/fromage éventuel non visible",
-    "Teneur en sel/sodium de la sauce (industrielle vs maison) non déductible",
-    "Poids exact et quantité réellement consommée (restes éventuels) non visibles",
-  ],
-  questions_suivi: [
-    "Comment te sens-tu aujourd’hui (faim, satiété, énergie) avant ou après ce repas ?",
-    "Avec l’anneau gastrique, est-ce que ce type d’aliment passe bien en ce moment (nausées, blocage, reflux, inconfort) ?",
-    "Est-ce que tu souhaites qu’on en parle côté objectifs (tension, confort digestif, poids) ou tu préfères juste une estimation nutritionnelle ?",
-  ],
-  avertissement_pathologies: [
-    "Allergie au gluten : plat potentiellement NON compatible car les spaghetti sont très souvent à base de blé (gluten). Compatible uniquement si les pâtes sont certifiées sans gluten et si absence de contamination croisée.",
-    "Hypertension : vigilance sur le sodium (sauce tomate préparée, bouillon, sel ajouté, fromage). Sans information, risque de teneur élevée en sel ; privilégier version maison/peu salée.",
-    "Anneau gastrique : portion du bol probablement trop grande ; les pâtes peuvent se compacter et provoquer inconfort/blocage selon tolérance. Recommandation pratique : petites bouchées, bien mâcher, portion réduite, éviter de boire pendant le repas (selon consignes médicales).",
-  ],
-};
-
-const MOCK_FALLBACK_ANALYSIS_RESPONSE: ScannerMockAnalysisResponse = {
-  plats_probables: [],
-  ingredients_visibles: [],
-  portion_estimee:
-    "Impossible à estimer : aucun aliment/plat n’est visible sur la photo (elle montre une personne dans une pièce).",
-  nutrition_estimee: {
-    calories_kcal: { min: 0, max: 0 },
-    proteines_g: { min: 0, max: 0 },
-    glucides_g: { min: 0, max: 0 },
-    lipides_g: { min: 0, max: 0 },
-    fibres_g: { min: 0, max: 0 },
-  },
-  score_sante_100: 0,
-  confiance_100: 0,
-  incertitudes: [
-    "Aucun plat/aliment n’est visible, donc identification impossible.",
-    "Aucune information sur ingrédients, mode de cuisson, marque ou recettes.",
-    "Portions et quantités impossibles à déduire sans photo de la nourriture.",
-  ],
-  questions_suivi: [
-    "Peux-tu envoyer une photo claire du plat (vue de dessus) avec l’assiette entière visible ?",
-    "Quel est le nom du plat et ses ingrédients principaux (ou une liste rapide) ?",
-    "Quelle quantité approximative as-tu mangée (assiette entière, moitié, et/ou poids/volume) ?",
-  ],
-  avertissement_pathologies: [
-    "Compatibilité avec les pathologies non évaluable : aucun aliment n’est visible sur la photo.",
-  ],
-};
-
-const MOCK_HUMAN_ANALYSIS_RESPONSE: ScannerMockAnalysisResponse = {
-  plats_probables: [],
-  ingredients_visibles: [],
-  portion_estimee: "Non déterminable : aucun plat/aliment n’est visible sur la photo.",
-  nutrition_estimee: {
-    calories_kcal: { min: 0, max: 0 },
-    proteines_g: { min: 0, max: 0 },
-    glucides_g: { min: 0, max: 0 },
-    lipides_g: { min: 0, max: 0 },
-    fibres_g: { min: 0, max: 0 },
-  },
-  score_sante_100: 0,
-  confiance_100: 5,
-  incertitudes: [
-    "Aucun aliment/plat n’est visible (photo centrée sur une personne et un intérieur).",
-    "Impossible d’identifier des ingrédients, une portion ou un mode de préparation.",
-    "Aucune information exploitable pour estimer la nutrition (calories/macros/fibres).",
-  ],
-  questions_suivi: [
-    "Quel est le plat/repas consommé (nom ou description) ?",
-    "Quels sont les ingrédients principaux et la façon de préparation (huile, sauce, frit, etc.) ?",
-    "Quelle quantité as-tu mangée (portion, poids approximatif ou nombre d’unités) ?",
-  ],
-  avertissement_pathologies: [
-    "Compatibilité avec les pathologies non évaluable : aucun repas n’est visible sur la photo.",
-  ],
-};
 
 const isImageSource = (value: string): value is ImageSource => {
   return value === "fichier" || value === "collage" || value === "url" || value === "camera";
@@ -199,10 +99,8 @@ const formatSavedAt = (savedAt: string): string => {
   });
 };
 
-const cloneAnalysisResponse = (
-  response: ScannerMockAnalysisResponse,
-): ScannerMockAnalysisResponse => {
-  return JSON.parse(JSON.stringify(response)) as ScannerMockAnalysisResponse;
+const cloneAnalysisResponse = (response: ScannerAnalysisResponse): ScannerAnalysisResponse => {
+  return JSON.parse(JSON.stringify(response)) as ScannerAnalysisResponse;
 };
 
 const listToMultiline = (items: string[]): string => {
@@ -211,10 +109,6 @@ const listToMultiline = (items: string[]): string => {
 
 const multilineToList = (value: string): string[] => {
   return value.split("\n").filter((line) => line.trim().length > 0);
-};
-
-const normalizeFileName = (fileName: string | undefined): string => {
-  return fileName?.trim().toLowerCase() ?? "";
 };
 
 const formatDateForPrompt = (value?: string | null): string => {
@@ -368,12 +262,8 @@ export default function ScannerRepasDetailsPage() {
   const [details, setDetails] = useState<ScannerMealDetails>(DEFAULT_DETAILS);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [analysisResponse, setAnalysisResponse] = useState<ScannerMockAnalysisResponse | null>(
-    null,
-  );
-  const [editableAnalysis, setEditableAnalysis] = useState<ScannerMockAnalysisResponse | null>(
-    null,
-  );
+  const [analysisResponse, setAnalysisResponse] = useState<ScannerAnalysisResponse | null>(null);
+  const [editableAnalysis, setEditableAnalysis] = useState<ScannerAnalysisResponse | null>(null);
   const [isEditingPortion, setIsEditingPortion] = useState(false);
   const [editingMetrics, setEditingMetrics] = useState<
     Partial<Record<NutritionMetricKey, boolean>>
@@ -671,7 +561,13 @@ export default function ScannerRepasDetailsPage() {
       }
 
       const payloadWithPrompt = {
-        ...payload,
+        requestedAt: payload.requestedAt,
+        details: payload.details,
+        draft: {
+          source: payload.draft.source,
+          fileName: payload.draft.fileName,
+          savedAt: payload.draft.savedAt,
+        },
         prompt: buildScannerAnalysisPrompt(
           userProfilePromptData?.userProfileData,
           payload.details,
@@ -689,9 +585,31 @@ export default function ScannerRepasDetailsPage() {
       setSubmitMessage("Demande envoyée. Analyse en cours.");
 
       try {
+        let imageUrlForAnalysis = draft.imageUrl;
+
+        if (draft.source !== "url") {
+          try {
+            const originalImage = await getScannerOriginalImage();
+            const matchesCurrentDraft =
+              originalImage &&
+              originalImage.savedAt === draft.savedAt &&
+              originalImage.source === draft.source &&
+              (originalImage.fileName ?? "") === (draft.fileName ?? "");
+
+            if (matchesCurrentDraft) {
+              imageUrlForAnalysis = await readBlobAsDataUrl(originalImage.blob);
+            }
+          } catch (storageError) {
+            console.warn(
+              "[MealsScanning] Image originale indisponible, fallback brouillon:",
+              storageError,
+            );
+          }
+        }
+
         const { analysis } = await requestMealScannerAnalysis({
           prompt: payloadWithPrompt.prompt,
-          imageUrl: draft.imageUrl,
+          imageUrl: imageUrlForAnalysis,
         });
 
         window.sessionStorage.setItem(SCANNER_ANALYSIS_RESPONSE_KEY, JSON.stringify(analysis));
@@ -700,47 +618,16 @@ export default function ScannerRepasDetailsPage() {
         setSubmitMessage("Analyse disponible.");
         return;
       } catch (apiError) {
-        console.error("[MealsScanning] API OpenAI indisponible, fallback mock:", apiError);
+        console.error("[MealsScanning] Erreur API OpenAI:", apiError);
+        throw apiError;
       }
-
-      const normalizedFileName = normalizeFileName(draft.fileName);
-
-      if (normalizedFileName === MOCK_HUMAN_FILE_NAME) {
-        window.sessionStorage.setItem(
-          SCANNER_ANALYSIS_RESPONSE_KEY,
-          JSON.stringify(MOCK_HUMAN_ANALYSIS_RESPONSE),
-        );
-        setAnalysisResponse(MOCK_HUMAN_ANALYSIS_RESPONSE);
-        setEditableAnalysis(cloneAnalysisResponse(MOCK_HUMAN_ANALYSIS_RESPONSE));
-        setSubmitMessage("Analyse mock disponible (fallback).");
-        return;
-      }
-
-      if (normalizedFileName === MOCK_TRIGGER_FILE_NAME) {
-        await new Promise<void>((resolve) => {
-          window.setTimeout(() => resolve(), MOCK_ANALYSIS_DELAY_MS);
-        });
-
-        window.sessionStorage.setItem(
-          SCANNER_ANALYSIS_RESPONSE_KEY,
-          JSON.stringify(MOCK_ANALYSIS_RESPONSE),
-        );
-        setAnalysisResponse(MOCK_ANALYSIS_RESPONSE);
-        setEditableAnalysis(cloneAnalysisResponse(MOCK_ANALYSIS_RESPONSE));
-        setSubmitMessage("Réponse mock reçue après 10 secondes (fallback).");
-        return;
-      }
-
-      window.sessionStorage.setItem(
-        SCANNER_ANALYSIS_RESPONSE_KEY,
-        JSON.stringify(MOCK_FALLBACK_ANALYSIS_RESPONSE),
-      );
-      setAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE);
-      setEditableAnalysis(cloneAnalysisResponse(MOCK_FALLBACK_ANALYSIS_RESPONSE));
-      setSubmitMessage("Analyse mock générique disponible (fallback).");
     } catch (error) {
       console.error("[MealsScanning] Erreur analyse:", error);
-      setSubmitError("Impossible d'envoyer la demande d'analyse.");
+      setSubmitError(
+        error instanceof Error && error.message
+          ? `Impossible d'obtenir l'analyse IA: ${error.message}`
+          : "Impossible d'obtenir l'analyse IA.",
+      );
     } finally {
       setIsSubmitting(false);
     }

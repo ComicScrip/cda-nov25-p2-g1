@@ -56,7 +56,7 @@ const extractJsonCandidate = (value: string): string => {
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "25mb",
+      sizeLimit: "50mb",
     },
   },
 };
