@@ -10,6 +10,15 @@ import {
   SCANNER_MEAL_DRAFT_KEY,
   type ScannerMealDraft,
 } from "@/lib/scannerDraft";
+import {
+  deleteScannerOriginalImage,
+  saveScannerOriginalImage,
+} from "@/lib/scannerOriginalImageStore";
+
+const MAX_STORED_IMAGE_DIMENSION = 1_280;
+const MIN_STORED_IMAGE_DIMENSION = 768;
+const MAX_STORED_IMAGE_DATA_URL_LENGTH = 450_000;
+const STORAGE_IMAGE_QUALITY_STEPS = [0.82, 0.74, 0.66, 0.58];
 
 const getClipboardImageFile = (items: DataTransferItemList | null): File | null => {
   if (!items) {
@@ -50,6 +59,95 @@ const readFileAsDataUrl = (file: File): Promise<string> => {
     reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
     reader.readAsDataURL(file);
   });
+};
+
+const loadImageForStorage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("Fenêtre indisponible"));
+      return;
+    }
+
+    const image = new window.Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Chargement de l'image impossible"));
+    image.src = src;
+  });
+};
+
+const renderImageToCanvas = (
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+): HTMLCanvasElement => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Canvas indisponible");
+  }
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, width, height);
+
+  return canvas;
+};
+
+const optimizeImageForStorage = async (src: string): Promise<string> => {
+  if (src.startsWith("data:image/") && src.length <= MAX_STORED_IMAGE_DATA_URL_LENGTH) {
+    return src;
+  }
+
+  const image = await loadImageForStorage(src);
+  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+
+  if (largestSide === 0) {
+    throw new Error("Image vide");
+  }
+
+  const initialScale = Math.min(1, MAX_STORED_IMAGE_DIMENSION / largestSide);
+  let width = Math.max(1, Math.round(image.naturalWidth * initialScale));
+  let height = Math.max(1, Math.round(image.naturalHeight * initialScale));
+  let bestCandidate = "";
+
+  while (true) {
+    const canvas = renderImageToCanvas(image, width, height);
+
+    for (const quality of STORAGE_IMAGE_QUALITY_STEPS) {
+      const candidate = canvas.toDataURL("image/jpeg", quality);
+      bestCandidate = candidate;
+
+      if (candidate.length <= MAX_STORED_IMAGE_DATA_URL_LENGTH) {
+        return candidate;
+      }
+    }
+
+    const currentLargestSide = Math.max(width, height);
+    if (currentLargestSide <= MIN_STORED_IMAGE_DIMENSION) {
+      return bestCandidate;
+    }
+
+    const nextLargestSide = Math.max(
+      MIN_STORED_IMAGE_DIMENSION,
+      Math.round(currentLargestSide * 0.82),
+    );
+    const resizeRatio = nextLargestSide / currentLargestSide;
+    width = Math.max(1, Math.round(width * resizeRatio));
+    height = Math.max(1, Math.round(height * resizeRatio));
+  }
+};
+
+const isStorageQuotaError = (error: unknown): boolean => {
+  return (
+    error instanceof DOMException &&
+    (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+  );
 };
 
 const getFileNameFromUrl = (value: string): string | null => {
@@ -132,6 +230,7 @@ export default function ScannerRepasPage() {
   const clearImage = useCallback(() => {
     releaseObjectUrl();
     imageFileRef.current = null;
+    void deleteScannerOriginalImage();
     setPreviewUrl(null);
     setSource(null);
     setFileName(null);
@@ -209,7 +308,7 @@ export default function ScannerRepasPage() {
     }
   }, [stopCamera]);
 
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     const videoElement = videoRef.current;
     if (
       !cameraReady ||
@@ -232,13 +331,27 @@ export default function ScannerRepasPage() {
     }
 
     context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+    const capturedBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 1);
+    });
+
+    if (!capturedBlob) {
+      setCameraError("Capture impossible.");
+      return;
+    }
+
+    const capturedFile = new File([capturedBlob], "capture-camera.jpg", {
+      type: capturedBlob.type || "image/jpeg",
+    });
+    const previewObjectUrl = URL.createObjectURL(capturedFile);
 
     releaseObjectUrl();
-    imageFileRef.current = null;
-    setPreviewUrl(dataUrl);
+    objectUrlRef.current = previewObjectUrl;
+    imageFileRef.current = capturedFile;
+    setPreviewUrl(previewObjectUrl);
     setSource("camera");
-    setFileName("capture-camera.jpg");
+    setFileName(capturedFile.name);
     setUrlError(null);
     setSaveError(null);
   }, [cameraReady, releaseObjectUrl]);
@@ -254,18 +367,33 @@ export default function ScannerRepasPage() {
 
     try {
       let imageToStore = "";
+      const savedAt = new Date().toISOString();
 
       if (source === "url") {
         if (!isValidHttpUrl(previewUrl)) {
           throw new Error("URL invalide");
         }
+
+        await deleteScannerOriginalImage();
         imageToStore = previewUrl;
-      } else if (previewUrl.startsWith("data:image/")) {
-        imageToStore = previewUrl;
-      } else if (imageFileRef.current) {
-        imageToStore = await readFileAsDataUrl(imageFileRef.current);
       } else {
-        throw new Error("Image indisponible");
+        const originalImage = imageFileRef.current;
+        if (!originalImage) {
+          throw new Error("Image originale indisponible");
+        }
+
+        imageToStore = await optimizeImageForStorage(previewUrl);
+        await saveScannerOriginalImage({
+          blob: originalImage,
+          fileName: fileName?.trim() || undefined,
+          mimeType: originalImage.type || "image/jpeg",
+          savedAt,
+          source,
+        });
+
+        if (!imageToStore.startsWith("data:image/")) {
+          imageToStore = await readFileAsDataUrl(originalImage);
+        }
       }
 
       const cleanedFileName = fileName?.trim();
@@ -273,7 +401,7 @@ export default function ScannerRepasPage() {
       const draft: ScannerMealDraft = {
         imageUrl: imageToStore,
         source,
-        savedAt: new Date().toISOString(),
+        savedAt,
         fileName: cleanedFileName || undefined,
       };
 
@@ -283,9 +411,15 @@ export default function ScannerRepasPage() {
 
       window.sessionStorage.removeItem(SCANNER_ANALYSIS_REQUEST_KEY);
       window.sessionStorage.removeItem(SCANNER_ANALYSIS_RESPONSE_KEY);
+      window.sessionStorage.removeItem(SCANNER_MEAL_DRAFT_KEY);
       window.sessionStorage.setItem(SCANNER_MEAL_DRAFT_KEY, JSON.stringify(draft));
       await router.push("/meals_scanning_details");
-    } catch {
+    } catch (error) {
+      if (isStorageQuotaError(error)) {
+        setSaveError("Cette photo reste trop lourde pour être stockée sur cet appareil.");
+        return;
+      }
+
       setSaveError("Impossible d'enregistrer cette image. Réessayez avec une autre photo.");
     } finally {
       setIsSaving(false);

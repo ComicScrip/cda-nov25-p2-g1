@@ -690,7 +690,13 @@ export default function ScannerRepasDetailsPage() {
       }
 
       const payloadWithPrompt = {
-        ...payload,
+        requestedAt: payload.requestedAt,
+        details: payload.details,
+        draft: {
+          source: payload.draft.source,
+          fileName: payload.draft.fileName,
+          savedAt: payload.draft.savedAt,
+        },
         prompt: buildScannerAnalysisPrompt(
           userProfilePromptData?.userProfileData,
           payload.details,
