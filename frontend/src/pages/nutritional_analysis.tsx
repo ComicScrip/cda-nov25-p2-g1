@@ -1,10 +1,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import HomeLayout from "@/components/HomeLayout";
-import UserPageLayout from "@/components/UserPageLayout";
 import { useProfileQuery, UserRole } from "@/graphql/generated/schema";
 import { Loader2, UploadCloud, Save, Edit2 } from "lucide-react";
 import { useNutritionalAnalysis } from "@/hooks/useNutritionalAnalysis";
+import CoachLayout from "@/components/coach/CoachLayout";
 
 // Page for uploading meal photos and displaying nutritional analysis results
 export default function NutritionalAnalysisPage() {
@@ -63,13 +62,11 @@ export default function NutritionalAnalysisPage() {
 
   if (profileLoading) {
     return (
-      <HomeLayout pageTitle="Analyse nutritionnelle">
-        <UserPageLayout activeNav="meals">
-          <div className="flex-1 flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        </UserPageLayout>
-      </HomeLayout>
+      <CoachLayout pageTitle="Analyse nutritionnelle">
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </CoachLayout>
     );
   }
 
@@ -78,19 +75,22 @@ export default function NutritionalAnalysisPage() {
   }
 
   return (
-    <HomeLayout pageTitle="Analyse nutritionnelle">
-      <UserPageLayout activeNav="meals">
-        <div className="mb-6 max-w-2xl text-[#2c2c2c]">
-          <h1 className="text-lg font-semibold">
-            Analyse nutritionnelle de votre repas
-          </h1>
-          <p className="mt-1 text-xs text-[#555]">
-            Importez une photo de votre plat pour obtenir une estimation des
-            ingrédients, des quantités et des valeurs nutritionnelles.
-          </p>
-        </div>
+    <CoachLayout pageTitle="Analyse nutritionnelle">
+      <div className="bg-light-bg py-6 md:py-8 px-4 md:px-6 flex-1">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">
+              Analyse nutritionnelle
+            </h1>
+            <p className="text-sm md:text-base text-gray-600">
+              Importez une photo de votre plat pour obtenir une estimation des
+              ingrédients, des quantités et des valeurs nutritionnelles.
+            </p>
+          </div>
 
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="space-y-4">
             {nutritionalAnalysis.analysis && nutritionalAnalysis.filePreview ? (
               <div className="overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]">
@@ -98,7 +98,7 @@ export default function NutritionalAnalysisPage() {
                   <span>Plat analysé</span>
                   <label
                     htmlFor="meal-image-new"
-                    className="cursor-pointer text-[#4a7c4a] hover:text-[#3a6a3a] underline text-[10px]"
+                    className="cursor-pointer text-[#1e4a1e] hover:text-[#0f2f0f] underline text-[10px]"
                   >
                     Changer l&apos;image
                   </label>
@@ -198,14 +198,14 @@ export default function NutritionalAnalysisPage() {
 
           <div className="space-y-4">
             {!nutritionalAnalysis.analysis && !nutritionalAnalysis.analyzing && (
-              <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+              <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-gray-800">
                 Importez une photo puis lancez l&apos;analyse pour voir ici les
                 résultats détaillés.
               </div>
             )}
 
             {nutritionalAnalysis.analyzing && (
-              <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
+              <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-gray-800">
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Analyse en cours de votre repas...
@@ -283,7 +283,7 @@ export default function NutritionalAnalysisPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2bbf5c] text-xs font-bold text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#15803d] text-xs font-bold text-white">
                       {Math.round(nutritionalAnalysis.analysis.healthScore)}%
                     </div>
                   </div>
@@ -486,7 +486,7 @@ export default function NutritionalAnalysisPage() {
                   )}
 
                   {nutritionalAnalysis.analysis.warnings.length > 0 && (
-                    <div className="mt-3 rounded-sm bg-[#fff3cd] px-3 py-2 text-[11px] text-[#664d03]">
+                    <div className="mt-3 rounded-sm bg-[#fff3cd] px-3 py-2 text-[11px] text-gray-900">
                       <div className="text-[11px] font-semibold">
                         Points de vigilance
                       </div>
@@ -543,9 +543,10 @@ export default function NutritionalAnalysisPage() {
               </div>
             )}
           </div>
+          </div>
         </div>
-      </UserPageLayout>
-    </HomeLayout>
+      </div>
+    </CoachLayout>
   );
 }
 

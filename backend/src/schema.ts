@@ -13,6 +13,7 @@ export async function getSchema() {
       UserDataResolver,
       NutritionalAnalystResolver,
       MealAnalysisResolver,
+      CoachDashboardResolver,
     ],
     authChecker,
   });
