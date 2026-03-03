@@ -138,6 +138,14 @@ export default function DashboardPage() {
             {meals.map((meal: DashboardMeal, index: number) => {
               const isSecondRow = index >= 2;
               const isRightColumn = index % 2 === 1;
+              const mealKey = [
+                offset,
+                meal.name,
+                meal.calories,
+                meal.protein,
+                meal.carbs,
+                meal.fat,
+              ].join("-");
               const dividerClasses = [
                 "space-y-1",
                 index > 0 ? "border-t border-[#1f3d1f]/25 pt-2" : "",
@@ -153,7 +161,7 @@ export default function DashboardPage() {
 
               return (
                 <Link
-                  key={`${offset}-${index}-${meal.name}`}
+                  key={mealKey}
                   href={{
                     pathname: "/user_meals",
                     query: {

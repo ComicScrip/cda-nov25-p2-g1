@@ -13,9 +13,12 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ["@radix-ui/react-slot"],
+  // Keep Turbopack scoped to this app instead of auto-detecting a parent workspace.
   turbopack: {
-    // Avoid workspace-root misdetection when other lockfiles exist above this app.
     root: process.cwd(),
+  },
+  watchOptions: {
+    pollIntervalMs: 1000,
   },
 };
 

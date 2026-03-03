@@ -21,10 +21,10 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `NEXT_PUBLIC_GRAPHQL_API_URL=/graphql npm run dev -- --hostname ${host} --port ${port}`,
+    command: `NEXT_PUBLIC_GRAPHQL_API_URL=/graphql npm run build && NEXT_PUBLIC_GRAPHQL_API_URL=/graphql npm run start -- --hostname ${host} --port ${port}`,
     url: `${baseURL}/login`,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
   projects: [
     {
