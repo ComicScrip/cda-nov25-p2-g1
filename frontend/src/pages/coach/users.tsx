@@ -1,0 +1,54 @@
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import CoachLayout from "@/components/coach/CoachLayout";
+import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
+
+export default function CoachUsers() {
+  const router = useRouter();
+  const { data, loading } = useProfileQuery({
+    fetchPolicy: "cache-and-network",
+  });
+
+  useEffect(() => {
+    if (!loading) {
+      if (!data?.me) {
+        router.push("/login");
+      } else if (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin) {
+        // Redirect to appropriate dashboard based on role
+        if (data.me.role === UserRole.Coachee) {
+          router.push("/dashboard_user");
+        } else {
+          router.push("/");
+        }
+      }
+    }
+  }, [data, loading, router]);
+
+  if (loading) {
+    return (
+      <CoachLayout pageTitle="Utilisateurs">
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </CoachLayout>
+    );
+  }
+
+  if (!data?.me || (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)) {
+    return null;
+  }
+
+  return (
+    <CoachLayout pageTitle="Utilisateurs">
+      <div className="bg-light-bg py-6 md:py-8 px-4 md:px-6 flex-1">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900">
+            Gestion des utilisateurs
+          </h1>
+          <p className="text-gray-600">Coming soon...</p>
+        </div>
+      </div>
+    </CoachLayout>
+  );
+}

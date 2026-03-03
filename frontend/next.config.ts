@@ -13,8 +13,10 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ["@radix-ui/react-slot"],
-  // Turbopack configuration (empty to use defaults)
-  turbopack: {},
+  turbopack: {
+    // Avoid workspace-root misdetection when other lockfiles exist above this app.
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

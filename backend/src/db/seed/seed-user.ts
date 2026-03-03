@@ -10,6 +10,12 @@ export async function seedUsers() {
     role: UserRole.Coachee,
   }).save();
 
+  const coach = await User.create({
+    email: "coach@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Coach,
+  }).save();
+
   const jane = await User.create({
     email: "jane.doe@app.com",
     hashedPassword: await hash("SuperP@ssW0rd!"),
@@ -28,7 +34,7 @@ export async function seedUsers() {
     role: UserRole.Admin,
   }).save();
 
-  users.push(dave, jane, admin, janette);
+  users.push(dave, jane, admin, janette, coach);
 
   return users;
 }

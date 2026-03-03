@@ -21,6 +21,21 @@ export type Scalars = {
   DateTimeISO: { input: any; output: any; }
 };
 
+export type CoachDashboardData = {
+  __typename?: 'CoachDashboardData';
+  recentRecipes: Array<RecentRecipeData>;
+  recentUsers: Array<RecentUserData>;
+  stats: CoachDashboardStats;
+};
+
+export type CoachDashboardStats = {
+  __typename?: 'CoachDashboardStats';
+  averageScore: StatData;
+  publishedRecipes: StatData;
+  scannedMeals: StatData;
+  users: StatData;
+};
+
 export type CoachScannerSubmissionTestData = {
   __typename?: 'CoachScannerSubmissionTestData';
   createdAt: Scalars['String']['output'];
@@ -141,6 +156,7 @@ export type Pathology = {
 
 export type Query = {
   __typename?: 'Query';
+  coachDashboardData?: Maybe<CoachDashboardData>;
   coachScannerSubmissionsTestData: Array<CoachScannerSubmissionTestData>;
   coachUserMealsTestData: Array<CoachUserMealTestData>;
   me?: Maybe<User>;
@@ -156,6 +172,23 @@ export type Query = {
 export type QueryUserDashboardDataArgs = {
   limit?: Scalars['Int']['input'];
   offset?: Scalars['Int']['input'];
+};
+
+export type RecentRecipeData = {
+  __typename?: 'RecentRecipeData';
+  calories: Scalars['Float']['output'];
+  carbs: Scalars['Float']['output'];
+  id: Scalars['String']['output'];
+  lipids: Scalars['Float']['output'];
+  name: Scalars['String']['output'];
+  proteins: Scalars['Float']['output'];
+};
+
+export type RecentUserData = {
+  __typename?: 'RecentUserData';
+  email: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  score: Scalars['Float']['output'];
 };
 
 export type RecipeData = {
@@ -181,6 +214,12 @@ export type RecipeData = {
 export type SignupInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
+};
+
+export type StatData = {
+  __typename?: 'StatData';
+  count: Scalars['Int']['output'];
+  evolution: Scalars['String']['output'];
 };
 
 export type User = {
@@ -299,6 +338,11 @@ export type UpdateUserProfileDataMutationVariables = Exact<{
 
 
 export type UpdateUserProfileDataMutation = { __typename?: 'Mutation', updateUserProfileData?: { __typename?: 'UserProfileData', firstName: string, lastName: string, dateOfBirth?: string | null, gender?: string | null, height?: number | null, currentWeight?: number | null, goal?: string | null, medicalTags: Array<string> } | null };
+
+export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -506,6 +550,79 @@ export function useUpdateUserProfileDataMutation(baseOptions?: ApolloReactHooks.
 export type UpdateUserProfileDataMutationHookResult = ReturnType<typeof useUpdateUserProfileDataMutation>;
 export type UpdateUserProfileDataMutationResult = ApolloReactCommon.MutationResult<UpdateUserProfileDataMutation>;
 export type UpdateUserProfileDataMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateUserProfileDataMutation, UpdateUserProfileDataMutationVariables>;
+
+export const CoachDashboardDataDocument = gql`
+    query CoachDashboardData {
+  coachDashboardData {
+    stats {
+      users {
+        count
+        evolution
+      }
+      publishedRecipes {
+        count
+        evolution
+      }
+      scannedMeals {
+        count
+        evolution
+      }
+      averageScore {
+        count
+        evolution
+      }
+    }
+    recentUsers {
+      name
+      email
+      score
+    }
+    recentRecipes {
+      id
+      name
+      calories
+      proteins
+      carbs
+      lipids
+    }
+  }
+}
+    `;
+
+/**
+ * __useCoachDashboardDataQuery__
+ *
+ * To run a query within a React component, call `useCoachDashboardDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCoachDashboardDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCoachDashboardDataQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCoachDashboardDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>(CoachDashboardDataDocument, options);
+      }
+export function useCoachDashboardDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>(CoachDashboardDataDocument, options);
+        }
+// @ts-ignore
+export function useCoachDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>;
+export function useCoachDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachDashboardDataQuery | undefined, CoachDashboardDataQueryVariables>;
+export function useCoachDashboardDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>(CoachDashboardDataDocument, options);
+        }
+export type CoachDashboardDataQueryHookResult = ReturnType<typeof useCoachDashboardDataQuery>;
+export type CoachDashboardDataLazyQueryHookResult = ReturnType<typeof useCoachDashboardDataLazyQuery>;
+export type CoachDashboardDataSuspenseQueryHookResult = ReturnType<typeof useCoachDashboardDataSuspenseQuery>;
+export type CoachDashboardDataQueryResult = ApolloReactCommon.QueryResult<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>;
 export const ProfileDocument = gql`
     query profile {
   me {

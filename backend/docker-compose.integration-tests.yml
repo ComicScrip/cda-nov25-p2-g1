@@ -1,0 +1,16 @@
+services:
+  testDB:
+    image: postgres:18.1-alpine3.23
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 2s
+      retries: 10
+    stop_grace_period: 1s
+    restart: always
+    tmpfs: /var/lib/postgresql
+    ports:
+      - 5433:5432

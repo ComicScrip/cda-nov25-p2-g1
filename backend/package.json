@@ -5,13 +5,15 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "seed": "ts-node src/db/run-seed.ts",
+    "seed:massive": "ts-node src/db/run-massive.ts",
     "resetDB": "ts-node src/db/reset.ts",
     "resetDB:jane": "ts-node src/db/reset-Db-Jane.ts",
     "build": "tsc",
     "start": "node build/index.js",
     "lint": "biome check",
     "format": "biome format --write && biome check --write",
-    "test": "jest",
+    "testDB": "docker compose -f docker-compose.integration-tests.yml up testDB --wait",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch"
   },
   "repository": {
@@ -26,6 +28,7 @@
   "dependencies": {
     "@apollo/server": "^5.2.0",
     "@as-integrations/fastify": "^3.1.0",
+    "@faker-js/faker": "^9.9.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "argon2": "^0.40.3",
@@ -33,6 +36,7 @@
     "fastify": "^5.6.2",
     "graphql": "^16.12.0",
     "graphql-scalars": "^1.25.0",
+    "graphql-tag": "^2.12.6",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.25.0",
     "pg": "^8.16.3",
