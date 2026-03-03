@@ -10,6 +10,7 @@ process.env.NODE_ENV = "test";
 // Variables de base de données pour les tests (si nécessaire)
 process.env.DB_HOST = process.env.DB_HOST || "localhost";
 process.env.DB_PORT = process.env.DB_PORT || "5432";
+process.env.TEST_DB_PORT = process.env.TEST_DB_PORT || "5433";
 process.env.DB_USER = process.env.DB_USER || "test";
 process.env.DB_PASS = process.env.DB_PASS || "test";
 process.env.DB_NAME = process.env.DB_NAME || "test";
