@@ -18,7 +18,7 @@ const db = new DataSource({
   host: env.DB_HOST,
   username: env.DB_USER,
   password: env.DB_PASS,
-  port: env.NODE_ENV === "test" ? env.TEST_DB_PORT : env.DB_PORT,
+  port: env.NODE_ENV === "test" ? (env.TEST_DB_PORT ?? env.DB_PORT) : env.DB_PORT,
   database: env.DB_NAME,
   entities: [
     User,
