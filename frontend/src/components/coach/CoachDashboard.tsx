@@ -854,7 +854,7 @@ export default function DashboardCoachTestPage() {
                             10 éléments par page. Utilise `Suivant` pour charger les activités plus
                             anciennes du coaché sélectionné.
                           </p>
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
                             {paginatedActivitiesForSelectedUser.map((activity) => {
                               const isActive = activity.id === selectedActivity?.id;
 
@@ -945,407 +945,418 @@ export default function DashboardCoachTestPage() {
                     </aside>
 
                     <div className="space-y-4">
-                {payload && (
-                  <>
-                    <section className="rounded-md border border-[#cfd4c9] bg-[#e7ebe4] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
-                      <h2 className="text-sm font-semibold text-[#2d412d]">Scan enregistré</h2>
-                      <div className="mt-3 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
-                        {imageUrl ? (
-                          <div className="overflow-hidden rounded-md border border-[#d4dbcf] bg-white">
-                            <Image
-                              src={imageUrl}
-                              alt="Repas scanné"
-                              width={1200}
-                              height={900}
-                              unoptimized
-                              loader={({ src }) => src}
-                              className="h-40 w-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-sm font-semibold text-[#2d412d]">
-                            {draft?.fileName ?? "Aucune image"}
-                          </div>
-                        )}
-                        <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-xs text-[#495849]">
-                          <p>
-                            <span className="font-medium">Fichier:</span>{" "}
-                            {draft?.fileName ?? "inconnu"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Source image:</span>{" "}
-                            {draft?.source ?? "?"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Sauvegardé:</span>{" "}
-                            {formatDate(payload.savedAt)}
-                          </p>
-                          <p>
-                            <span className="font-medium">Déjà consommé:</span>{" "}
-                            {payload.platDejaConsomme ?? "non précisé"}
-                          </p>
-                        </div>
-                      </div>
-                    </section>
+                      {payload && (
+                        <>
+                          <section className="rounded-md border border-[#cfd4c9] bg-[#e7ebe4] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
+                            <h2 className="text-sm font-semibold text-[#2d412d]">
+                              Scan enregistré
+                            </h2>
+                            <div className="mt-3 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+                              {imageUrl ? (
+                                <div className="overflow-hidden rounded-md border border-[#d4dbcf] bg-white">
+                                  <Image
+                                    src={imageUrl}
+                                    alt="Repas scanné"
+                                    width={1200}
+                                    height={900}
+                                    unoptimized
+                                    loader={({ src }) => src}
+                                    className="h-40 w-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-sm font-semibold text-[#2d412d]">
+                                  {draft?.fileName ?? "Aucune image"}
+                                </div>
+                              )}
+                              <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-xs text-[#495849]">
+                                <p>
+                                  <span className="font-medium">Fichier:</span>{" "}
+                                  {draft?.fileName ?? "inconnu"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Source image:</span>{" "}
+                                  {draft?.source ?? "?"}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Sauvegardé:</span>{" "}
+                                  {formatDate(payload.savedAt)}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Déjà consommé:</span>{" "}
+                                  {payload.platDejaConsomme ?? "non précisé"}
+                                </p>
+                              </div>
+                            </div>
+                          </section>
 
-                    <section className="rounded-md border border-[#d8bfd3] bg-[#f4e7f2] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
-                      <h2 className="text-sm font-semibold text-[#5c3d58]">
-                        Informations facultatives
-                      </h2>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2 text-xs text-[#4b3e49]">
-                        <p>
-                          <span className="font-medium">Nom du plat:</span>{" "}
-                          {details?.dishName?.trim() || "non renseigné"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Moment du repas:</span>{" "}
-                          {details?.mealMoment || "non renseigné"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Portions:</span>{" "}
-                          {details?.estimatedPortions?.trim() || "non renseigné"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Ingrédients:</span>{" "}
-                          {details?.ingredients?.trim() || "non renseigné"}
-                        </p>
-                        <p className="sm:col-span-2">
-                          <span className="font-medium">Notes:</span>{" "}
-                          {details?.notes?.trim() || "non renseigné"}
-                        </p>
-                      </div>
-                    </section>
+                          <section className="rounded-md border border-[#d8bfd3] bg-[#f4e7f2] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
+                            <h2 className="text-sm font-semibold text-[#5c3d58]">
+                              Informations facultatives
+                            </h2>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2 text-xs text-[#4b3e49]">
+                              <p>
+                                <span className="font-medium">Nom du plat:</span>{" "}
+                                {details?.dishName?.trim() || "non renseigné"}
+                              </p>
+                              <p>
+                                <span className="font-medium">Moment du repas:</span>{" "}
+                                {details?.mealMoment || "non renseigné"}
+                              </p>
+                              <p>
+                                <span className="font-medium">Portions:</span>{" "}
+                                {details?.estimatedPortions?.trim() || "non renseigné"}
+                              </p>
+                              <p>
+                                <span className="font-medium">Ingrédients:</span>{" "}
+                                {details?.ingredients?.trim() || "non renseigné"}
+                              </p>
+                              <p className="sm:col-span-2">
+                                <span className="font-medium">Notes:</span>{" "}
+                                {details?.notes?.trim() || "non renseigné"}
+                              </p>
+                            </div>
+                          </section>
 
-                    <section className="rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.18)]">
-                      <h2 className="text-sm font-semibold text-[#7a5a18]">
-                        Réponses utilisateur au coach
-                      </h2>
-                      <div className="mt-2 space-y-2 text-xs text-[#3a2a12]">
-                        <p>
-                          <span className="font-medium">Réponse incertitudes:</span>{" "}
-                          {payload.reponseIncertitudes?.trim() || "aucune"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Réponse questions suivi:</span>{" "}
-                          {payload.reponseQuestionsSuivi?.trim() || "aucune"}
-                        </p>
-                      </div>
-                    </section>
-                  </>
-                )}
-
-                {payload ? (
-                  <>
-                    <section className="rounded-md border border-[#d6ddd0] bg-[#eef4e8] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-md border border-[#c694c0] bg-[#cfa0c8] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
-                          <p className="text-[11px] text-[#3b3b3b]">Score santé</p>
-                          <p className="text-lg font-semibold text-[#2c2c2c]">
-                            {analysis?.score_sante_100 ?? 0}/100
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#abd9dc] bg-[#bfe8ea] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
-                          <p className="text-[11px] text-[#3b3b3b]">Confiance IA</p>
-                          <p className="text-lg font-semibold text-[#2c2c2c]">
-                            {analysis?.confiance_100 ?? 0}%
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                        <p className="text-[11px] text-[#7a5a18]">Portion estimée</p>
-                        <p className="mt-1 text-xs text-[#3a2a12]">
-                          {analysis?.portion_estimee?.trim() || "Non renseigné"}
-                        </p>
-                      </div>
-
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3">
-                          <p className="text-[11px] text-[#7a5a18]">Calories</p>
-                          <p className="text-xs font-semibold text-[#3a2a12]">
-                            {metricRangeLabel(analysis?.nutrition_estimee?.calories_kcal, "kcal")}
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3">
-                          <p className="text-[11px] text-[#2c5c38]">Protéines</p>
-                          <p className="text-xs font-semibold text-[#1f3d1f]">
-                            {metricRangeLabel(analysis?.nutrition_estimee?.proteines_g, "g")}
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3">
-                          <p className="text-[11px] text-[#355f6f]">Glucides</p>
-                          <p className="text-xs font-semibold text-[#244451]">
-                            {metricRangeLabel(analysis?.nutrition_estimee?.glucides_g, "g")}
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3">
-                          <p className="text-[11px] text-[#6b4c67]">Lipides</p>
-                          <p className="text-xs font-semibold text-[#4f3850]">
-                            {metricRangeLabel(analysis?.nutrition_estimee?.lipides_g, "g")}
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#dfd3a9] bg-[#f4f0d4] p-3">
-                          <p className="text-[11px] text-[#6f5d28]">Fibres</p>
-                          <p className="text-xs font-semibold text-[#4b411f]">
-                            {metricRangeLabel(analysis?.nutrition_estimee?.fibres_g, "g")}
-                          </p>
-                        </div>
-                      </div>
-                    </section>
-
-                    <div className="grid gap-4 xl:grid-cols-2">
-                      <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                        <h2 className="text-sm font-semibold text-[#2d412d]">Plats probables</h2>
-                        {listOrEmpty(analysis?.plats_probables).length > 0 ? (
-                          <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                            {listOrEmpty(analysis?.plats_probables).map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="mt-2 text-xs text-[#657365]">Aucun item.</p>
-                        )}
-                      </section>
-
-                      <section className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                        <h2 className="text-sm font-semibold text-[#2d412d]">
-                          Ingrédients visibles
-                        </h2>
-                        {listOrEmpty(analysis?.ingredients_visibles).length > 0 ? (
-                          <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                            {listOrEmpty(analysis?.ingredients_visibles).map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="mt-2 text-xs text-[#657365]">Aucun item.</p>
-                        )}
-                      </section>
-                    </div>
-
-                    <div className="grid gap-4 xl:grid-cols-2">
-                      <section className="rounded-lg border border-[#f0d8ad] bg-[#fff8ec] p-4">
-                        <h2 className="text-sm font-semibold text-[#7a5a18]">
-                          Avertissements pathologies
-                        </h2>
-                        {listOrEmpty(analysis?.avertissement_pathologies).length > 0 ? (
-                          <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                            {listOrEmpty(analysis?.avertissement_pathologies).map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="mt-2 text-xs text-[#786b4a]">Aucun avertissement.</p>
-                        )}
-                      </section>
-
-                      <section className="rounded-lg border border-[#eadfbe] bg-[#fffdf4] p-4">
-                        <h2 className="text-sm font-semibold text-[#6f5d28]">Incertitudes</h2>
-                        {listOrEmpty(analysis?.incertitudes).length > 0 ? (
-                          <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                            {listOrEmpty(analysis?.incertitudes).map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="mt-2 text-xs text-[#786b4a]">Aucune incertitude.</p>
-                        )}
-                      </section>
-                    </div>
-
-                    <section className="rounded-md border border-[#c694c0] bg-[#f2e2ef] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                      <h2 className="text-sm font-semibold text-[#2d412d]">Questions de suivi</h2>
-                      {listOrEmpty(analysis?.questions_suivi).length > 0 ? (
-                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                          {listOrEmpty(analysis?.questions_suivi).map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-2 text-xs text-[#657365]">Aucune question de suivi.</p>
+                          <section className="rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.18)]">
+                            <h2 className="text-sm font-semibold text-[#7a5a18]">
+                              Réponses utilisateur au coach
+                            </h2>
+                            <div className="mt-2 space-y-2 text-xs text-[#3a2a12]">
+                              <p>
+                                <span className="font-medium">Réponse incertitudes:</span>{" "}
+                                {payload.reponseIncertitudes?.trim() || "aucune"}
+                              </p>
+                              <p>
+                                <span className="font-medium">Réponse questions suivi:</span>{" "}
+                                {payload.reponseQuestionsSuivi?.trim() || "aucune"}
+                              </p>
+                            </div>
+                          </section>
+                        </>
                       )}
-                    </section>
-                  </>
-                ) : selectedMealHistory ? (
-                  <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                    <h2 className="text-sm font-semibold text-[#2c5c38]">
-                      Aucun envoi coach, mais scan DB détecté
-                    </h2>
-                    <p className="mt-2 text-xs text-[#4e6d56]">
-                      Le coaché sélectionné n’a pas envoyé de soumission dédiée au coach, mais ce
-                      scan a bien été trouvé dans les tables `meal` / `dish`.
-                    </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
-                      <div className="overflow-hidden rounded-md border border-[#d5ead8] bg-white">
-                        <Image
-                          src={selectedMealHistory.photo}
-                          alt={getMealHistoryTitle(selectedMealHistory)}
-                          width={800}
-                          height={600}
-                          unoptimized
-                          loader={({ src }) => src}
-                          className="h-36 w-full object-cover"
-                        />
-                      </div>
-                      <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-dark-header">
-                        <p>
-                          <span className="font-medium">Repas:</span>{" "}
-                          {getMealHistoryTitle(selectedMealHistory)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Date:</span>{" "}
-                          {formatDate(selectedMealHistory.consumedAt)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Utilisateur:</span>{" "}
-                          {selectedMealHistory.userEmail || selectedMealHistory.userId}
-                        </p>
-                        <p>
-                          <span className="font-medium">Calories:</span>{" "}
-                          {selectedMealHistory.calories} kcal
-                        </p>
-                        <p>
-                          <span className="font-medium">Score IA:</span>{" "}
-                          {selectedMealHistory.aiScore}/100
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-                ) : (
-                  <section className="rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                    <h2 className="text-sm font-semibold text-[#75561e]">
-                      Aucune analyse scanner disponible
-                    </h2>
-                    <p className="mt-2 text-xs text-[#7a6843]">
-                      {selectedUser
-                        ? "Le coaché sélectionné n'a encore aucune soumission scanner à afficher ici."
-                        : "Choisissez un coaché dans la liste pour afficher son analyse."}
-                    </p>
-                  </section>
-                )}
 
-                <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                  <h2 className="text-sm font-semibold text-[#2c5c38]">
-                    Détail repas DB sélectionné (historique existant)
-                  </h2>
-                  {selectedMealHistory ? (
-                    <div className="mt-3 space-y-3">
-                      <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
-                        <div className="overflow-hidden rounded-md border border-[#d5ead8] bg-white">
-                          <Image
-                            src={selectedMealHistory.photo}
-                            alt={getMealHistoryTitle(selectedMealHistory)}
-                            width={800}
-                            height={600}
-                            unoptimized
-                            loader={({ src }) => src}
-                            className="h-32 w-full object-cover"
-                          />
-                        </div>
-                        <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-dark-header">
-                          <p>
-                            <span className="font-medium">Utilisateur:</span>{" "}
-                            {selectedMealHistory.userEmail || selectedMealHistory.userId}
-                          </p>
-                          <p>
-                            <span className="font-medium">Repas:</span>{" "}
-                            {getMealHistoryTitle(selectedMealHistory)}
-                          </p>
-                          <p>
-                            <span className="font-medium">Date:</span>{" "}
-                            {formatDate(selectedMealHistory.consumedAt)}
-                          </p>
-                          <p>
-                            <span className="font-medium">Coach:</span>{" "}
-                            {selectedMealHistory.coachName}
-                          </p>
-                          <p className="mt-1">
-                            <span className="font-medium">Commentaire coach:</span>{" "}
-                            {selectedMealHistory.coachComment}
-                          </p>
-                        </div>
-                      </div>
+                      {payload ? (
+                        <>
+                          <section className="rounded-md border border-[#d6ddd0] bg-[#eef4e8] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="rounded-md border border-[#c694c0] bg-[#cfa0c8] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                                <p className="text-[11px] text-[#3b3b3b]">Score santé</p>
+                                <p className="text-lg font-semibold text-[#2c2c2c]">
+                                  {analysis?.score_sante_100 ?? 0}/100
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#abd9dc] bg-[#bfe8ea] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                                <p className="text-[11px] text-[#3b3b3b]">Confiance IA</p>
+                                <p className="text-lg font-semibold text-[#2c2c2c]">
+                                  {analysis?.confiance_100 ?? 0}%
+                                </p>
+                              </div>
+                            </div>
 
-                      <div className="grid gap-2 sm:grid-cols-5">
-                        <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3 text-xs">
-                          <p className="text-[11px] text-[#7a5a18]">Calories</p>
-                          <p className="font-semibold text-[#3a2a12]">
-                            {selectedMealHistory.calories} kcal
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3 text-xs">
-                          <p className="text-[11px] text-[#2c5c38]">Protéines</p>
-                          <p className="font-semibold text-[#1f3d1f]">
-                            {selectedMealHistory.protein} g
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3 text-xs">
-                          <p className="text-[11px] text-[#355f6f]">Glucides</p>
-                          <p className="font-semibold text-[#244451]">
-                            {selectedMealHistory.carbs} g
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3 text-xs">
-                          <p className="text-[11px] text-[#6b4c67]">Lipides</p>
-                          <p className="font-semibold text-[#4f3850]">
-                            {selectedMealHistory.fat} g
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-[#90c78a] bg-[#a7d9a1] p-3 text-xs">
-                          <p className="text-[11px] text-[#2c5c38]">Score IA</p>
-                          <p className="font-semibold text-[#1f3d1f]">
-                            {selectedMealHistory.aiScore}/100
-                          </p>
-                        </div>
-                      </div>
+                            <div className="mt-4 rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                              <p className="text-[11px] text-[#7a5a18]">Portion estimée</p>
+                              <p className="mt-1 text-xs text-[#3a2a12]">
+                                {analysis?.portion_estimee?.trim() || "Non renseigné"}
+                              </p>
+                            </div>
 
-                      <div className="rounded-md border border-[#d5ead8] bg-white p-3">
-                        <p className="text-[11px] font-semibold text-[#3f6448]">
-                          Insights IA (historique)
-                        </p>
-                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
-                          {selectedMealHistory.aiInsights.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-[#627162]">
-                      Aucun repas DB sélectionné pour cet utilisateur.
-                    </p>
-                  )}
-                </section>
+                            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3">
+                                <p className="text-[11px] text-[#7a5a18]">Calories</p>
+                                <p className="text-xs font-semibold text-[#3a2a12]">
+                                  {metricRangeLabel(
+                                    analysis?.nutrition_estimee?.calories_kcal,
+                                    "kcal",
+                                  )}
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3">
+                                <p className="text-[11px] text-[#2c5c38]">Protéines</p>
+                                <p className="text-xs font-semibold text-[#1f3d1f]">
+                                  {metricRangeLabel(analysis?.nutrition_estimee?.proteines_g, "g")}
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3">
+                                <p className="text-[11px] text-[#355f6f]">Glucides</p>
+                                <p className="text-xs font-semibold text-[#244451]">
+                                  {metricRangeLabel(analysis?.nutrition_estimee?.glucides_g, "g")}
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3">
+                                <p className="text-[11px] text-[#6b4c67]">Lipides</p>
+                                <p className="text-xs font-semibold text-[#4f3850]">
+                                  {metricRangeLabel(analysis?.nutrition_estimee?.lipides_g, "g")}
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#dfd3a9] bg-[#f4f0d4] p-3">
+                                <p className="text-[11px] text-[#6f5d28]">Fibres</p>
+                                <p className="text-xs font-semibold text-[#4b411f]">
+                                  {metricRangeLabel(analysis?.nutrition_estimee?.fibres_g, "g")}
+                                </p>
+                              </div>
+                            </div>
+                          </section>
 
-                {payload && (
-                  <>
-                    <details className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                      <summary className="cursor-pointer text-sm font-semibold text-[#38477d]">
-                        Prompt envoyé à l’IA (aperçu)
-                      </summary>
-                      <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-3 text-[11px] text-dark-header">
-                        {payload.promptAnalyse || "Aucun prompt enregistré dans le payload."}
-                      </pre>
-                    </details>
+                          <div className="grid gap-4 xl:grid-cols-2">
+                            <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                              <h2 className="text-sm font-semibold text-[#2d412d]">
+                                Plats probables
+                              </h2>
+                              {listOrEmpty(analysis?.plats_probables).length > 0 ? (
+                                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                  {listOrEmpty(analysis?.plats_probables).map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-xs text-[#657365]">Aucun item.</p>
+                              )}
+                            </section>
 
-                    <section className="rounded-md border border-[#d6d6d6] bg-[#ececec] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                      <h2 className="text-sm font-semibold text-dark-header">
-                        JSON stocké (aperçu)
-                      </h2>
-                      <p className="mt-1 text-[11px] text-[#666]">
-                        Les longues chaînes (ex: image base64) sont tronquées dans cet aperçu.
-                      </p>
-                      <pre className="mt-3 max-h-136 overflow-auto rounded-md bg-[#1e2428] p-4 text-[11px] text-[#d8f2d2]">
-                        {jsonPreview}
-                      </pre>
-                    </section>
-                  </>
-                )}
+                            <section className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                              <h2 className="text-sm font-semibold text-[#2d412d]">
+                                Ingrédients visibles
+                              </h2>
+                              {listOrEmpty(analysis?.ingredients_visibles).length > 0 ? (
+                                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                  {listOrEmpty(analysis?.ingredients_visibles).map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-xs text-[#657365]">Aucun item.</p>
+                              )}
+                            </section>
+                          </div>
+
+                          <div className="grid gap-4 xl:grid-cols-2">
+                            <section className="rounded-lg border border-[#f0d8ad] bg-[#fff8ec] p-4">
+                              <h2 className="text-sm font-semibold text-[#7a5a18]">
+                                Avertissements pathologies
+                              </h2>
+                              {listOrEmpty(analysis?.avertissement_pathologies).length > 0 ? (
+                                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                  {listOrEmpty(analysis?.avertissement_pathologies).map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-xs text-[#786b4a]">Aucun avertissement.</p>
+                              )}
+                            </section>
+
+                            <section className="rounded-lg border border-[#eadfbe] bg-[#fffdf4] p-4">
+                              <h2 className="text-sm font-semibold text-[#6f5d28]">Incertitudes</h2>
+                              {listOrEmpty(analysis?.incertitudes).length > 0 ? (
+                                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                  {listOrEmpty(analysis?.incertitudes).map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-xs text-[#786b4a]">Aucune incertitude.</p>
+                              )}
+                            </section>
+                          </div>
+
+                          <section className="rounded-md border border-[#c694c0] bg-[#f2e2ef] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                            <h2 className="text-sm font-semibold text-[#2d412d]">
+                              Questions de suivi
+                            </h2>
+                            {listOrEmpty(analysis?.questions_suivi).length > 0 ? (
+                              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                {listOrEmpty(analysis?.questions_suivi).map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="mt-2 text-xs text-[#657365]">
+                                Aucune question de suivi.
+                              </p>
+                            )}
+                          </section>
+                        </>
+                      ) : selectedMealHistory ? (
+                        <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                          <h2 className="text-sm font-semibold text-[#2c5c38]">
+                            Aucun envoi coach, mais scan DB détecté
+                          </h2>
+                          <p className="mt-2 text-xs text-[#4e6d56]">
+                            Le coaché sélectionné n’a pas envoyé de soumission dédiée au coach, mais
+                            ce scan a bien été trouvé dans les tables `meal` / `dish`.
+                          </p>
+                          <div className="mt-3 grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
+                            <div className="overflow-hidden rounded-md border border-[#d5ead8] bg-white">
+                              <Image
+                                src={selectedMealHistory.photo}
+                                alt={getMealHistoryTitle(selectedMealHistory)}
+                                width={800}
+                                height={600}
+                                unoptimized
+                                loader={({ src }) => src}
+                                className="h-36 w-full object-cover"
+                              />
+                            </div>
+                            <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-dark-header">
+                              <p>
+                                <span className="font-medium">Repas:</span>{" "}
+                                {getMealHistoryTitle(selectedMealHistory)}
+                              </p>
+                              <p>
+                                <span className="font-medium">Date:</span>{" "}
+                                {formatDate(selectedMealHistory.consumedAt)}
+                              </p>
+                              <p>
+                                <span className="font-medium">Utilisateur:</span>{" "}
+                                {selectedMealHistory.userEmail || selectedMealHistory.userId}
+                              </p>
+                              <p>
+                                <span className="font-medium">Calories:</span>{" "}
+                                {selectedMealHistory.calories} kcal
+                              </p>
+                              <p>
+                                <span className="font-medium">Score IA:</span>{" "}
+                                {selectedMealHistory.aiScore}/100
+                              </p>
+                            </div>
+                          </div>
+                        </section>
+                      ) : (
+                        <section className="rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                          <h2 className="text-sm font-semibold text-[#75561e]">
+                            Aucune analyse scanner disponible
+                          </h2>
+                          <p className="mt-2 text-xs text-[#7a6843]">
+                            {selectedUser
+                              ? "Le coaché sélectionné n'a encore aucune soumission scanner à afficher ici."
+                              : "Choisissez un coaché dans la liste pour afficher son analyse."}
+                          </p>
+                        </section>
+                      )}
+
+                      <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                        <h2 className="text-sm font-semibold text-[#2c5c38]">
+                          Détail repas DB sélectionné (historique existant)
+                        </h2>
+                        {selectedMealHistory ? (
+                          <div className="mt-3 space-y-3">
+                            <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
+                              <div className="overflow-hidden rounded-md border border-[#d5ead8] bg-white">
+                                <Image
+                                  src={selectedMealHistory.photo}
+                                  alt={getMealHistoryTitle(selectedMealHistory)}
+                                  width={800}
+                                  height={600}
+                                  unoptimized
+                                  loader={({ src }) => src}
+                                  className="h-32 w-full object-cover"
+                                />
+                              </div>
+                              <div className="rounded-md border border-[#d5ead8] bg-white p-3 text-xs text-dark-header">
+                                <p>
+                                  <span className="font-medium">Utilisateur:</span>{" "}
+                                  {selectedMealHistory.userEmail || selectedMealHistory.userId}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Repas:</span>{" "}
+                                  {getMealHistoryTitle(selectedMealHistory)}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Date:</span>{" "}
+                                  {formatDate(selectedMealHistory.consumedAt)}
+                                </p>
+                                <p>
+                                  <span className="font-medium">Coach:</span>{" "}
+                                  {selectedMealHistory.coachName}
+                                </p>
+                                <p className="mt-1">
+                                  <span className="font-medium">Commentaire coach:</span>{" "}
+                                  {selectedMealHistory.coachComment}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-2 sm:grid-cols-5">
+                              <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3 text-xs">
+                                <p className="text-[11px] text-[#7a5a18]">Calories</p>
+                                <p className="font-semibold text-[#3a2a12]">
+                                  {selectedMealHistory.calories} kcal
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3 text-xs">
+                                <p className="text-[11px] text-[#2c5c38]">Protéines</p>
+                                <p className="font-semibold text-[#1f3d1f]">
+                                  {selectedMealHistory.protein} g
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3 text-xs">
+                                <p className="text-[11px] text-[#355f6f]">Glucides</p>
+                                <p className="font-semibold text-[#244451]">
+                                  {selectedMealHistory.carbs} g
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3 text-xs">
+                                <p className="text-[11px] text-[#6b4c67]">Lipides</p>
+                                <p className="font-semibold text-[#4f3850]">
+                                  {selectedMealHistory.fat} g
+                                </p>
+                              </div>
+                              <div className="rounded-md border border-[#90c78a] bg-[#a7d9a1] p-3 text-xs">
+                                <p className="text-[11px] text-[#2c5c38]">Score IA</p>
+                                <p className="font-semibold text-[#1f3d1f]">
+                                  {selectedMealHistory.aiScore}/100
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="rounded-md border border-[#d5ead8] bg-white p-3">
+                              <p className="text-[11px] font-semibold text-[#3f6448]">
+                                Insights IA (historique)
+                              </p>
+                              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
+                                {selectedMealHistory.aiInsights.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-xs text-[#627162]">
+                            Aucun repas DB sélectionné pour cet utilisateur.
+                          </p>
+                        )}
+                      </section>
+
+                      {payload && (
+                        <>
+                          <details className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                            <summary className="cursor-pointer text-sm font-semibold text-[#38477d]">
+                              Prompt envoyé à l’IA (aperçu)
+                            </summary>
+                            <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-3 text-[11px] text-dark-header">
+                              {payload.promptAnalyse || "Aucun prompt enregistré dans le payload."}
+                            </pre>
+                          </details>
+
+                          <section className="rounded-md border border-[#d6d6d6] bg-[#ececec] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                            <h2 className="text-sm font-semibold text-dark-header">
+                              JSON stocké (aperçu)
+                            </h2>
+                            <p className="mt-1 text-[11px] text-[#666]">
+                              Les longues chaînes (ex: image base64) sont tronquées dans cet aperçu.
+                            </p>
+                            <pre className="mt-3 max-h-136 overflow-auto rounded-md bg-[#1e2428] p-4 text-[11px] text-[#d8f2d2]">
+                              {jsonPreview}
+                            </pre>
+                          </section>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-md border border-[#c8c8c8] bg-[#d8d8d8] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+                <div className="self-start rounded-md border border-[#c8c8c8] bg-[#d8d8d8] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#2c2c2c]">
                     Coachés récents
                   </p>
@@ -1357,7 +1368,7 @@ export default function DashboardCoachTestPage() {
                       <span>Coaché</span>
                       <span className="text-right">Dernière activité</span>
                     </div>
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-2 max-h-[36rem] space-y-1 overflow-y-auto pr-1">
                       {recentPostingUsers.length > 0 ? (
                         recentPostingUsers.map((user) => {
                           const isSelected = selectedUserId === user.id;

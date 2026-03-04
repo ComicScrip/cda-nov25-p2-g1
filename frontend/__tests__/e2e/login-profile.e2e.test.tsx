@@ -5,6 +5,7 @@ import Login from "@/pages/login";
 import UserProfilePage from "@/pages/user_profile";
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 const mockLogin = jest.fn();
 const mockUpdateProfile = jest.fn();
 const mockLogout = jest.fn();
@@ -16,7 +17,7 @@ const mockUseMutation = jest.fn();
 const mockClearStore = jest.fn();
 
 jest.mock("next/router", () => ({
-  useRouter: () => ({ push: mockPush, query: {} }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, query: {} }),
 }));
 
 jest.mock("next/link", () => ({
@@ -63,6 +64,7 @@ function getInputById(id: string) {
 describe("E2E flow - login and profile creation", () => {
   beforeEach(() => {
     mockPush.mockReset();
+    mockReplace.mockReset();
     mockLogin.mockReset();
     mockUpdateProfile.mockReset();
     mockLogout.mockReset();
@@ -112,7 +114,7 @@ describe("E2E flow - login and profile creation", () => {
       }),
     );
 
-    expect(mockPush).toHaveBeenCalledWith("/dashboard_user");
+    expect(mockReplace).toHaveBeenCalledWith("/dashboard_user");
   });
 
   it("creates profile data and displays a success message", async () => {

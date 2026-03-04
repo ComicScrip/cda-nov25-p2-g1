@@ -1,1 +1,1 @@
-export { default } from "./dashboard_coach_test";
+export { default } from "@/components/coach/CoachDashboard";
