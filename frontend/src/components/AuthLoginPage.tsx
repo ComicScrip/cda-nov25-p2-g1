@@ -189,9 +189,13 @@ export default function AuthLoginPage({ audience }: AuthLoginPageProps) {
       }
 
       const returnUrl = getSafeReturnUrl(router.query.returnUrl);
-      const targetUrl = returnUrl ?? getDefaultDashboardHref(role);
+      const normalizedReturnUrl =
+        role === UserRole.Coach && returnUrl === "/coach/dashboard_coach_test"
+          ? "/coach/dashboard"
+          : returnUrl;
+      const targetUrl = normalizedReturnUrl ?? getDefaultDashboardHref(role);
 
-      void router.push(targetUrl);
+      void router.replace(targetUrl);
     } catch (err: any) {
       const errorMessage =
         err?.graphQLErrors?.[0]?.message ||

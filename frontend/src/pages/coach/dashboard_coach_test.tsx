@@ -11,6 +11,7 @@ import type { ScannerMealDetails, ScannerMealDraft } from "@/lib/scannerDraft";
 
 const SCANNER_COACH_PAYLOAD_KEY = "scannerMealCoachPayloadV1";
 const ACTIVITY_PAGE_SIZE = 10;
+const SELECTED_USER_DETAIL_LIMIT = 120;
 
 type NutritionRange = {
   min?: number;
@@ -59,6 +60,11 @@ type CoachScannerSubmissionsTestQueryData = {
   coachScannerSubmissionsTestData: CoachScannerSubmissionTestRow[];
 };
 
+type CoachScannerSubmissionsTestQueryVariables = {
+  userId?: string;
+  limit?: number;
+};
+
 type CoachUserMealTestRow = {
   id: string;
   userId: string;
@@ -80,6 +86,11 @@ type CoachUserMealsTestQueryData = {
   coachUserMealsTestData: CoachUserMealTestRow[];
 };
 
+type CoachUserMealsTestQueryVariables = {
+  userId?: string;
+  limit?: number;
+};
+
 type CoachSubmissionRecord = {
   id: string;
   userId: string;
@@ -96,7 +107,8 @@ type CoachSelectableUser = {
   scannerCount: number;
   mealsCount: number;
   score: number | null;
-  lastMealAt?: string | null;
+  lastSubmissionAt?: string | null;
+  lastActivityAt?: string | null;
 };
 
 type CoachActivityRecord = {
@@ -111,8 +123,8 @@ type CoachActivityRecord = {
 };
 
 const COACH_SCANNER_SUBMISSIONS_TEST_QUERY = gql`
-  query CoachScannerSubmissionsTestData {
-    coachScannerSubmissionsTestData {
+  query CoachScannerSubmissionsTestData($userId: String, $limit: Int) {
+    coachScannerSubmissionsTestData(userId: $userId, limit: $limit) {
       id
       userId
       userEmail
@@ -123,8 +135,8 @@ const COACH_SCANNER_SUBMISSIONS_TEST_QUERY = gql`
 `;
 
 const COACH_USER_MEALS_TEST_QUERY = gql`
-  query CoachUserMealsTestData {
-    coachUserMealsTestData {
+  query CoachUserMealsTestData($userId: String, $limit: Int) {
+    coachUserMealsTestData(userId: $userId, limit: $limit) {
       id
       userId
       userEmail
@@ -230,6 +242,29 @@ function formatDate(value?: string): string {
   return date.toLocaleString("fr-FR");
 }
 
+function getLatestDate(current?: string | null, candidate?: string | null): string | null {
+  if (!current) {
+    return candidate ?? null;
+  }
+
+  if (!candidate) {
+    return current;
+  }
+
+  const currentTime = new Date(current).getTime();
+  const candidateTime = new Date(candidate).getTime();
+
+  if (Number.isNaN(currentTime)) {
+    return candidate;
+  }
+
+  if (Number.isNaN(candidateTime)) {
+    return current;
+  }
+
+  return candidateTime > currentTime ? candidate : current;
+}
+
 function metricRangeLabel(range?: NutritionRange, unit?: string): string {
   if (!range || range.min === undefined || range.max === undefined) {
     return "Non renseigné";
@@ -274,33 +309,6 @@ export default function DashboardCoachTestPage() {
     fetchPolicy: "cache-and-network",
   });
   const isAuthorizedCoach = profileData?.me?.role === UserRole.Coach;
-  const {
-    data: coachDashboardData,
-    loading: coachUsersLoading,
-    error: coachUsersError,
-    refetch: refetchCoachUsers,
-  } = useCoachDashboardDataQuery({
-    fetchPolicy: "cache-and-network",
-    skip: !isAuthorizedCoach,
-  });
-  const {
-    data,
-    loading,
-    error,
-    refetch: refetchScannerSubmissions,
-  } = useQuery<CoachScannerSubmissionsTestQueryData>(COACH_SCANNER_SUBMISSIONS_TEST_QUERY, {
-    fetchPolicy: "cache-and-network",
-    skip: !isAuthorizedCoach,
-  });
-  const {
-    data: mealsData,
-    loading: mealsLoading,
-    error: mealsError,
-    refetch: refetchCoachMeals,
-  } = useQuery<CoachUserMealsTestQueryData>(COACH_USER_MEALS_TEST_QUERY, {
-    fetchPolicy: "cache-and-network",
-    skip: !isAuthorizedCoach,
-  });
   const [localPayload, setLocalPayload] = useState<CoachSubmissionPayload | null>(null);
   const [localSourceLabel, setLocalSourceLabel] = useState<"session" | "fallback" | "error">(
     "fallback",
@@ -312,6 +320,36 @@ export default function DashboardCoachTestPage() {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [activityPage, setActivityPage] = useState(0);
   const deferredUserSearchTerm = useDeferredValue(userSearchTerm);
+  const {
+    data: coachDashboardData,
+    loading: coachUsersLoading,
+    error: coachUsersError,
+  } = useCoachDashboardDataQuery({
+    fetchPolicy: "cache-and-network",
+    skip: !isAuthorizedCoach,
+  });
+  const selectedUserDetailVariables = selectedUserId
+    ? {
+        userId: selectedUserId,
+        limit: SELECTED_USER_DETAIL_LIMIT,
+      }
+    : undefined;
+  const { data, error } = useQuery<
+    CoachScannerSubmissionsTestQueryData,
+    CoachScannerSubmissionsTestQueryVariables
+  >(COACH_SCANNER_SUBMISSIONS_TEST_QUERY, {
+    fetchPolicy: "cache-and-network",
+    skip: !isAuthorizedCoach || !selectedUserId,
+    variables: selectedUserDetailVariables,
+  });
+  const { data: mealsData, error: mealsError } = useQuery<
+    CoachUserMealsTestQueryData,
+    CoachUserMealsTestQueryVariables
+  >(COACH_USER_MEALS_TEST_QUERY, {
+    fetchPolicy: "cache-and-network",
+    skip: !isAuthorizedCoach || !selectedUserId,
+    variables: selectedUserDetailVariables,
+  });
 
   const handleSelectUser = useCallback((nextUserId: string | null) => {
     setSelectedUserId(nextUserId);
@@ -414,9 +452,10 @@ export default function DashboardCoachTestPage() {
         userEmail,
         displayName,
         scannerCount: 0,
-        mealsCount: 0,
+        mealsCount: coachedUser.scannedMeals,
         score: coachedUser.score,
-        lastMealAt: coachedUser.lastMealAt ?? null,
+        lastSubmissionAt: null,
+        lastActivityAt: coachedUser.lastMealAt ?? null,
       });
     }
 
@@ -425,6 +464,8 @@ export default function DashboardCoachTestPage() {
       const userEmail = record.userEmail?.trim() || `Utilisateur ${record.userId.slice(0, 8)}`;
       if (existing) {
         existing.scannerCount += 1;
+        existing.lastSubmissionAt = getLatestDate(existing.lastSubmissionAt, record.createdAt);
+        existing.lastActivityAt = getLatestDate(existing.lastActivityAt, record.createdAt);
       } else {
         map.set(record.userId, {
           userId: record.userId,
@@ -433,7 +474,8 @@ export default function DashboardCoachTestPage() {
           scannerCount: 1,
           mealsCount: 0,
           score: null,
-          lastMealAt: null,
+          lastSubmissionAt: record.createdAt,
+          lastActivityAt: record.createdAt,
         });
       }
     }
@@ -442,7 +484,7 @@ export default function DashboardCoachTestPage() {
       const existing = map.get(mealRow.userId);
       const userEmail = mealRow.userEmail?.trim() || `Utilisateur ${mealRow.userId.slice(0, 8)}`;
       if (existing) {
-        existing.mealsCount += 1;
+        existing.lastActivityAt = getLatestDate(existing.lastActivityAt, mealRow.consumedAt);
       } else {
         map.set(mealRow.userId, {
           userId: mealRow.userId,
@@ -451,7 +493,8 @@ export default function DashboardCoachTestPage() {
           scannerCount: 0,
           mealsCount: 1,
           score: mealRow.aiScore,
-          lastMealAt: mealRow.consumedAt,
+          lastSubmissionAt: null,
+          lastActivityAt: mealRow.consumedAt,
         });
       }
     }
@@ -490,12 +533,7 @@ export default function DashboardCoachTestPage() {
       return;
     }
 
-    const preferredUserId =
-      coachMealRows[0]?.userId ??
-      dbRecords[0]?.userId ??
-      recentUsers[0]?.id ??
-      users[0]?.userId ??
-      null;
+    const preferredUserId = recentUsers[0]?.id ?? users[0]?.userId ?? null;
 
     setSelectedUserId((current) => {
       if (current && users.some((user) => user.userId === current)) {
@@ -504,7 +542,19 @@ export default function DashboardCoachTestPage() {
 
       return preferredUserId;
     });
-  }, [coachMealRows, dbRecords, recentUsers, users]);
+  }, [recentUsers, users]);
+
+  useEffect(() => {
+    if (!normalizedUserSearch || filteredUsers.length === 0) {
+      return;
+    }
+
+    if (selectedUserId && filteredUsers.some((user) => user.userId === selectedUserId)) {
+      return;
+    }
+
+    handleSelectUser(filteredUsers[0]?.userId ?? null);
+  }, [filteredUsers, handleSelectUser, normalizedUserSearch, selectedUserId]);
 
   const recordsForSelectedUser = useMemo(() => {
     if (!hasDbRecords || !selectedUserId) {
@@ -561,9 +611,9 @@ export default function DashboardCoachTestPage() {
   const selectedUser = useMemo(() => {
     return users.find((user) => user.userId === selectedUserId) ?? users[0] ?? null;
   }, [selectedUserId, users]);
-  const selectedUserIndex = selectedUser
-    ? users.findIndex((user) => user.userId === selectedUser.userId)
-    : -1;
+  const recentPostingUsers = useMemo(() => {
+    return recentUsers.slice(0, 10);
+  }, [recentUsers]);
   const shouldUseLocalPreview = !hasAnyDbData && users.length === 0;
   const selectedRecord = useMemo(() => {
     if (selectedSubmissionId) {
@@ -654,8 +704,6 @@ export default function DashboardCoachTestPage() {
   const details = payload?.details;
   const draft = payload?.draft;
   const imageUrl = draft?.imageUrl?.trim();
-  const hasPreviousUser = selectedUserIndex > 0;
-  const hasNextUser = selectedUserIndex >= 0 && selectedUserIndex < users.length - 1;
 
   useEffect(() => {
     if (!profileLoading) {
@@ -672,7 +720,7 @@ export default function DashboardCoachTestPage() {
 
   if (profileLoading) {
     return (
-      <CoachLayout pageTitle="Dashboard Coach Test">
+      <CoachLayout pageTitle="Dashboard Coach">
         <div className="flex min-h-[400px] flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -685,30 +733,44 @@ export default function DashboardCoachTestPage() {
   }
 
   return (
-    <CoachLayout pageTitle="Dashboard Coach Test" footerVariant="userSlim">
+    <CoachLayout pageTitle="Dashboard Coach" footerVariant="userSlim">
       <section className="flex flex-1 bg-[#eef3ea] px-4 py-6 md:px-8">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="rounded-xl border border-[#cfd8c8] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.08)]">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-[#243124]">Dashboard Coach Test</h1>
+          <div className="rounded-xl border border-[#d7ddd1] bg-[#f7faf3] p-5 shadow-[0_3px_6px_rgba(0,0,0,0.16)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="min-w-0">
+                <div className="inline-flex rounded-full border border-[#c694c0] bg-[#e7cfe3] px-4 py-2 shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                  <h1 className="text-xl font-semibold text-[#4f3850]">Dashboard Coach</h1>
+                </div>
                 <p className="mt-1 text-xs text-[#596659]">
                   Visualisation chronologique des derniers scans d’un coaché.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    loadPayload();
-                    void refetchScannerSubmissions();
-                    void refetchCoachMeals();
-                    void refetchCoachUsers();
-                  }}
-                  className="rounded-md bg-[#2f5f8f] px-3 py-2 text-xs font-semibold text-white"
-                >
-                  {loading || mealsLoading || coachUsersLoading ? "Chargement..." : "Rafraîchir"}
-                </button>
+              <div className="w-full md:max-w-[520px]">
+                <div className="w-full">
+                  <label
+                    htmlFor="coach-user-search"
+                    className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#556c97]"
+                  >
+                    Chercher un coaché
+                  </label>
+                  <p className="mt-1 text-[11px] text-[#5f6d97]">Par nom ou email.</p>
+                  <input
+                    id="coach-user-search"
+                    type="search"
+                    value={userSearchTerm}
+                    onChange={(event) => {
+                      setUserSearchTerm(event.target.value);
+                    }}
+                    placeholder="Nom ou email"
+                    className="mt-2 w-full rounded-md border border-[#d5dcf0] bg-white px-3 py-2 text-sm text-[#23386f] outline-none transition focus:border-[#6986d8] focus:ring-2 focus:ring-[#e1e8ff]"
+                  />
+                </div>
+                {filteredUsers.length === 0 && (
+                  <p className="mt-3 text-xs text-[#62719c]">
+                    Aucun coaché ne correspond à cette recherche.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -736,9 +798,9 @@ export default function DashboardCoachTestPage() {
               </div>
             )}
 
-            <section className="mt-5 rounded-lg border border-[#d9e5d0] bg-[#f7fbf3] p-4">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-                <div>
+            <section className="mt-5 rounded-md border border-[#d8ddd0] bg-[#f0f4eb] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
+                <div className="min-w-0 space-y-5">
                   <h2 className="text-sm font-semibold text-[#243124]">Coaché sélectionné</h2>
                   <p className="mt-1 text-xs text-[#5a6758]">
                     {selectedUser
@@ -753,287 +815,184 @@ export default function DashboardCoachTestPage() {
                   </p>
                   {selectedUser && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-2">
-                        <p className="text-[11px] text-[#5a6758]">Score</p>
-                        <p className="text-sm font-semibold text-[#243124]">
+                      <div className="rounded-md border border-[#c694c0] bg-[#cfa0c8] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                        <p className="text-[11px] text-[#3b3b3b]">Score</p>
+                        <p className="text-sm font-semibold text-[#2c2c2c]">
                           {selectedUser.score !== null ? Math.round(selectedUser.score) : "--"}
                         </p>
                       </div>
-                      <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-2">
-                        <p className="text-[11px] text-[#5a6758]">Scans envoyés</p>
-                        <p className="text-sm font-semibold text-[#243124]">
+                      <div className="rounded-md border border-[#abd9dc] bg-[#bfe8ea] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                        <p className="text-[11px] text-[#3b3b3b]">Scans envoyés</p>
+                        <p className="text-sm font-semibold text-[#2c2c2c]">
                           {selectedUser.scannerCount}
                         </p>
                       </div>
-                      <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-2">
-                        <p className="text-[11px] text-[#5a6758]">Repas DB</p>
-                        <p className="text-sm font-semibold text-[#243124]">
+                      <div className="rounded-md border border-[#90c78a] bg-[#a7d9a1] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                        <p className="text-[11px] text-[#3b3b3b]">Repas DB</p>
+                        <p className="text-sm font-semibold text-[#2c2c2c]">
                           {selectedUser.mealsCount}
                         </p>
                       </div>
-                      <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-2">
-                        <p className="text-[11px] text-[#5a6758]">Dernier envoi</p>
-                        <p className="text-xs font-semibold text-[#243124]">
-                          {selectedUser.lastMealAt ? formatDate(selectedUser.lastMealAt) : "Aucun"}
+                      <div className="rounded-md border border-[#d39c58] bg-[#e9b26b] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                        <p className="text-[11px] text-[#3b3b3b]">Dernier scan envoyé</p>
+                        <p className="text-xs font-semibold text-[#2c2c2c]">
+                          {selectedUser.lastSubmissionAt
+                            ? formatDate(selectedUser.lastSubmissionAt)
+                            : "Aucun"}
                         </p>
                       </div>
                     </div>
                   )}
-                </div>
+                  <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+                    <aside className="flex flex-col gap-4">
+                      {users.length > 0 && (
+                        <section className="order-1 rounded-md bg-[#89c689] p-4 text-[#1f3d1f] shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
+                          <h2 className="text-sm font-semibold text-[#1f3d1f]">
+                            Derniers scans du coaché
+                          </h2>
+                          <p className="mt-1 text-[11px] text-[#294f29]">
+                            10 éléments par page. Utilise `Suivant` pour charger les activités plus
+                            anciennes du coaché sélectionné.
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {paginatedActivitiesForSelectedUser.map((activity) => {
+                              const isActive = activity.id === selectedActivity?.id;
 
-                <div className="rounded-md border border-[#d8e5d2] bg-white p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#556652]">
-                    Navigation coachés
-                  </p>
-                  <p className="mt-1 text-xs text-[#5a6758]">
-                    {selectedUserIndex >= 0
-                      ? `Coaché ${selectedUserIndex + 1} sur ${users.length}`
-                      : "Aucun coaché sélectionné"}
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectUser(users[selectedUserIndex - 1]?.userId ?? null)}
-                      disabled={!hasPreviousUser}
-                      className="rounded-md border border-[#cfd8c8] bg-[#f6faf3] px-3 py-2 text-xs font-semibold text-[#355335] disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      Coaché précédent
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectUser(users[selectedUserIndex + 1]?.userId ?? null)}
-                      disabled={!hasNextUser}
-                      className="rounded-md border border-[#cfd8c8] bg-[#f6faf3] px-3 py-2 text-xs font-semibold text-[#355335] disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      Coaché suivant
-                    </button>
-                  </div>
-                </div>
-              </div>
+                              return (
+                                <button
+                                  key={activity.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (activity.kind === "submission" && activity.submission) {
+                                      setSelectedSubmissionId(activity.submission.id);
+                                      setSelectedMealHistoryId(null);
+                                      return;
+                                    }
 
-              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(220px,0.7fr)_minmax(220px,0.7fr)]">
-                <section className="rounded-md border border-[#d8e5d2] bg-white p-4 xl:row-span-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-[#243124]">Coachés</h3>
-                    <p className="mt-1 text-xs text-[#5a6758]">
-                      {users.length} coaché{users.length > 1 ? "s" : ""} rattaché
-                      {users.length > 1 ? "s" : ""} à ce coach.
-                    </p>
-                  </div>
-
-                  <div className="mt-4">
-                    <label
-                      htmlFor="coach-user-search"
-                      className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#556c97]"
-                    >
-                      Choisir un coaché
-                    </label>
-                    <p className="mt-1 text-[11px] text-[#5f6d97]">
-                      Recherche un nom ou un email, puis sélectionne le coaché dans la liste.
-                    </p>
-                    <input
-                      id="coach-user-search"
-                      type="search"
-                      value={userSearchTerm}
-                      onChange={(event) => {
-                        setUserSearchTerm(event.target.value);
-                      }}
-                      placeholder="Nom ou email"
-                      className="mt-2 w-full rounded-md border border-[#d5dcf0] bg-white px-3 py-2 text-sm text-[#23386f] outline-none transition focus:border-[#6986d8] focus:ring-2 focus:ring-[#e1e8ff]"
-                    />
-                    <select
-                      value={selectedUserId ?? ""}
-                      onChange={(event) => handleSelectUser(event.target.value || null)}
-                      className="mt-3 w-full rounded-md border border-[#d5dcf0] bg-white px-3 py-2 text-sm text-[#23386f] outline-none transition focus:border-[#6986d8] focus:ring-2 focus:ring-[#e1e8ff]"
-                    >
-                      <option value="">Sélectionner un coaché</option>
-                      {filteredUsers.map((user) => (
-                        <option key={user.userId} value={user.userId}>
-                          {user.userEmail}
-                          {user.displayName !== user.userEmail ? ` - ${user.displayName}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedUser && (
-                      <div className="mt-3 rounded-md border border-[#dce6f9] bg-[#f8fbff] px-3 py-2 text-xs text-[#34507e]">
-                        <p className="font-semibold">{selectedUser.userEmail}</p>
-                        {selectedUser.displayName !== selectedUser.userEmail && (
-                          <p className="mt-0.5">Profil: {selectedUser.displayName}</p>
-                        )}
-                        <p className="mt-1">
-                          {selectedUser.scannerCount} soumission
-                          {selectedUser.scannerCount > 1 ? "s" : ""} scanner •{" "}
-                          {selectedUser.mealsCount} repas DB
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-[#58719b]">
-                          {selectedUser.lastMealAt
-                            ? `Dernière activité: ${formatDate(selectedUser.lastMealAt)}`
-                            : "Aucune activité récente"}
-                        </p>
-                      </div>
-                    )}
-                    {filteredUsers.length === 0 && (
-                      <p className="mt-3 text-xs text-[#62719c]">
-                        Aucun coaché ne correspond à cette recherche.
-                      </p>
-                    )}
-                  </div>
-                </section>
-
-                <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-3">
-                  <p className="text-[11px] text-[#5a6758]">Soumissions scanner</p>
-                  <p className="text-base font-semibold text-[#243124]">
-                    {selectedUser?.scannerCount ?? 0}
-                  </p>
-                </div>
-                <div className="rounded-md border border-[#d8e5d2] bg-white px-3 py-3">
-                  <p className="text-[11px] text-[#5a6758]">Repas historiques</p>
-                  <p className="text-base font-semibold text-[#243124]">
-                    {selectedUser?.mealsCount ?? 0}
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-              <aside className="flex flex-col gap-4">
-                {users.length > 0 && (
-                  <section className="order-1 rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
-                    <h2 className="text-sm font-semibold text-[#2c5c38]">
-                      Derniers scans du coaché
-                    </h2>
-                    <p className="mt-1 text-[11px] text-[#5d7b63]">
-                      10 éléments par page. Utilise `Suivant` pour charger les activités plus
-                      anciennes du coaché sélectionné.
-                    </p>
-                    <div className="mt-3 space-y-2">
-                      {paginatedActivitiesForSelectedUser.map((activity) => {
-                        const isActive = activity.id === selectedActivity?.id;
-
-                        return (
-                          <button
-                            key={activity.id}
-                            type="button"
-                            onClick={() => {
-                              if (activity.kind === "submission" && activity.submission) {
-                                setSelectedSubmissionId(activity.submission.id);
-                                setSelectedMealHistoryId(null);
-                                return;
-                              }
-
-                              if (activity.kind === "meal" && activity.meal) {
-                                setSelectedMealHistoryId(activity.meal.id);
-                                setSelectedSubmissionId(null);
-                              }
-                            }}
-                            className={`w-full rounded-md border px-3 py-2 text-left text-xs ${
-                              isActive
-                                ? "border-[#6cb07a] bg-[#ebf9ee] text-[#23492c]"
-                                : "border-[#d5ead8] bg-white text-[#35523b]"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="font-semibold">{activity.title}</div>
-                                <div className="mt-0.5 text-[11px]">
-                                  {formatDate(activity.occurredAt)}
-                                </div>
-                                <div className="mt-0.5 text-[11px] text-[#5d7b63]">
-                                  {activity.description}
-                                </div>
+                                    if (activity.kind === "meal" && activity.meal) {
+                                      setSelectedMealHistoryId(activity.meal.id);
+                                      setSelectedSubmissionId(null);
+                                    }
+                                  }}
+                                  className={`w-full rounded-md border px-3 py-2 text-left text-xs ${
+                                    isActive
+                                      ? "border-[#2f8d53] bg-[#e9f6e8] text-[#1f3d1f] shadow-[0_2px_4px_rgba(0,0,0,0.14)]"
+                                      : "border-[#76b778] bg-[#f7fff5] text-[#274327]"
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="font-semibold">{activity.title}</div>
+                                      <div className="mt-0.5 text-[11px]">
+                                        {formatDate(activity.occurredAt)}
+                                      </div>
+                                      <div className="mt-0.5 text-[11px] text-[#356035]">
+                                        {activity.description}
+                                      </div>
+                                    </div>
+                                    <span
+                                      className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                                        activity.kind === "submission"
+                                          ? "bg-[#edf4ff] text-[#3a5ba8]"
+                                          : "bg-[#eaf7ee] text-[#27663a]"
+                                      }`}
+                                    >
+                                      {activity.subtitle}
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                            {paginatedActivitiesForSelectedUser.length === 0 && (
+                              <p className="text-xs text-[#627162]">
+                                Aucun scan ni repas historique pour cet utilisateur.
+                              </p>
+                            )}
+                          </div>
+                          {activitiesForSelectedUser.length > 0 && (
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                              <p className="text-[11px] text-[#5d7b63]">
+                                Page {activityPage + 1} sur {activityPageCount}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActivityPage((current) => Math.max(current - 1, 0))
+                                  }
+                                  disabled={activityPage === 0}
+                                  className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-[#1f3d1f] shadow-[0_2px_4px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-45"
+                                >
+                                  Précédent
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActivityPage((current) =>
+                                      Math.min(current + 1, activityPageCount - 1),
+                                    )
+                                  }
+                                  disabled={activityPage >= activityPageCount - 1}
+                                  className="rounded-md bg-[#2596be] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-45"
+                                >
+                                  Suivant
+                                </button>
                               </div>
-                              <span
-                                className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
-                                  activity.kind === "submission"
-                                    ? "bg-[#edf4ff] text-[#3a5ba8]"
-                                    : "bg-[#eaf7ee] text-[#27663a]"
-                                }`}
-                              >
-                                {activity.subtitle}
-                              </span>
                             </div>
-                          </button>
-                        );
-                      })}
-                      {paginatedActivitiesForSelectedUser.length === 0 && (
-                        <p className="text-xs text-[#627162]">
-                          Aucun scan ni repas historique pour cet utilisateur.
-                        </p>
+                          )}
+                        </section>
                       )}
-                    </div>
-                    {activitiesForSelectedUser.length > 0 && (
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <p className="text-[11px] text-[#5d7b63]">
-                          Page {activityPage + 1} sur {activityPageCount}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setActivityPage((current) => Math.max(current - 1, 0))}
-                            disabled={activityPage === 0}
-                            className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            Précédent
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActivityPage((current) =>
-                                Math.min(current + 1, activityPageCount - 1),
-                              )
-                            }
-                            disabled={activityPage >= activityPageCount - 1}
-                            className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            Suivant
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                )}
+                    </aside>
 
-                {payload ? (
+                    <div className="space-y-4">
+                {payload && (
                   <>
-                    <section className="order-2 rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
+                    <section className="rounded-md border border-[#cfd4c9] bg-[#e7ebe4] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
                       <h2 className="text-sm font-semibold text-[#2d412d]">Scan enregistré</h2>
-                      <div className="mt-2 space-y-1 text-xs text-[#495849]">
-                        <p>
-                          <span className="font-medium">Fichier:</span>{" "}
-                          {draft?.fileName ?? "inconnu"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Source image:</span> {draft?.source ?? "?"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Sauvegardé:</span>{" "}
-                          {formatDate(payload.savedAt)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Déjà consommé:</span>{" "}
-                          {payload.platDejaConsomme ?? "non précisé"}
-                        </p>
-                      </div>
-                      {imageUrl && (
-                        <div className="mt-3 overflow-hidden rounded-md border border-[#d4dbcf] bg-white">
-                          <Image
-                            src={imageUrl}
-                            alt="Repas scanné"
-                            width={1200}
-                            height={900}
-                            unoptimized
-                            loader={({ src }) => src}
-                            className="h-52 w-full object-cover"
-                          />
+                      <div className="mt-3 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+                        {imageUrl ? (
+                          <div className="overflow-hidden rounded-md border border-[#d4dbcf] bg-white">
+                            <Image
+                              src={imageUrl}
+                              alt="Repas scanné"
+                              width={1200}
+                              height={900}
+                              unoptimized
+                              loader={({ src }) => src}
+                              className="h-40 w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-sm font-semibold text-[#2d412d]">
+                            {draft?.fileName ?? "Aucune image"}
+                          </div>
+                        )}
+                        <div className="rounded-md border border-[#d4dbcf] bg-white p-3 text-xs text-[#495849]">
+                          <p>
+                            <span className="font-medium">Fichier:</span>{" "}
+                            {draft?.fileName ?? "inconnu"}
+                          </p>
+                          <p>
+                            <span className="font-medium">Source image:</span>{" "}
+                            {draft?.source ?? "?"}
+                          </p>
+                          <p>
+                            <span className="font-medium">Sauvegardé:</span>{" "}
+                            {formatDate(payload.savedAt)}
+                          </p>
+                          <p>
+                            <span className="font-medium">Déjà consommé:</span>{" "}
+                            {payload.platDejaConsomme ?? "non précisé"}
+                          </p>
                         </div>
-                      )}
+                      </div>
                     </section>
 
-                    <section className="order-4 rounded-lg border border-[#d7dfd2] bg-[#f8fbf6] p-4">
-                      <h2 className="text-sm font-semibold text-[#2d412d]">
+                    <section className="rounded-md border border-[#d8bfd3] bg-[#f4e7f2] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
+                      <h2 className="text-sm font-semibold text-[#5c3d58]">
                         Informations facultatives
                       </h2>
-                      <div className="mt-2 space-y-2 text-xs text-dark-header">
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2 text-xs text-[#4b3e49]">
                         <p>
                           <span className="font-medium">Nom du plat:</span>{" "}
                           {details?.dishName?.trim() || "non renseigné"}
@@ -1050,18 +1009,18 @@ export default function DashboardCoachTestPage() {
                           <span className="font-medium">Ingrédients:</span>{" "}
                           {details?.ingredients?.trim() || "non renseigné"}
                         </p>
-                        <p>
+                        <p className="sm:col-span-2">
                           <span className="font-medium">Notes:</span>{" "}
                           {details?.notes?.trim() || "non renseigné"}
                         </p>
                       </div>
                     </section>
 
-                    <section className="order-5 rounded-lg border border-[#eddab6] bg-[#fff8ea] p-4">
+                    <section className="rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.18)]">
                       <h2 className="text-sm font-semibold text-[#7a5a18]">
                         Réponses utilisateur au coach
                       </h2>
-                      <div className="mt-2 space-y-2 text-xs text-dark-header">
+                      <div className="mt-2 space-y-2 text-xs text-[#3a2a12]">
                         <p>
                           <span className="font-medium">Réponse incertitudes:</span>{" "}
                           {payload.reponseIncertitudes?.trim() || "aucune"}
@@ -1073,76 +1032,61 @@ export default function DashboardCoachTestPage() {
                       </div>
                     </section>
                   </>
-                ) : (
-                  <section className="order-2 rounded-lg border border-[#e6ddc1] bg-[#fffaf0] p-4">
-                    <h2 className="text-sm font-semibold text-[#75561e]">
-                      Aucune soumission scanner
-                    </h2>
-                    <p className="mt-2 text-xs text-[#7a6843]">
-                      {selectedUser
-                        ? selectedMealHistory
-                          ? "Ce coaché n'a pas de soumission coach, mais un scan DB récent est bien disponible."
-                          : "Ce coaché n'a pas encore envoyé de scan exploitable au coach."
-                        : "Sélectionnez un coaché pour afficher ses scans et ses repas."}
-                    </p>
-                  </section>
                 )}
-              </aside>
 
-              <div className="space-y-4">
                 {payload ? (
                   <>
-                    <section className="rounded-lg border border-[#d6dfd0] bg-white p-4">
+                    <section className="rounded-md border border-[#d6ddd0] bg-[#eef4e8] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.12)]">
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-md border border-[#dbe7d4] bg-[#f4faf0] px-3 py-2">
-                          <p className="text-[11px] text-[#516451]">Score santé</p>
-                          <p className="text-lg font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#c694c0] bg-[#cfa0c8] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                          <p className="text-[11px] text-[#3b3b3b]">Score santé</p>
+                          <p className="text-lg font-semibold text-[#2c2c2c]">
                             {analysis?.score_sante_100 ?? 0}/100
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#dbe7d4] bg-[#f4faf0] px-3 py-2">
-                          <p className="text-[11px] text-[#516451]">Confiance IA</p>
-                          <p className="text-lg font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#abd9dc] bg-[#bfe8ea] px-3 py-2 text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.14)]">
+                          <p className="text-[11px] text-[#3b3b3b]">Confiance IA</p>
+                          <p className="text-lg font-semibold text-[#2c2c2c]">
                             {analysis?.confiance_100 ?? 0}%
                           </p>
                         </div>
                       </div>
 
-                      <div className="mt-4 rounded-md border border-[#d8e3d2] bg-[#f9fcf8] p-3">
-                        <p className="text-[11px] text-[#516451]">Portion estimée</p>
-                        <p className="mt-1 text-xs text-dark-header">
+                      <div className="mt-4 rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                        <p className="text-[11px] text-[#7a5a18]">Portion estimée</p>
+                        <p className="mt-1 text-xs text-[#3a2a12]">
                           {analysis?.portion_estimee?.trim() || "Non renseigné"}
                         </p>
                       </div>
 
                       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
-                          <p className="text-[11px] text-[#516451]">Calories</p>
-                          <p className="text-xs font-semibold text-dark-header">
+                        <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3">
+                          <p className="text-[11px] text-[#7a5a18]">Calories</p>
+                          <p className="text-xs font-semibold text-[#3a2a12]">
                             {metricRangeLabel(analysis?.nutrition_estimee?.calories_kcal, "kcal")}
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
-                          <p className="text-[11px] text-[#516451]">Protéines</p>
-                          <p className="text-xs font-semibold text-dark-header">
+                        <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3">
+                          <p className="text-[11px] text-[#2c5c38]">Protéines</p>
+                          <p className="text-xs font-semibold text-[#1f3d1f]">
                             {metricRangeLabel(analysis?.nutrition_estimee?.proteines_g, "g")}
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
-                          <p className="text-[11px] text-[#516451]">Glucides</p>
-                          <p className="text-xs font-semibold text-dark-header">
+                        <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3">
+                          <p className="text-[11px] text-[#355f6f]">Glucides</p>
+                          <p className="text-xs font-semibold text-[#244451]">
                             {metricRangeLabel(analysis?.nutrition_estimee?.glucides_g, "g")}
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
-                          <p className="text-[11px] text-[#516451]">Lipides</p>
-                          <p className="text-xs font-semibold text-dark-header">
+                        <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3">
+                          <p className="text-[11px] text-[#6b4c67]">Lipides</p>
+                          <p className="text-xs font-semibold text-[#4f3850]">
                             {metricRangeLabel(analysis?.nutrition_estimee?.lipides_g, "g")}
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#e1e7dc] bg-[#fbfdf9] p-3">
-                          <p className="text-[11px] text-[#516451]">Fibres</p>
-                          <p className="text-xs font-semibold text-dark-header">
+                        <div className="rounded-md border border-[#dfd3a9] bg-[#f4f0d4] p-3">
+                          <p className="text-[11px] text-[#6f5d28]">Fibres</p>
+                          <p className="text-xs font-semibold text-[#4b411f]">
                             {metricRangeLabel(analysis?.nutrition_estimee?.fibres_g, "g")}
                           </p>
                         </div>
@@ -1150,7 +1094,7 @@ export default function DashboardCoachTestPage() {
                     </section>
 
                     <div className="grid gap-4 xl:grid-cols-2">
-                      <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
+                      <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                         <h2 className="text-sm font-semibold text-[#2d412d]">Plats probables</h2>
                         {listOrEmpty(analysis?.plats_probables).length > 0 ? (
                           <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
@@ -1163,7 +1107,7 @@ export default function DashboardCoachTestPage() {
                         )}
                       </section>
 
-                      <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
+                      <section className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                         <h2 className="text-sm font-semibold text-[#2d412d]">
                           Ingrédients visibles
                         </h2>
@@ -1209,7 +1153,7 @@ export default function DashboardCoachTestPage() {
                       </section>
                     </div>
 
-                    <section className="rounded-lg border border-[#d8e3d2] bg-[#f9fcf7] p-4">
+                    <section className="rounded-md border border-[#c694c0] bg-[#f2e2ef] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                       <h2 className="text-sm font-semibold text-[#2d412d]">Questions de suivi</h2>
                       {listOrEmpty(analysis?.questions_suivi).length > 0 ? (
                         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-dark-header">
@@ -1223,7 +1167,7 @@ export default function DashboardCoachTestPage() {
                     </section>
                   </>
                 ) : selectedMealHistory ? (
-                  <section className="rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
+                  <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     <h2 className="text-sm font-semibold text-[#2c5c38]">
                       Aucun envoi coach, mais scan DB détecté
                     </h2>
@@ -1268,7 +1212,7 @@ export default function DashboardCoachTestPage() {
                     </div>
                   </section>
                 ) : (
-                  <section className="rounded-lg border border-[#e6ddc1] bg-[#fffaf0] p-4">
+                  <section className="rounded-md border border-[#d5a76a] bg-[#f8e3bd] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     <h2 className="text-sm font-semibold text-[#75561e]">
                       Aucune analyse scanner disponible
                     </h2>
@@ -1280,7 +1224,7 @@ export default function DashboardCoachTestPage() {
                   </section>
                 )}
 
-                <section className="rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
+                <section className="rounded-md border border-[#90c78a] bg-[#d8efcf] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                   <h2 className="text-sm font-semibold text-[#2c5c38]">
                     Détail repas DB sélectionné (historique existant)
                   </h2>
@@ -1323,33 +1267,33 @@ export default function DashboardCoachTestPage() {
                       </div>
 
                       <div className="grid gap-2 sm:grid-cols-5">
-                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
-                          <p className="text-[11px] text-[#516451]">Calories</p>
-                          <p className="font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#d39c58] bg-[#f7deb6] p-3 text-xs">
+                          <p className="text-[11px] text-[#7a5a18]">Calories</p>
+                          <p className="font-semibold text-[#3a2a12]">
                             {selectedMealHistory.calories} kcal
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
-                          <p className="text-[11px] text-[#516451]">Protéines</p>
-                          <p className="font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#90c78a] bg-[#cde8c8] p-3 text-xs">
+                          <p className="text-[11px] text-[#2c5c38]">Protéines</p>
+                          <p className="font-semibold text-[#1f3d1f]">
                             {selectedMealHistory.protein} g
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
-                          <p className="text-[11px] text-[#516451]">Glucides</p>
-                          <p className="font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#abd9dc] bg-[#d2edf0] p-3 text-xs">
+                          <p className="text-[11px] text-[#355f6f]">Glucides</p>
+                          <p className="font-semibold text-[#244451]">
                             {selectedMealHistory.carbs} g
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
-                          <p className="text-[11px] text-[#516451]">Lipides</p>
-                          <p className="font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#c694c0] bg-[#e7cfe3] p-3 text-xs">
+                          <p className="text-[11px] text-[#6b4c67]">Lipides</p>
+                          <p className="font-semibold text-[#4f3850]">
                             {selectedMealHistory.fat} g
                           </p>
                         </div>
-                        <div className="rounded-md border border-[#dbe7d4] bg-white p-3 text-xs">
-                          <p className="text-[11px] text-[#516451]">Score IA</p>
-                          <p className="font-semibold text-[#243124]">
+                        <div className="rounded-md border border-[#90c78a] bg-[#a7d9a1] p-3 text-xs">
+                          <p className="text-[11px] text-[#2c5c38]">Score IA</p>
+                          <p className="font-semibold text-[#1f3d1f]">
                             {selectedMealHistory.aiScore}/100
                           </p>
                         </div>
@@ -1375,7 +1319,7 @@ export default function DashboardCoachTestPage() {
 
                 {payload && (
                   <>
-                    <details className="rounded-lg border border-[#d2d8ec] bg-[#f7f9ff] p-4">
+                    <details className="rounded-md border border-[#abd9dc] bg-[#e2f1f3] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                       <summary className="cursor-pointer text-sm font-semibold text-[#38477d]">
                         Prompt envoyé à l’IA (aperçu)
                       </summary>
@@ -1384,7 +1328,7 @@ export default function DashboardCoachTestPage() {
                       </pre>
                     </details>
 
-                    <section className="rounded-lg border border-[#d6d6d6] bg-[#fafafa] p-4">
+                    <section className="rounded-md border border-[#d6d6d6] bg-[#ececec] p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                       <h2 className="text-sm font-semibold text-dark-header">
                         JSON stocké (aperçu)
                       </h2>
@@ -1397,8 +1341,62 @@ export default function DashboardCoachTestPage() {
                     </section>
                   </>
                 )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-[#c8c8c8] bg-[#d8d8d8] p-3 shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#2c2c2c]">
+                    Coachés récents
+                  </p>
+                  <p className="mt-1 text-xs text-[#444]">
+                    À gauche les coachés les plus récents, à droite leur dernière activité.
+                  </p>
+                  <div className="mt-3 rounded-md bg-white/65 p-2 shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]">
+                    <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2 border-b border-[#b9b9b9] px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4d4d4d]">
+                      <span>Coaché</span>
+                      <span className="text-right">Dernière activité</span>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {recentPostingUsers.length > 0 ? (
+                        recentPostingUsers.map((user) => {
+                          const isSelected = selectedUserId === user.id;
+
+                          return (
+                            <button
+                              key={user.id}
+                              type="button"
+                              onClick={() => handleSelectUser(user.id)}
+                              className={`grid w-full grid-cols-[minmax(0,1fr)_112px] gap-2 rounded-md px-2 py-2 text-left text-xs transition ${
+                                isSelected
+                                  ? "bg-[#e7cfe3] text-[#4f3850] shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
+                                  : "bg-white/80 text-[#2c2c2c] hover:bg-[#f5f5f5]"
+                              }`}
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate font-semibold">
+                                  {user.name || user.email}
+                                </span>
+                                <span className="block truncate text-[11px] text-[#666]">
+                                  {user.email}
+                                </span>
+                              </span>
+                              <span className="text-right text-[11px] font-medium">
+                                {user.lastMealAt ? formatDate(user.lastMealAt) : "Aucune"}
+                              </span>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <p className="px-2 py-3 text-xs text-[#666]">
+                          Aucun coaché récent à afficher.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </section>

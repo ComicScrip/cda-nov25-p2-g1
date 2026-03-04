@@ -668,18 +668,33 @@ export default class UserDataResolver {
   @Query(() => [CoachScannerSubmissionTestData])
   async coachScannerSubmissionsTestData(
     @Ctx() context: GraphQLContext,
+    @Arg("userId", () => String, { nullable: true }) userId?: string,
+    @Arg("limit", () => Int, { nullable: true }) limit?: number,
   ): Promise<CoachScannerSubmissionTestData[]> {
     const currentUser = await getCurrentUser(context);
     const visibleUserIds = await resolveVisibleUserIds(currentUser);
+    const clampedLimit =
+      typeof limit === "number" && Number.isFinite(limit)
+        ? Math.min(Math.max(limit, 1), 200)
+        : 120;
 
     if (visibleUserIds && visibleUserIds.length === 0) {
       return [];
     }
 
+    if (userId && visibleUserIds && !visibleUserIds.includes(userId)) {
+      return [];
+    }
+
     const submissions = await Scanner_Coach_Submission.find({
-      where: visibleUserIds ? { user: { id: In(visibleUserIds) } } : undefined,
+      where: userId
+        ? { user: { id: userId } }
+        : visibleUserIds
+          ? { user: { id: In(visibleUserIds) } }
+          : undefined,
       relations: ["user"],
       order: { createdAt: "DESC" },
+      take: clampedLimit,
     });
 
     return submissions.map((submission) => ({
@@ -696,18 +711,33 @@ export default class UserDataResolver {
   @Query(() => [CoachUserMealTestData])
   async coachUserMealsTestData(
     @Ctx() context: GraphQLContext,
+    @Arg("userId", () => String, { nullable: true }) userId?: string,
+    @Arg("limit", () => Int, { nullable: true }) limit?: number,
   ): Promise<CoachUserMealTestData[]> {
     const currentUser = await getCurrentUser(context);
     const visibleUserIds = await resolveVisibleUserIds(currentUser);
+    const clampedLimit =
+      typeof limit === "number" && Number.isFinite(limit)
+        ? Math.min(Math.max(limit, 1), 200)
+        : 120;
 
     if (visibleUserIds && visibleUserIds.length === 0) {
       return [];
     }
 
+    if (userId && visibleUserIds && !visibleUserIds.includes(userId)) {
+      return [];
+    }
+
     const meals = await Meal.find({
-      where: visibleUserIds ? { user: { id: In(visibleUserIds) } } : undefined,
+      where: userId
+        ? { user: { id: userId } }
+        : visibleUserIds
+          ? { user: { id: In(visibleUserIds) } }
+          : undefined,
       relations: ["user", "dishes", "dishes.analysis"],
       order: { consumedAt: "DESC" },
+      take: clampedLimit,
     });
 
     const fallbackPhoto = "/MyDietChef_image.webp";
