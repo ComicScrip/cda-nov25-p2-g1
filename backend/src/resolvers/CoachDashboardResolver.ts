@@ -153,12 +153,15 @@ function getUserScoreSummary(userMeals: Meal[]) {
 
   const lastMealAt = userMeals
     .map((meal) => {
-      const consumedAt = meal.consumedAt instanceof Date
-        ? meal.consumedAt
-        : meal.consumedAt
-          ? new Date(meal.consumedAt)
-          : null;
-      return consumedAt && !Number.isNaN(consumedAt.getTime()) ? consumedAt : null;
+      const consumedAt =
+        meal.consumedAt instanceof Date
+          ? meal.consumedAt
+          : meal.consumedAt
+            ? new Date(meal.consumedAt)
+            : null;
+      return consumedAt && !Number.isNaN(consumedAt.getTime())
+        ? consumedAt
+        : null;
     })
     .filter((date): date is Date => date !== null)
     .sort((a, b) => b.getTime() - a.getTime())[0];

@@ -1,10 +1,12 @@
 import { Client } from "pg";
 import env from "../env";
-import { initializeDatabase } from "./initialize";
 import db from "./index";
+import { initializeDatabase } from "./initialize";
 
 function getDatabasePort() {
-  return env.NODE_ENV === "test" ? (env.TEST_DB_PORT ?? env.DB_PORT) : env.DB_PORT;
+  return env.NODE_ENV === "test"
+    ? (env.TEST_DB_PORT ?? env.DB_PORT)
+    : env.DB_PORT;
 }
 
 export async function clearDB() {
@@ -52,7 +54,9 @@ export async function clearDB() {
     `);
 
     for (const sequence of sequences) {
-      await client.query(`DROP SEQUENCE IF EXISTS "${sequence.sequencename}" CASCADE`);
+      await client.query(
+        `DROP SEQUENCE IF EXISTS "${sequence.sequencename}" CASCADE`,
+      );
     }
   } finally {
     await client.end();

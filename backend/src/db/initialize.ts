@@ -2,14 +2,16 @@ import { hash } from "argon2";
 import { Client } from "pg";
 import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
-import db from "./index";
 import env from "../env";
+import db from "./index";
 
 const FIXED_COACH_EMAIL = "coach@app.com";
 const FIXED_COACH_PASSWORD = "SuperP@ssW0rd!";
 
 function getDatabasePort() {
-  return env.NODE_ENV === "test" ? (env.TEST_DB_PORT ?? env.DB_PORT) : env.DB_PORT;
+  return env.NODE_ENV === "test"
+    ? (env.TEST_DB_PORT ?? env.DB_PORT)
+    : env.DB_PORT;
 }
 
 async function cleanupLegacyScannerCoachSubmissions() {

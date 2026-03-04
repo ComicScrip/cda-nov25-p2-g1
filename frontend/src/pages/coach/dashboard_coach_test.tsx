@@ -491,7 +491,11 @@ export default function DashboardCoachTestPage() {
     }
 
     const preferredUserId =
-      coachMealRows[0]?.userId ?? dbRecords[0]?.userId ?? recentUsers[0]?.id ?? users[0]?.userId ?? null;
+      coachMealRows[0]?.userId ??
+      dbRecords[0]?.userId ??
+      recentUsers[0]?.id ??
+      users[0]?.userId ??
+      null;
 
     setSelectedUserId((current) => {
       if (current && users.some((user) => user.userId === current)) {
@@ -894,99 +898,99 @@ export default function DashboardCoachTestPage() {
             <div className="mt-5 grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
               <aside className="flex flex-col gap-4">
                 {users.length > 0 && (
-                  <>
-                    <section className="order-1 rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
-                      <h2 className="text-sm font-semibold text-[#2c5c38]">
-                        Derniers scans du coaché
-                      </h2>
-                      <p className="mt-1 text-[11px] text-[#5d7b63]">
-                        10 éléments par page. Utilise `Suivant` pour charger les activités plus
-                        anciennes du coaché sélectionné.
-                      </p>
-                      <div className="mt-3 space-y-2">
-                        {paginatedActivitiesForSelectedUser.map((activity) => {
-                          const isActive = activity.id === selectedActivity?.id;
+                  <section className="order-1 rounded-lg border border-[#d5ead8] bg-[#f7fcf8] p-4">
+                    <h2 className="text-sm font-semibold text-[#2c5c38]">
+                      Derniers scans du coaché
+                    </h2>
+                    <p className="mt-1 text-[11px] text-[#5d7b63]">
+                      10 éléments par page. Utilise `Suivant` pour charger les activités plus
+                      anciennes du coaché sélectionné.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {paginatedActivitiesForSelectedUser.map((activity) => {
+                        const isActive = activity.id === selectedActivity?.id;
 
-                          return (
-                            <button
-                              key={activity.id}
-                              type="button"
-                              onClick={() => {
-                                if (activity.kind === "submission" && activity.submission) {
-                                  setSelectedSubmissionId(activity.submission.id);
-                                  setSelectedMealHistoryId(null);
-                                  return;
-                                }
-
-                                if (activity.kind === "meal" && activity.meal) {
-                                  setSelectedMealHistoryId(activity.meal.id);
-                                  setSelectedSubmissionId(null);
-                                }
-                              }}
-                              className={`w-full rounded-md border px-3 py-2 text-left text-xs ${
-                                isActive
-                                  ? "border-[#6cb07a] bg-[#ebf9ee] text-[#23492c]"
-                                  : "border-[#d5ead8] bg-white text-[#35523b]"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="font-semibold">{activity.title}</div>
-                                  <div className="mt-0.5 text-[11px]">{formatDate(activity.occurredAt)}</div>
-                                  <div className="mt-0.5 text-[11px] text-[#5d7b63]">
-                                    {activity.description}
-                                  </div>
-                                </div>
-                                <span
-                                  className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
-                                    activity.kind === "submission"
-                                      ? "bg-[#edf4ff] text-[#3a5ba8]"
-                                      : "bg-[#eaf7ee] text-[#27663a]"
-                                  }`}
-                                >
-                                  {activity.subtitle}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                        {paginatedActivitiesForSelectedUser.length === 0 && (
-                          <p className="text-xs text-[#627162]">
-                            Aucun scan ni repas historique pour cet utilisateur.
-                          </p>
-                        )}
-                      </div>
-                      {activitiesForSelectedUser.length > 0 && (
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                          <p className="text-[11px] text-[#5d7b63]">
-                            Page {activityPage + 1} sur {activityPageCount}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setActivityPage((current) => Math.max(current - 1, 0))}
-                              disabled={activityPage === 0}
-                              className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
-                            >
-                              Précédent
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActivityPage((current) =>
-                                  Math.min(current + 1, activityPageCount - 1),
-                                )
+                        return (
+                          <button
+                            key={activity.id}
+                            type="button"
+                            onClick={() => {
+                              if (activity.kind === "submission" && activity.submission) {
+                                setSelectedSubmissionId(activity.submission.id);
+                                setSelectedMealHistoryId(null);
+                                return;
                               }
-                              disabled={activityPage >= activityPageCount - 1}
-                              className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
-                            >
-                              Suivant
-                            </button>
-                          </div>
-                        </div>
+
+                              if (activity.kind === "meal" && activity.meal) {
+                                setSelectedMealHistoryId(activity.meal.id);
+                                setSelectedSubmissionId(null);
+                              }
+                            }}
+                            className={`w-full rounded-md border px-3 py-2 text-left text-xs ${
+                              isActive
+                                ? "border-[#6cb07a] bg-[#ebf9ee] text-[#23492c]"
+                                : "border-[#d5ead8] bg-white text-[#35523b]"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="font-semibold">{activity.title}</div>
+                                <div className="mt-0.5 text-[11px]">
+                                  {formatDate(activity.occurredAt)}
+                                </div>
+                                <div className="mt-0.5 text-[11px] text-[#5d7b63]">
+                                  {activity.description}
+                                </div>
+                              </div>
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                                  activity.kind === "submission"
+                                    ? "bg-[#edf4ff] text-[#3a5ba8]"
+                                    : "bg-[#eaf7ee] text-[#27663a]"
+                                }`}
+                              >
+                                {activity.subtitle}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {paginatedActivitiesForSelectedUser.length === 0 && (
+                        <p className="text-xs text-[#627162]">
+                          Aucun scan ni repas historique pour cet utilisateur.
+                        </p>
                       )}
-                    </section>
-                  </>
+                    </div>
+                    {activitiesForSelectedUser.length > 0 && (
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <p className="text-[11px] text-[#5d7b63]">
+                          Page {activityPage + 1} sur {activityPageCount}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActivityPage((current) => Math.max(current - 1, 0))}
+                            disabled={activityPage === 0}
+                            className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Précédent
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActivityPage((current) =>
+                                Math.min(current + 1, activityPageCount - 1),
+                              )
+                            }
+                            disabled={activityPage >= activityPageCount - 1}
+                            className="rounded-md border border-[#cfe2d4] bg-white px-3 py-2 text-xs font-semibold text-[#35523b] disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Suivant
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </section>
                 )}
 
                 {payload ? (

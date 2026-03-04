@@ -407,7 +407,9 @@ function parseCoachSuggestion(suggestion?: string): {
   };
 }
 
-async function resolveVisibleUserIds(currentUser: User): Promise<string[] | null> {
+async function resolveVisibleUserIds(
+  currentUser: User,
+): Promise<string[] | null> {
   if (currentUser.role === UserRole.Admin) {
     return null;
   }

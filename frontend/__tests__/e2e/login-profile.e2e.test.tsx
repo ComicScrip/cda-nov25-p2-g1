@@ -13,6 +13,7 @@ const mockUserProfileDataQuery = jest.fn();
 const mockRefetchProfile = jest.fn();
 const mockUseQuery = jest.fn();
 const mockUseMutation = jest.fn();
+const mockClearStore = jest.fn();
 
 jest.mock("next/router", () => ({
   useRouter: () => ({ push: mockPush, query: {} }),
@@ -46,6 +47,9 @@ jest.mock("@/graphql/generated/schema", () => ({
 jest.mock("@apollo/client/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
+  useApolloClient: () => ({
+    clearStore: mockClearStore,
+  }),
 }));
 
 function getInputById(id: string) {
@@ -67,6 +71,7 @@ describe("E2E flow - login and profile creation", () => {
     mockRefetchProfile.mockReset();
     mockUseQuery.mockReset();
     mockUseMutation.mockReset();
+    mockClearStore.mockReset();
 
     mockLogin.mockResolvedValue({ data: { login: true } });
     mockUpdateProfile.mockResolvedValue({ data: { updateUserProfileData: {} } });
@@ -88,7 +93,8 @@ describe("E2E flow - login and profile creation", () => {
       error: undefined,
     });
 
-    mockUseMutation.mockReturnValue([mockUpdateProfile, { loading: false, error: undefined }]);
+    mockClearStore.mockResolvedValue(undefined);
+    mockUseMutation.mockReturnValue([mockLogin, { loading: false, error: undefined }]);
   });
 
   it("logs in and redirects to the dashboard", async () => {

@@ -159,10 +159,7 @@ async function seedWeightMeasures(
   }
 }
 
-async function enforceSingleCoachSeed(
-  manager: EntityManager,
-  coachUser: User,
-) {
+async function enforceSingleCoachSeed(manager: EntityManager, coachUser: User) {
   await manager.query(
     `
       UPDATE users

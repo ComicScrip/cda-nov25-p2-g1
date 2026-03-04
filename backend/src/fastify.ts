@@ -9,11 +9,15 @@ function expandLoopbackOrigin(origin: string) {
     const variants = new Set([origin]);
 
     if (url.hostname === "localhost") {
-      variants.add(`${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`);
+      variants.add(
+        `${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`,
+      );
     }
 
     if (url.hostname === "127.0.0.1") {
-      variants.add(`${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`);
+      variants.add(
+        `${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`,
+      );
     }
 
     return [...variants];
