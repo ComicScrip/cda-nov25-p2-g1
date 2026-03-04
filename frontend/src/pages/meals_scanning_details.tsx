@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -582,7 +583,7 @@ export default function ScannerRepasDetailsPage() {
         JSON.stringify(payloadWithPrompt),
       );
 
-      setSubmitMessage("Demande envoyée. Analyse en cours.");
+      setSubmitMessage("Demande envoyée. Analyse en cours. Merci de patienter.");
 
       try {
         let imageUrlForAnalysis = draft.imageUrl;
@@ -792,23 +793,45 @@ export default function ScannerRepasDetailsPage() {
                   disabled={isSubmitting}
                   className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  {isSubmitting ? "Analyse en cours..." : "Demander une analyse"}
+                  {isSubmitting ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Analyse en cours...
+                    </span>
+                  ) : (
+                    "Demander une analyse"
+                  )}
                 </button>
               </div>
 
               {submitError && <p className="mt-3 text-xs text-[#8a2a2a]">{submitError}</p>}
-              {submitMessage && <p className="mt-3 text-xs text-[#1d7a42]">{submitMessage}</p>}
+              {submitMessage &&
+                (isSubmitting ? (
+                  <div className="mt-3 flex items-center gap-2 rounded-md border border-[#cde2d1] bg-[#f4fbf5] px-3 py-2 text-xs text-[#1d7a42]">
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    <p>{submitMessage}</p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-[#1d7a42]">{submitMessage}</p>
+                ))}
               {!analysisData && (
                 <div className="mt-4 rounded-md border border-[#c3d2ba] bg-white p-4">
                   <h3 className="text-sm font-semibold text-[#2f4a2f]">
                     Résultat de l&apos;analyse
                   </h3>
                   <div className="mt-3 grid min-h-36 place-items-center rounded-md border border-dashed border-[#cfdcc8] bg-[#f8fbf6] px-4 py-4 text-center">
-                    <p className="text-xs text-[#4f5e4f]">
-                      {isSubmitting
-                        ? "Analyse en cours. Les résultats vont apparaître ici."
-                        : "Lance une analyse pour afficher les résultats et compléter ce formulaire."}
-                    </p>
+                    {isSubmitting ? (
+                      <div className="flex flex-col items-center gap-3 text-center">
+                        <Loader2 className="h-7 w-7 animate-spin text-[#2f6c4c]" />
+                        <p className="text-xs text-[#4f5e4f]">
+                          Analyse en cours. Les résultats vont apparaître ici. Merci de patienter.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#4f5e4f]">
+                        Lance une analyse pour afficher les résultats et compléter ce formulaire.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

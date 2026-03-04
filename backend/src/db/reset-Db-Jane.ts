@@ -9,6 +9,7 @@ import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import db from "./index";
+import { initializeDatabase } from "./initialize";
 
 const JANE_EMAIL = "jane.doe@app.com";
 const JANE_PASSWORD = "SuperP@ssW0rd!";
@@ -680,7 +681,7 @@ async function seedRecipes(user: User) {
 }
 
 async function main() {
-  await db.initialize();
+  await initializeDatabase();
   await db.synchronize();
 
   const jane = await upsertJaneUser();

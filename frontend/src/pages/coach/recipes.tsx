@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 import CoachLayout from "@/components/coach/CoachLayout";
 import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
+import { getDefaultDashboardHref } from "@/lib/auth";
 
 export default function CoachRecipes() {
   const router = useRouter();
@@ -13,14 +14,12 @@ export default function CoachRecipes() {
   useEffect(() => {
     if (!loading) {
       if (!data?.me) {
-        router.push("/login");
-      } else if (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin) {
-        // Redirect to appropriate dashboard based on role
-        if (data.me.role === UserRole.Coachee) {
-          router.push("/dashboard_user");
-        } else {
-          router.push("/");
-        }
+        void router.replace({
+          pathname: "/coach/login",
+          query: { returnUrl: router.asPath },
+        });
+      } else if (data.me.role !== UserRole.Coach) {
+        void router.replace(getDefaultDashboardHref(data.me.role));
       }
     }
   }, [data, loading, router]);
@@ -35,7 +34,7 @@ export default function CoachRecipes() {
     );
   }
 
-  if (!data?.me || (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)) {
+  if (!data?.me || data.me.role !== UserRole.Coach) {
     return null;
   }
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UserRole, useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { getDefaultDashboardHref } from "@/lib/auth";
 
 const USER_MOBILE_NAV_LINKS = [
   { href: "/dashboard_user", label: "Dashboard" },
@@ -12,6 +13,13 @@ const USER_MOBILE_NAV_LINKS = [
   { href: "/evolution_user", label: "Mon Evolution" },
   { href: "/user_profile", label: "Mon Profile" },
   { href: "/meals_scanning", label: "IA Assiste" },
+] as const;
+
+const COACH_MOBILE_NAV_LINKS = [
+  { href: "/coach/dashboard", label: "Dashboard coach" },
+  { href: "/coach/users", label: "Mes coachés" },
+  { href: "/coach/recipes", label: "Recettes" },
+  { href: "/ai_chef", label: "Chef IA" },
 ] as const;
 
 export default function Header() {
@@ -25,7 +33,7 @@ export default function Header() {
   const router = useRouter();
 
   const getDashboardHref = () => {
-    return user?.role === UserRole.Admin ? "/admin" : "/dashboard_user";
+    return getDefaultDashboardHref(user?.role);
   };
 
   const handleLogout = async () => {
@@ -47,13 +55,13 @@ export default function Header() {
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="logo-circle-hover w-12 h-12 overflow-hidden rounded-full">
+          <div className="logo-circle logo-circle-hover overflow-hidden">
             <Image
               src="/Logo_MDC.png"
               alt="MyDietChef"
               width={48}
               height={48}
-              className="h-12 w-12 object-contain"
+              className="header-logo-image"
               priority
             />
           </div>
@@ -110,7 +118,10 @@ export default function Header() {
                 <Link href="/signup" className="text-white hover:text-gray-300 transition-colors">
                   Essayer gratuitement
                 </Link>
-                <Link href="/#coach" className="text-white hover:text-gray-300 transition-colors">
+                <Link
+                  href="/coach/login"
+                  className="text-white hover:text-gray-300 transition-colors"
+                >
                   Espace coach
                 </Link>
               </>
@@ -165,6 +176,20 @@ export default function Header() {
                         Dashboard
                       </Link>
                     </Button>
+                  ) : user.role === UserRole.Coach ? (
+                    COACH_MOBILE_NAV_LINKS.map((item) => (
+                      <Button
+                        key={item.href}
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                      >
+                        <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))
                   ) : (
                     USER_MOBILE_NAV_LINKS.map((item) => (
                       <Button
@@ -226,7 +251,7 @@ export default function Header() {
                     Essayer gratuitement
                   </Link>
                   <Link
-                    href="/#coach"
+                    href="/coach/login"
                     className="text-white hover:text-gray-300 transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >

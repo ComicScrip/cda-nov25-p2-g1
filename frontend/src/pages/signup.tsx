@@ -42,7 +42,7 @@ export default function Signup() {
   };
 
   return (
-    <HomeLayout pageTitle="Inscription">
+    <HomeLayout pageTitle="Inscription" footerVariant="userSlim">
       <div className="flex justify-center items-center p-6">
         <Card className="w-full max-w-md">
           <CardHeader>

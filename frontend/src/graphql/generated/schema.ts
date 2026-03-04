@@ -23,6 +23,7 @@ export type Scalars = {
 
 export type CoachDashboardData = {
   __typename?: 'CoachDashboardData';
+  coachedUsers: Array<RecentUserData>;
   recentRecipes: Array<RecentRecipeData>;
   recentUsers: Array<RecentUserData>;
   stats: CoachDashboardStats;
@@ -187,7 +188,10 @@ export type RecentRecipeData = {
 export type RecentUserData = {
   __typename?: 'RecentUserData';
   email: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  lastMealAt?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  scannedMeals: Scalars['Int']['output'];
   score: Scalars['Float']['output'];
 };
 
@@ -342,7 +346,7 @@ export type UpdateUserProfileDataMutation = { __typename?: 'Mutation', updateUse
 export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
+export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', id: string, name: string, email: string, score: number, scannedMeals: number, lastMealAt?: string | null }>, coachedUsers: Array<{ __typename?: 'RecentUserData', id: string, name: string, email: string, score: number, scannedMeals: number, lastMealAt?: string | null }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -550,7 +554,6 @@ export function useUpdateUserProfileDataMutation(baseOptions?: ApolloReactHooks.
 export type UpdateUserProfileDataMutationHookResult = ReturnType<typeof useUpdateUserProfileDataMutation>;
 export type UpdateUserProfileDataMutationResult = ApolloReactCommon.MutationResult<UpdateUserProfileDataMutation>;
 export type UpdateUserProfileDataMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateUserProfileDataMutation, UpdateUserProfileDataMutationVariables>;
-
 export const CoachDashboardDataDocument = gql`
     query CoachDashboardData {
   coachDashboardData {
@@ -573,9 +576,20 @@ export const CoachDashboardDataDocument = gql`
       }
     }
     recentUsers {
+      id
       name
       email
       score
+      scannedMeals
+      lastMealAt
+    }
+    coachedUsers {
+      id
+      name
+      email
+      score
+      scannedMeals
+      lastMealAt
     }
     recentRecipes {
       id

@@ -19,9 +19,20 @@ query CoachDashboardData {
       }
     }
     recentUsers {
+      id
       name
       email
       score
+      scannedMeals
+      lastMealAt
+    }
+    coachedUsers {
+      id
+      name
+      email
+      score
+      scannedMeals
+      lastMealAt
     }
     recentRecipes {
       id

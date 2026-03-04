@@ -8,11 +8,12 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
+import { In } from "typeorm";
 import { getCurrentUser } from "../auth";
-import { Status, UserRole } from "../entities/enums";
+import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Recipe } from "../entities/Recipe";
-import { User } from "../entities/User";
+import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import type { GraphQLContext } from "../types";
 
@@ -52,6 +53,9 @@ class CoachDashboardStats {
 @ObjectType()
 class RecentUserData {
   @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
   name!: string;
 
   @Field(() => String)
@@ -59,6 +63,12 @@ class RecentUserData {
 
   @Field(() => Float)
   score!: number;
+
+  @Field(() => Int)
+  scannedMeals!: number;
+
+  @Field(() => String, { nullable: true })
+  lastMealAt?: string | null;
 }
 
 /**
@@ -96,6 +106,9 @@ class CoachDashboardData {
   @Field(() => [RecentUserData])
   recentUsers!: RecentUserData[];
 
+  @Field(() => [RecentUserData])
+  coachedUsers!: RecentUserData[];
+
   @Field(() => [RecentRecipeData])
   recentRecipes!: RecentRecipeData[];
 }
@@ -127,6 +140,36 @@ function getUserDisplayName(user: User, profile: User_profile | null): string {
   return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
 }
 
+function getUserScoreSummary(userMeals: Meal[]) {
+  const userDishes = userMeals.flatMap((meal) => meal.dishes ?? []);
+  const userScores = userDishes
+    .map((dish) => dish.analysis?.mealHealthScore ?? 0)
+    .filter((score) => score > 0);
+
+  const score =
+    userScores.length > 0
+      ? userScores.reduce((sum, value) => sum + value, 0) / userScores.length
+      : 0;
+
+  const lastMealAt = userMeals
+    .map((meal) => {
+      const consumedAt = meal.consumedAt instanceof Date
+        ? meal.consumedAt
+        : meal.consumedAt
+          ? new Date(meal.consumedAt)
+          : null;
+      return consumedAt && !Number.isNaN(consumedAt.getTime()) ? consumedAt : null;
+    })
+    .filter((date): date is Date => date !== null)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+
+  return {
+    score,
+    scannedMeals: userDishes.length,
+    lastMealAt: lastMealAt?.toISOString() ?? null,
+  };
+}
+
 /**
  * Resolver for coach dashboard data
  * Provides statistics and recent activity for coaches
@@ -142,7 +185,7 @@ export default class CoachDashboardResolver {
   async coachDashboardData(
     @Ctx() context: GraphQLContext,
   ): Promise<CoachDashboardData | null> {
-    await getCurrentUser(context); // Verify user is authenticated and authorized
+    const currentUser = await getCurrentUser(context);
 
     // Calculate date ranges for evolution comparison
     const now = new Date();
@@ -151,10 +194,19 @@ export default class CoachDashboardResolver {
     const sixtyDaysAgo = new Date(now);
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    // Get all coachees (users with role Coachee)
-    const allCoachees = await User.find({
-      where: { role: UserRole.Coachee },
-    });
+    const coacheeQuery = User.createQueryBuilder("user").where(
+      "user.role = :role",
+      { role: UserRole.Coachee },
+    );
+
+    if (currentUser.role === UserRole.Coach) {
+      coacheeQuery.andWhere("user.coach_id = :coachId", {
+        coachId: currentUser.id,
+      });
+    }
+
+    const allCoachees = await coacheeQuery.getMany();
+    const coacheeIds = allCoachees.map((user) => user.id);
 
     // Get coachees created in last 30 days and previous 30 days for evolution
     const recentCoachees = allCoachees.filter(
@@ -179,10 +231,13 @@ export default class CoachDashboardResolver {
         recipe.createdAt >= sixtyDaysAgo && recipe.createdAt < thirtyDaysAgo,
     );
 
-    // Get all meals with dishes and analysis (scanned meals)
-    const allMeals = await Meal.find({
-      relations: ["dishes", "dishes.analysis"],
-    });
+    const allMeals =
+      coacheeIds.length > 0
+        ? await Meal.find({
+            where: { user: { id: In(coacheeIds) } },
+            relations: ["user", "dishes", "dishes.analysis"],
+          })
+        : [];
     const allDishes = allMeals.flatMap((meal) => meal.dishes ?? []);
     const dishesWithAnalysis = allDishes.filter((dish) => dish.analysis);
 
@@ -257,41 +312,55 @@ export default class CoachDashboardResolver {
     };
 
     // Get recent users (last 3) with their average scores
-    const recentUsersList = allCoachees
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 3);
+    const profiles =
+      coacheeIds.length > 0
+        ? await User_profile.find({
+            where: { user: { id: In(coacheeIds) } },
+            relations: ["user"],
+          })
+        : [];
 
-    const recentUsersData: RecentUserData[] = await Promise.all(
-      recentUsersList.map(async (user) => {
-        const profile = await User_profile.findOne({
-          where: { user: { id: user.id } },
-        });
-
-        // Get user's meals with dishes and analysis to calculate average score
-        const userMeals = await Meal.find({
-          where: { user: { id: user.id } },
-          relations: ["dishes", "dishes.analysis"],
-        });
-
-        // Extract all dishes from meals and get their scores
-        const userDishes = userMeals.flatMap((meal) => meal.dishes ?? []);
-        const userScores = userDishes
-          .map((dish) => dish.analysis?.mealHealthScore ?? 0)
-          .filter((score) => score > 0);
-
-        const userAverageScore =
-          userScores.length > 0
-            ? userScores.reduce((sum, score) => sum + score, 0) /
-              userScores.length
-            : 0;
-
-        return {
-          name: getUserDisplayName(user, profile),
-          email: user.email,
-          score: userAverageScore,
-        };
-      }),
+    const profileByUserId = new Map(
+      profiles.map((profile) => [profile.user.id, profile]),
     );
+    const mealsByUserId = new Map<string, Meal[]>();
+
+    for (const meal of allMeals) {
+      const userId = meal.user?.id;
+      if (!userId) continue;
+      const userMeals = mealsByUserId.get(userId);
+      if (userMeals) {
+        userMeals.push(meal);
+      } else {
+        mealsByUserId.set(userId, [meal]);
+      }
+    }
+
+    const coachedUsersData: RecentUserData[] = allCoachees.map((user) => {
+      const profile = profileByUserId.get(user.id) ?? null;
+      const summary = getUserScoreSummary(mealsByUserId.get(user.id) ?? []);
+
+      return {
+        id: user.id,
+        name: getUserDisplayName(user, profile),
+        email: user.email,
+        score: summary.score,
+        scannedMeals: summary.scannedMeals,
+        lastMealAt: summary.lastMealAt,
+      };
+    });
+
+    const recentUsersData = coachedUsersData
+      .slice()
+      .sort((a, b) => {
+        const aTime = a.lastMealAt ? new Date(a.lastMealAt).getTime() : 0;
+        const bTime = b.lastMealAt ? new Date(b.lastMealAt).getTime() : 0;
+        if (aTime !== bTime) {
+          return bTime - aTime;
+        }
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 3);
 
     // Get recent recipes (last 3 published recipes)
     const recentRecipesList = allPublishedRecipes
@@ -312,6 +381,9 @@ export default class CoachDashboardResolver {
     return {
       stats,
       recentUsers: recentUsersData,
+      coachedUsers: coachedUsersData
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
       recentRecipes: recentRecipesData,
     };
   }

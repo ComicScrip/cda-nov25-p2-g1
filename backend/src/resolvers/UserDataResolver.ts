@@ -21,12 +21,13 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
+import { In } from "typeorm";
 import { getCurrentUser } from "../auth";
 import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
 import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
-import { UserRole } from "../entities/User";
+import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
@@ -406,6 +407,25 @@ function parseCoachSuggestion(suggestion?: string): {
   };
 }
 
+async function resolveVisibleUserIds(currentUser: User): Promise<string[] | null> {
+  if (currentUser.role === UserRole.Admin) {
+    return null;
+  }
+
+  if (currentUser.role === UserRole.Coach) {
+    const coachedUsers = await User.find({
+      where: {
+        role: UserRole.Coachee,
+        coach: { id: currentUser.id },
+      },
+    });
+
+    return coachedUsers.map((user) => user.id);
+  }
+
+  return [currentUser.id];
+}
+
 type DishEntry = {
   id: string;
   consumedAt: Date;
@@ -648,12 +668,14 @@ export default class UserDataResolver {
     @Ctx() context: GraphQLContext,
   ): Promise<CoachScannerSubmissionTestData[]> {
     const currentUser = await getCurrentUser(context);
-    const canSeeAllUsers =
-      currentUser.role === UserRole.Coach ||
-      currentUser.role === UserRole.Admin;
+    const visibleUserIds = await resolveVisibleUserIds(currentUser);
+
+    if (visibleUserIds && visibleUserIds.length === 0) {
+      return [];
+    }
 
     const submissions = await Scanner_Coach_Submission.find({
-      where: canSeeAllUsers ? undefined : { user: { id: currentUser.id } },
+      where: visibleUserIds ? { user: { id: In(visibleUserIds) } } : undefined,
       relations: ["user"],
       order: { createdAt: "DESC" },
     });
@@ -674,12 +696,14 @@ export default class UserDataResolver {
     @Ctx() context: GraphQLContext,
   ): Promise<CoachUserMealTestData[]> {
     const currentUser = await getCurrentUser(context);
-    const canSeeAllUsers =
-      currentUser.role === UserRole.Coach ||
-      currentUser.role === UserRole.Admin;
+    const visibleUserIds = await resolveVisibleUserIds(currentUser);
+
+    if (visibleUserIds && visibleUserIds.length === 0) {
+      return [];
+    }
 
     const meals = await Meal.find({
-      where: canSeeAllUsers ? undefined : { user: { id: currentUser.id } },
+      where: visibleUserIds ? { user: { id: In(visibleUserIds) } } : undefined,
       relations: ["user", "dishes", "dishes.analysis"],
       order: { consumedAt: "DESC" },
     });

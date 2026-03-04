@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import CoachDashboard from "@/components/coach/CoachDashboard";
 import CoachLayout from "@/components/coach/CoachLayout";
 import { UserRole, useProfileQuery } from "@/graphql/generated/schema";
+import { getDefaultDashboardHref } from "@/lib/auth";
 
 export default function CoachDashboardPage() {
   const router = useRouter();
@@ -15,14 +16,12 @@ export default function CoachDashboardPage() {
   useEffect(() => {
     if (!loading) {
       if (!data?.me) {
-        router.push("/login");
-      } else if (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin) {
-        // Redirect to appropriate dashboard based on role
-        if (data.me.role === UserRole.Coachee) {
-          router.push("/dashboard_user");
-        } else {
-          router.push("/");
-        }
+        void router.replace({
+          pathname: "/coach/login",
+          query: { returnUrl: router.asPath },
+        });
+      } else if (data.me.role !== UserRole.Coach) {
+        void router.replace(getDefaultDashboardHref(data.me.role));
       }
     }
   }, [data, loading, router]);
@@ -38,13 +37,13 @@ export default function CoachDashboardPage() {
     );
   }
 
-  // Don't render if user is not a coach or admin (redirect in progress)
-  if (!data?.me || (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)) {
+  // Don't render if user is not a coach (redirect in progress)
+  if (!data?.me || data.me.role !== UserRole.Coach) {
     return null;
   }
 
   return (
-    <CoachLayout pageTitle="Dashboard Coach">
+    <CoachLayout pageTitle="Dashboard Coach" footerVariant="userSlim">
       <CoachDashboard />
     </CoachLayout>
   );

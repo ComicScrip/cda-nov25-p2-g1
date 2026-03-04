@@ -164,15 +164,15 @@ export default function CoachDashboard() {
                 <CardHeader className="p-5 md:p-6">
                   <CardTitle className="text-base md:text-lg font-semibold text-[#1f3d1f] flex items-center gap-2.5">
                     <User className="h-6 w-6 md:h-7 md:w-7" />
-                    Derniers utilisateurs
+                    Coachés récents
                   </CardTitle>
                   <CardDescription className="text-xs md:text-sm text-[#1f3d1f] opacity-90 mt-1">
-                    Les trois derniers utilisateurs
+                    Les coachés rattachés à votre compte les plus récents
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentUsers.length > 0 ? (
-                    recentUsers.map((userItem: { name: string; email: string; score: number }) => (
+                    recentUsers.map((userItem) => (
                       <Card key={userItem.email} className="bg-white/90 border-0 backdrop-blur-sm">
                         <CardContent className="p-4 md:p-5">
                           <div className="flex justify-between items-center">
@@ -182,6 +182,10 @@ export default function CoachDashboard() {
                               </div>
                               <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
                                 {userItem.email}
+                              </CardDescription>
+                              <CardDescription className="text-[11px] md:text-xs text-[#555] mt-1">
+                                {userItem.scannedMeals} repas scanné
+                                {userItem.scannedMeals > 1 ? "s" : ""}
                               </CardDescription>
                             </div>
                             <div className="flex items-center gap-1.5">
