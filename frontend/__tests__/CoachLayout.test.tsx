@@ -133,6 +133,32 @@ describe("CoachLayout", () => {
   });
 
   describe("Navigation", () => {
+    it("should render all navigation menu items", () => {
+      mockUseQuery.mockReturnValue({
+        data: {
+          me: {
+            id: "1",
+            email: "coach@example.com",
+            role: UserRole.Coach,
+            createdAt: new Date(),
+          },
+        },
+        loading: false,
+        error: undefined,
+      } as any);
+
+      render(
+        <CoachLayout pageTitle="Test">
+          <div>Content</div>
+        </CoachLayout>,
+      );
+
+      expect(screen.getByText("Dashboard")).toBeInTheDocument();
+      expect(screen.getByText("utilisateurs")).toBeInTheDocument();
+      expect(screen.getByText("Recettes")).toBeInTheDocument();
+      expect(screen.getByText("Analyse IA")).toBeInTheDocument();
+    });
+
     it("should highlight the active menu item based on current pathname", () => {
       // Set pathname to match one of the menu items
       mockUseRouter.mockReturnValue({
