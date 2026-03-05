@@ -1,14 +1,20 @@
 import { parseScannerAnalysisResponse, type ScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 
+export type MealScannerProvider = "auto" | "openai" | "gemini";
+
 type RequestMealScannerAnalysisParams = {
   prompt: string;
   imageUrl: string;
   model?: string;
+  provider?: MealScannerProvider;
+  openaiModel?: string;
+  geminiModel?: string;
 };
 
 type RequestMealScannerAnalysisResult = {
   analysis: ScannerAnalysisResponse;
   rawOutputText?: string;
+  provider?: Exclude<MealScannerProvider, "auto">;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -19,6 +25,9 @@ export const requestMealScannerAnalysis = async ({
   prompt,
   imageUrl,
   model,
+  provider,
+  openaiModel,
+  geminiModel,
 }: RequestMealScannerAnalysisParams): Promise<RequestMealScannerAnalysisResult> => {
   const response = await fetch("/api/meal-analysis", {
     method: "POST",
@@ -29,6 +38,9 @@ export const requestMealScannerAnalysis = async ({
       prompt,
       imageUrl,
       model,
+      provider,
+      openaiModel,
+      geminiModel,
     }),
   });
 
@@ -42,7 +54,8 @@ export const requestMealScannerAnalysis = async ({
 
   if (!response.ok) {
     if (isRecord(payload) && typeof payload.error === "string") {
-      throw new Error(payload.error);
+      const details = typeof payload.details === "string" ? payload.details : null;
+      throw new Error(details ? `${payload.error} (${details})` : payload.error);
     }
 
     throw new Error(`Erreur API (${response.status})`);
@@ -60,5 +73,9 @@ export const requestMealScannerAnalysis = async ({
   return {
     analysis,
     rawOutputText: typeof payload.rawOutputText === "string" ? payload.rawOutputText : undefined,
+    provider:
+      typeof payload.provider === "string" && (payload.provider === "openai" || payload.provider === "gemini")
+        ? payload.provider
+        : undefined,
   };
 };
