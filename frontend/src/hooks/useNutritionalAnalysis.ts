@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   type AnalyzeMealImageMutation,
   useAnalyzeMealImageMutation,
   useSaveMealAnalysisMutation,
-  useUpdateIngredientQuantitiesMutation,
   useUpdateAnalysisCaloriesMutation,
   useUpdateDishNameMutation,
+  useUpdateIngredientQuantitiesMutation,
 } from "@/graphql/generated/schema";
 import { compressImage, validateImageFile } from "@/utils/imageCompression";
 
@@ -20,59 +20,51 @@ export function useNutritionalAnalysis() {
   const [savedDishId, setSavedDishId] = useState<string | null>(null);
   const [editingQuantities, setEditingQuantities] = useState(false);
   const [editingCalories, setEditingCalories] = useState(false);
-  const [editedQuantities, setEditedQuantities] = useState<
-    Record<string, number>
-  >({});
+  const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [editedCalories, setEditedCalories] = useState<number | null>(null);
   const [editingDishName, setEditingDishName] = useState(false);
   const [editedDishName, setEditedDishName] = useState<string>("");
 
   const [analyzeMealImage, { loading: analyzing, error: analyzeError }] =
     useAnalyzeMealImageMutation();
-  const [saveMealAnalysis, { loading: saving }] =
-    useSaveMealAnalysisMutation();
+  const [saveMealAnalysis, { loading: saving }] = useSaveMealAnalysisMutation();
   const [updateQuantities, { loading: updatingQuantities }] =
     useUpdateIngredientQuantitiesMutation();
-  const [updateCalories, { loading: updatingCalories }] =
-    useUpdateAnalysisCaloriesMutation();
-  const [updateDishName, { loading: updatingDishName }] =
-    useUpdateDishNameMutation();
+  const [updateCalories, { loading: updatingCalories }] = useUpdateAnalysisCaloriesMutation();
+  const [updateDishName, { loading: updatingDishName }] = useUpdateDishNameMutation();
 
-  const handleFileChange = useCallback(
-    async (file: File | null) => {
-      if (!file) return;
+  const handleFileChange = useCallback(async (file: File | null) => {
+    if (!file) return;
 
-      // Clear previous errors and analysis when changing image
+    // Clear previous errors and analysis when changing image
+    setFileError(null);
+    setAnalysis(null);
+    setSavedDishId(null);
+
+    // Validate file
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setFileError(validationError);
+      return;
+    }
+
+    try {
+      // Compress image before storing
+      const { base64, mimeType } = await compressImage(file);
+
+      // Create preview data URL
+      const previewDataUrl = `data:${mimeType};base64,${base64}`;
+      setFilePreview(previewDataUrl);
+      setFileMime(mimeType);
+      setFileBase64(base64);
       setFileError(null);
-      setAnalysis(null);
-      setSavedDishId(null);
-
-      // Validate file
-      const validationError = validateImageFile(file);
-      if (validationError) {
-        setFileError(validationError);
-        return;
-      }
-
-      try {
-        // Compress image before storing
-        const { base64, mimeType } = await compressImage(file);
-
-        // Create preview data URL
-        const previewDataUrl = `data:${mimeType};base64,${base64}`;
-        setFilePreview(previewDataUrl);
-        setFileMime(mimeType);
-        setFileBase64(base64);
-        setFileError(null);
-      } catch (error) {
-        console.error("Error compressing image:", error);
-        setFileError(
-          "Erreur lors du traitement de l'image. Veuillez réessayer avec une autre image.",
-        );
-      }
-    },
-    [],
-  );
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      setFileError(
+        "Erreur lors du traitement de l'image. Veuillez réessayer avec une autre image.",
+      );
+    }
+  }, []);
 
   const handleAnalyze = useCallback(async () => {
     if (!fileBase64) return;
@@ -199,27 +191,13 @@ export function useNutritionalAnalysis() {
             };
           }),
           totalNutrition: {
-            calories:
-              data.updateIngredientQuantities.calories ??
-              analysis.totalNutrition.calories,
-            protein:
-              data.updateIngredientQuantities.proteins ??
-              analysis.totalNutrition.protein,
-            carbs:
-              data.updateIngredientQuantities.carbohydrates ??
-              analysis.totalNutrition.carbs,
-            fat:
-              data.updateIngredientQuantities.lipids ??
-              analysis.totalNutrition.fat,
-            fiber:
-              data.updateIngredientQuantities.fiber ??
-              analysis.totalNutrition.fiber,
-            sugar:
-              data.updateIngredientQuantities.sugar ??
-              analysis.totalNutrition.sugar,
-            salt:
-              data.updateIngredientQuantities.sodium ??
-              analysis.totalNutrition.salt,
+            calories: data.updateIngredientQuantities.calories ?? analysis.totalNutrition.calories,
+            protein: data.updateIngredientQuantities.proteins ?? analysis.totalNutrition.protein,
+            carbs: data.updateIngredientQuantities.carbohydrates ?? analysis.totalNutrition.carbs,
+            fat: data.updateIngredientQuantities.lipids ?? analysis.totalNutrition.fat,
+            fiber: data.updateIngredientQuantities.fiber ?? analysis.totalNutrition.fiber,
+            sugar: data.updateIngredientQuantities.sugar ?? analysis.totalNutrition.sugar,
+            salt: data.updateIngredientQuantities.sodium ?? analysis.totalNutrition.salt,
           },
         };
         setAnalysis(updatedAnalysis);
@@ -258,8 +236,7 @@ export function useNutritionalAnalysis() {
             ...analysis,
             totalNutrition: {
               ...analysis.totalNutrition,
-              calories:
-                data.updateAnalysisCalories.calories ?? editedCalories,
+              calories: data.updateAnalysisCalories.calories ?? editedCalories,
             },
           });
         }
