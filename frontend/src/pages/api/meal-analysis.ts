@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { parseScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 
 export type MealAnalysisProvider = "openai" | "gemini";
+type MealAnalysisResolvedProvider = MealAnalysisProvider | "local_fallback";
 type RequestedMealAnalysisProvider = MealAnalysisProvider | "auto";
 
 type MealAnalysisRequestBody = {
@@ -35,7 +36,7 @@ type ProviderUsage = {
 type MealAnalysisSuccessResponse = {
   analysis: ParsedAnalysis;
   rawOutputText?: string;
-  provider: MealAnalysisProvider;
+  provider: MealAnalysisResolvedProvider;
   attemptedProviders: MealAnalysisProvider[];
   providerErrors?: ProviderAttemptError[];
   usage?: ProviderUsage;
@@ -57,6 +58,10 @@ type ProviderCallResult = {
     totalTokens?: number;
   };
 };
+
+type ProviderValidationResult =
+  | { ok: true; apiKey: string }
+  | { ok: false; error: ProviderAttemptError };
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.2";
 const DEFAULT_GEMINI_MODEL = "gemini-2.0-flash";
@@ -158,6 +163,77 @@ const buildProviderUsage = (
     budgetTokens: getProviderBudget(provider),
     remainingTokens: getProviderRemainingTokens(provider),
   };
+};
+
+const buildLocalFallbackAnalysis = (providerErrors: ProviderAttemptError[]): ParsedAnalysis => {
+  const fallbackReason =
+    providerErrors.length > 0
+      ? providerErrors.map((error) => `${error.provider}:${error.reason}`).join(", ")
+      : "unknown";
+
+  return {
+    plats_probables: ["Analyse automatique indisponible"],
+    ingredients_visibles: [],
+    portion_estimee: "non determinee",
+    nutrition_estimee: {
+      calories_kcal: { min: 0, max: 0 },
+      proteines_g: { min: 0, max: 0 },
+      glucides_g: { min: 0, max: 0 },
+      lipides_g: { min: 0, max: 0 },
+      fibres_g: { min: 0, max: 0 },
+    },
+    score_sante_100: 0,
+    confiance_100: 0,
+    incertitudes: [
+      "Le service IA est indisponible pour le moment.",
+      `Fallback local actif (${fallbackReason}).`,
+    ],
+    questions_suivi: [
+      "Peux-tu decrire le plat, les ingredients et la portion ?",
+      "As-tu un objectif particulier pour ce repas (perte de poids, energie, proteines) ?",
+    ],
+    avertissement_pathologies: [
+      "Aucune estimation fiable sans reponse IA. Verification manuelle recommandee.",
+    ],
+  };
+};
+
+const logProviderError = (error: ProviderAttemptError): void => {
+  console.error(`[meal-analysis] ${error.provider} ${error.reason}: ${error.message}`);
+};
+
+const validateProviderBeforeAiCall = (
+  provider: MealAnalysisProvider,
+  providerApiKey: string | undefined,
+): ProviderValidationResult => {
+  const budgetTokens = getProviderBudget(provider);
+  const remainingTokens = getProviderRemainingTokens(provider);
+  if (budgetTokens !== null && remainingTokens !== null && remainingTokens <= 0) {
+    return {
+      ok: false,
+      error: {
+        provider,
+        reason: "budget_exceeded",
+        message: `Budget de tokens épuisé pour ${provider}.`,
+      },
+    };
+  }
+
+  if (!providerApiKey) {
+    return {
+      ok: false,
+      error: {
+        provider,
+        reason: "missing_api_key",
+        message:
+          provider === "openai"
+            ? "OPENAI_API_KEY manquant dans le serveur Next (.env)."
+            : "GEMINI_API_KEY manquant dans le serveur Next (.env).",
+      },
+    };
+  }
+
+  return { ok: true, apiKey: providerApiKey };
 };
 
 const parseProviderOrder = (value: string | undefined): MealAnalysisProvider[] => {
@@ -518,31 +594,15 @@ export default async function handler(
   for (const provider of providersToTry) {
     attemptedProviders.push(provider);
 
-    const budgetTokens = getProviderBudget(provider);
-    const remainingTokens = getProviderRemainingTokens(provider);
-    if (budgetTokens !== null && remainingTokens !== null && remainingTokens <= 0) {
-      providerErrors.push({
-        provider,
-        reason: "budget_exceeded",
-        message: `Budget de tokens épuisé pour ${provider}.`,
-      });
-      continue;
-    }
-
     const providerApiKey =
       provider === "openai"
         ? (process.env.OPENAI_API_KEY ?? process.env.api_key)
         : process.env.GEMINI_API_KEY;
 
-    if (!providerApiKey) {
-      providerErrors.push({
-        provider,
-        reason: "missing_api_key",
-        message:
-          provider === "openai"
-            ? "OPENAI_API_KEY manquant dans le serveur Next (.env)."
-            : "GEMINI_API_KEY manquant dans le serveur Next (.env).",
-      });
+    const providerValidation = validateProviderBeforeAiCall(provider, providerApiKey);
+    if (!providerValidation.ok) {
+      providerErrors.push(providerValidation.error);
+      logProviderError(providerValidation.error);
       continue;
     }
 
@@ -550,13 +610,13 @@ export default async function handler(
       const result =
         provider === "openai"
           ? await callOpenAIProvider({
-              apiKey: providerApiKey,
+              apiKey: providerValidation.apiKey,
               model: openaiModel,
               prompt,
               imageUrl,
             })
           : await callGeminiProvider({
-              apiKey: providerApiKey,
+              apiKey: providerValidation.apiKey,
               model: geminiModel,
               prompt,
               imageUrl,
@@ -575,43 +635,25 @@ export default async function handler(
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : `Erreur ${provider} inconnue`;
-      console.error(`[meal-analysis] ${provider} error:`, message);
-      providerErrors.push({
+      const providerError: ProviderAttemptError = {
         provider,
         reason: "call_failed",
         message,
-      });
+      };
+      providerErrors.push(providerError);
+      logProviderError(providerError);
     }
   }
 
-  const allMissingKeys =
-    providerErrors.length > 0 &&
-    providerErrors.every((providerError) => providerError.reason === "missing_api_key");
-  const allBudgetExceeded =
-    providerErrors.length > 0 &&
-    providerErrors.every((providerError) => providerError.reason === "budget_exceeded");
-
-  if (allMissingKeys) {
-    res.status(500).json({
-      error: "Aucune clé API IA disponible (OpenAI/Gemini).",
-      attemptedProviders,
-      providerErrors,
-    });
-    return;
-  }
-
-  if (allBudgetExceeded) {
-    res.status(429).json({
-      error: "Tous les providers IA ont épuisé leur budget de tokens.",
-      attemptedProviders,
-      providerErrors,
-    });
-    return;
-  }
-
-  res.status(502).json({
-    error: "Échec de l'appel IA sur tous les providers disponibles.",
+  const fallbackAnalysis = buildLocalFallbackAnalysis(providerErrors);
+  console.error("[meal-analysis] Fallback local activé après échec providers IA.", {
     attemptedProviders,
     providerErrors,
+  });
+  res.status(200).json({
+    analysis: fallbackAnalysis,
+    provider: "local_fallback",
+    attemptedProviders,
+    providerErrors: providerErrors.length > 0 ? providerErrors : undefined,
   });
 }

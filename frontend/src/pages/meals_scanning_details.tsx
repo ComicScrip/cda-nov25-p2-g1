@@ -608,7 +608,7 @@ export default function ScannerRepasDetailsPage() {
           }
         }
 
-        const { analysis } = await requestMealScannerAnalysis({
+        const { analysis, provider } = await requestMealScannerAnalysis({
           prompt: payloadWithPrompt.prompt,
           imageUrl: imageUrlForAnalysis,
         });
@@ -616,10 +616,15 @@ export default function ScannerRepasDetailsPage() {
         window.sessionStorage.setItem(SCANNER_ANALYSIS_RESPONSE_KEY, JSON.stringify(analysis));
         setAnalysisResponse(analysis);
         setEditableAnalysis(cloneAnalysisResponse(analysis));
-        setSubmitMessage("Analyse disponible.");
+        if (provider === "local_fallback") {
+          console.error("[MealsScanning] Fallback local active: providers IA indisponibles.");
+          setSubmitMessage("Analyse de secours disponible (providers IA indisponibles).");
+        } else {
+          setSubmitMessage("Analyse disponible.");
+        }
         return;
       } catch (apiError) {
-        console.error("[MealsScanning] Erreur API OpenAI:", apiError);
+        console.error("[MealsScanning] Erreur API IA:", apiError);
         throw apiError;
       }
     } catch (error) {

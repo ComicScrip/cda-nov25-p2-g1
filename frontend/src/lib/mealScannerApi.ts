@@ -1,6 +1,6 @@
 import { parseScannerAnalysisResponse, type ScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 
-export type MealScannerProvider = "auto" | "openai" | "gemini";
+export type MealScannerProvider = "auto" | "openai" | "gemini" | "local_fallback";
 
 type RequestMealScannerAnalysisParams = {
   prompt: string;
@@ -55,9 +55,17 @@ export const requestMealScannerAnalysis = async ({
   if (!response.ok) {
     if (isRecord(payload) && typeof payload.error === "string") {
       const details = typeof payload.details === "string" ? payload.details : null;
-      throw new Error(details ? `${payload.error} (${details})` : payload.error);
+      const message = details ? `${payload.error} (${details})` : payload.error;
+      console.error("[mealScannerApi] provider error:", message, {
+        attemptedProviders: Array.isArray(payload.attemptedProviders)
+          ? payload.attemptedProviders
+          : undefined,
+        providerErrors: Array.isArray(payload.providerErrors) ? payload.providerErrors : undefined,
+      });
+      throw new Error(message);
     }
 
+    console.error("[mealScannerApi] API error without JSON payload", { status: response.status });
     throw new Error(`Erreur API (${response.status})`);
   }
 
@@ -75,7 +83,9 @@ export const requestMealScannerAnalysis = async ({
     rawOutputText: typeof payload.rawOutputText === "string" ? payload.rawOutputText : undefined,
     provider:
       typeof payload.provider === "string" &&
-      (payload.provider === "openai" || payload.provider === "gemini")
+      (payload.provider === "openai" ||
+        payload.provider === "gemini" ||
+        payload.provider === "local_fallback")
         ? payload.provider
         : undefined,
   };
