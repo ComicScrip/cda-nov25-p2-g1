@@ -20,6 +20,11 @@ export type Scalars = {
   DateTimeISO: { input: any; output: any; }
 };
 
+export type AnalyzeMealImageInput = {
+  imageBase64: Scalars['String']['input'];
+  mimeType?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CoachDashboardData = {
   __typename?: 'CoachDashboardData';
   recentRecipes: Array<RecentRecipeData>;
@@ -71,6 +76,31 @@ export type EvolutionDataPoint = {
   weight: Scalars['Float']['output'];
 };
 
+export type IngredientEstimateType = {
+  __typename?: 'IngredientEstimateType';
+  calories?: Maybe<Scalars['Float']['output']>;
+  carbs?: Maybe<Scalars['Float']['output']>;
+  confidence?: Maybe<Scalars['Float']['output']>;
+  estimatedQuantityGrams?: Maybe<Scalars['Float']['output']>;
+  fat?: Maybe<Scalars['Float']['output']>;
+  name: Scalars['String']['output'];
+  protein?: Maybe<Scalars['Float']['output']>;
+};
+
+export type IngredientQuantityInput = {
+  calories?: InputMaybe<Scalars['Float']['input']>;
+  carbs?: InputMaybe<Scalars['Float']['input']>;
+  estimatedQuantityGrams?: InputMaybe<Scalars['Float']['input']>;
+  fat?: InputMaybe<Scalars['Float']['input']>;
+  name: Scalars['String']['input'];
+  protein?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type IngredientQuantityUpdateInput = {
+  ingredientName: Scalars['String']['input'];
+  quantityGrams: Scalars['Float']['input'];
+};
+
 export type LoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -86,10 +116,20 @@ export type Meal = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  analyzeMealImage: NutritionalAnalysisType;
   login: Scalars['String']['output'];
   logout: Scalars['Boolean']['output'];
+  saveMealAnalysis: Scalars['String']['output'];
   signup: User;
+  updateAnalysisCalories: Nutritional_Analysis;
+  updateDishName: Scalars['String']['output'];
+  updateIngredientQuantities: Nutritional_Analysis;
   updateUserProfileData?: Maybe<UserProfileData>;
+};
+
+
+export type MutationAnalyzeMealImageArgs = {
+  input: AnalyzeMealImageInput;
 };
 
 
@@ -98,13 +138,86 @@ export type MutationLoginArgs = {
 };
 
 
+export type MutationSaveMealAnalysisArgs = {
+  input: SaveMealAnalysisInput;
+};
+
+
 export type MutationSignupArgs = {
   data: SignupInput;
 };
 
 
+export type MutationUpdateAnalysisCaloriesArgs = {
+  input: UpdateAnalysisCaloriesInput;
+};
+
+
+export type MutationUpdateDishNameArgs = {
+  input: UpdateDishNameInput;
+};
+
+
+export type MutationUpdateIngredientQuantitiesArgs = {
+  input: UpdateIngredientQuantitiesInput;
+};
+
+
 export type MutationUpdateUserProfileDataArgs = {
   data: UserProfileUpdateInput;
+};
+
+export type NutritionalAnalysisType = {
+  __typename?: 'NutritionalAnalysisType';
+  analysisSummary: Scalars['String']['output'];
+  dishName: Scalars['String']['output'];
+  healthScore: Scalars['Float']['output'];
+  ingredients: Array<IngredientEstimateType>;
+  mealType?: Maybe<Scalars['String']['output']>;
+  totalNutrition: NutritionalTotalsType;
+  warnings: Array<Scalars['String']['output']>;
+};
+
+export type NutritionalTotalsInput = {
+  calories?: InputMaybe<Scalars['Float']['input']>;
+  carbs?: InputMaybe<Scalars['Float']['input']>;
+  fat?: InputMaybe<Scalars['Float']['input']>;
+  fiber?: InputMaybe<Scalars['Float']['input']>;
+  protein?: InputMaybe<Scalars['Float']['input']>;
+  salt?: InputMaybe<Scalars['Float']['input']>;
+  sugar?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type NutritionalTotalsType = {
+  __typename?: 'NutritionalTotalsType';
+  calories?: Maybe<Scalars['Float']['output']>;
+  carbs?: Maybe<Scalars['Float']['output']>;
+  fat?: Maybe<Scalars['Float']['output']>;
+  fiber?: Maybe<Scalars['Float']['output']>;
+  protein?: Maybe<Scalars['Float']['output']>;
+  salt?: Maybe<Scalars['Float']['output']>;
+  sugar?: Maybe<Scalars['Float']['output']>;
+};
+
+export type Nutritional_Analysis = {
+  __typename?: 'Nutritional_Analysis';
+  analyzedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  calories?: Maybe<Scalars['Float']['output']>;
+  carbohydrates?: Maybe<Scalars['Float']['output']>;
+  confidenceScore?: Maybe<Scalars['Float']['output']>;
+  fiber?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['String']['output'];
+  isModified?: Maybe<Scalars['Boolean']['output']>;
+  lipids?: Maybe<Scalars['Float']['output']>;
+  mealHealthScore?: Maybe<Scalars['Float']['output']>;
+  proteins?: Maybe<Scalars['Float']['output']>;
+  rating?: Maybe<Scalars['Float']['output']>;
+  sodium?: Maybe<Scalars['Float']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  sugar?: Maybe<Scalars['Float']['output']>;
+  suggestions?: Maybe<Scalars['String']['output']>;
+  validatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  warnings?: Maybe<Scalars['String']['output']>;
 };
 
 export type Pathology = {
@@ -168,6 +281,18 @@ export type RecipeData = {
   title: Scalars['String']['output'];
 };
 
+export type SaveMealAnalysisInput = {
+  analysisSummary: Scalars['String']['input'];
+  dishName: Scalars['String']['input'];
+  healthScore: Scalars['Float']['input'];
+  imageBase64: Scalars['String']['input'];
+  ingredients: Array<IngredientQuantityInput>;
+  mealType?: InputMaybe<Scalars['String']['input']>;
+  mimeType?: InputMaybe<Scalars['String']['input']>;
+  totalNutrition: NutritionalTotalsInput;
+  warnings: Array<Scalars['String']['input']>;
+};
+
 export type SignupInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -177,6 +302,21 @@ export type StatData = {
   __typename?: 'StatData';
   count: Scalars['Int']['output'];
   evolution: Scalars['String']['output'];
+};
+
+export type UpdateAnalysisCaloriesInput = {
+  analysisId: Scalars['String']['input'];
+  calories: Scalars['Float']['input'];
+};
+
+export type UpdateDishNameInput = {
+  dishId: Scalars['String']['input'];
+  dishName: Scalars['String']['input'];
+};
+
+export type UpdateIngredientQuantitiesInput = {
+  dishId: Scalars['String']['input'];
+  ingredients: Array<IngredientQuantityUpdateInput>;
 };
 
 export type User = {
@@ -263,6 +403,13 @@ export type Weight_Measure = {
   weight: Scalars['Float']['output'];
 };
 
+export type AnalyzeMealImageMutationVariables = Exact<{
+  input: AnalyzeMealImageInput;
+}>;
+
+
+export type AnalyzeMealImageMutation = { __typename?: 'Mutation', analyzeMealImage: { __typename?: 'NutritionalAnalysisType', dishName: string, analysisSummary: string, healthScore: number, mealType?: string | null, warnings: Array<string>, totalNutrition: { __typename?: 'NutritionalTotalsType', calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null, fiber?: number | null, sugar?: number | null, salt?: number | null }, ingredients: Array<{ __typename?: 'IngredientEstimateType', name: string, estimatedQuantityGrams?: number | null, confidence?: number | null, calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null }> } };
+
 export type LoginMutationVariables = Exact<{
   data: LoginInput;
 }>;
@@ -275,12 +422,40 @@ export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
 
 export type LogoutMutation = { __typename?: 'Mutation', logout: boolean };
 
+export type SaveMealAnalysisMutationVariables = Exact<{
+  input: SaveMealAnalysisInput;
+}>;
+
+
+export type SaveMealAnalysisMutation = { __typename?: 'Mutation', saveMealAnalysis: string };
+
 export type SignupMutationVariables = Exact<{
   data: SignupInput;
 }>;
 
 
 export type SignupMutation = { __typename?: 'Mutation', signup: { __typename?: 'User', id: string, email: string, createdAt: any } };
+
+export type UpdateAnalysisCaloriesMutationVariables = Exact<{
+  input: UpdateAnalysisCaloriesInput;
+}>;
+
+
+export type UpdateAnalysisCaloriesMutation = { __typename?: 'Mutation', updateAnalysisCalories: { __typename?: 'Nutritional_Analysis', id: string, calories?: number | null, isModified?: boolean | null, validatedAt?: any | null, status?: string | null } };
+
+export type UpdateDishNameMutationVariables = Exact<{
+  input: UpdateDishNameInput;
+}>;
+
+
+export type UpdateDishNameMutation = { __typename?: 'Mutation', updateDishName: string };
+
+export type UpdateIngredientQuantitiesMutationVariables = Exact<{
+  input: UpdateIngredientQuantitiesInput;
+}>;
+
+
+export type UpdateIngredientQuantitiesMutation = { __typename?: 'Mutation', updateIngredientQuantities: { __typename?: 'Nutritional_Analysis', id: string, calories?: number | null, proteins?: number | null, carbohydrates?: number | null, lipids?: number | null, fiber?: number | null, sugar?: number | null, sodium?: number | null, mealHealthScore?: number | null, isModified?: boolean | null } };
 
 export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -301,6 +476,61 @@ export type UserDashboardDataQueryVariables = Exact<{
 export type UserDashboardDataQuery = { __typename?: 'Query', userDashboardData?: { __typename?: 'DashboardData', firstName?: string | null, daysOfUse: number, healthScore: number, scannedMeals: number, averageCalories: number, targetCalories: number, targetProgress: number, targetProtein: number, targetCarbs: number, targetLipids: number, todayProtein: number, todayCarbs: number, todayFat: number, hasMoreMeals: boolean, recentMeals: Array<{ __typename?: 'DashboardMealData', name: string, calories: number, protein: number, carbs: number, fat: number }> } | null };
 
 
+export const AnalyzeMealImageDocument = gql`
+    mutation AnalyzeMealImage($input: AnalyzeMealImageInput!) {
+  analyzeMealImage(input: $input) {
+    dishName
+    analysisSummary
+    healthScore
+    mealType
+    warnings
+    totalNutrition {
+      calories
+      protein
+      carbs
+      fat
+      fiber
+      sugar
+      salt
+    }
+    ingredients {
+      name
+      estimatedQuantityGrams
+      confidence
+      calories
+      protein
+      carbs
+      fat
+    }
+  }
+}
+    `;
+export type AnalyzeMealImageMutationFn = ApolloReactCommon.MutationFunction<AnalyzeMealImageMutation, AnalyzeMealImageMutationVariables>;
+
+/**
+ * __useAnalyzeMealImageMutation__
+ *
+ * To run a mutation, you first call `useAnalyzeMealImageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAnalyzeMealImageMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [analyzeMealImageMutation, { data, loading, error }] = useAnalyzeMealImageMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAnalyzeMealImageMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AnalyzeMealImageMutation, AnalyzeMealImageMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AnalyzeMealImageMutation, AnalyzeMealImageMutationVariables>(AnalyzeMealImageDocument, options);
+      }
+export type AnalyzeMealImageMutationHookResult = ReturnType<typeof useAnalyzeMealImageMutation>;
+export type AnalyzeMealImageMutationResult = ApolloReactCommon.MutationResult<AnalyzeMealImageMutation>;
+export type AnalyzeMealImageMutationOptions = ApolloReactCommon.BaseMutationOptions<AnalyzeMealImageMutation, AnalyzeMealImageMutationVariables>;
 export const LoginDocument = gql`
     mutation Login($data: LoginInput!) {
   login(data: $data)
@@ -362,6 +592,37 @@ export function useLogoutMutation(baseOptions?: ApolloReactHooks.MutationHookOpt
 export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
 export type LogoutMutationResult = ApolloReactCommon.MutationResult<LogoutMutation>;
 export type LogoutMutationOptions = ApolloReactCommon.BaseMutationOptions<LogoutMutation, LogoutMutationVariables>;
+export const SaveMealAnalysisDocument = gql`
+    mutation SaveMealAnalysis($input: SaveMealAnalysisInput!) {
+  saveMealAnalysis(input: $input)
+}
+    `;
+export type SaveMealAnalysisMutationFn = ApolloReactCommon.MutationFunction<SaveMealAnalysisMutation, SaveMealAnalysisMutationVariables>;
+
+/**
+ * __useSaveMealAnalysisMutation__
+ *
+ * To run a mutation, you first call `useSaveMealAnalysisMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSaveMealAnalysisMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [saveMealAnalysisMutation, { data, loading, error }] = useSaveMealAnalysisMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSaveMealAnalysisMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SaveMealAnalysisMutation, SaveMealAnalysisMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SaveMealAnalysisMutation, SaveMealAnalysisMutationVariables>(SaveMealAnalysisDocument, options);
+      }
+export type SaveMealAnalysisMutationHookResult = ReturnType<typeof useSaveMealAnalysisMutation>;
+export type SaveMealAnalysisMutationResult = ApolloReactCommon.MutationResult<SaveMealAnalysisMutation>;
+export type SaveMealAnalysisMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveMealAnalysisMutation, SaveMealAnalysisMutationVariables>;
 export const SignupDocument = gql`
     mutation Signup($data: SignupInput!) {
   signup(data: $data) {
@@ -397,6 +658,116 @@ export function useSignupMutation(baseOptions?: ApolloReactHooks.MutationHookOpt
 export type SignupMutationHookResult = ReturnType<typeof useSignupMutation>;
 export type SignupMutationResult = ApolloReactCommon.MutationResult<SignupMutation>;
 export type SignupMutationOptions = ApolloReactCommon.BaseMutationOptions<SignupMutation, SignupMutationVariables>;
+export const UpdateAnalysisCaloriesDocument = gql`
+    mutation UpdateAnalysisCalories($input: UpdateAnalysisCaloriesInput!) {
+  updateAnalysisCalories(input: $input) {
+    id
+    calories
+    isModified
+    validatedAt
+    status
+  }
+}
+    `;
+export type UpdateAnalysisCaloriesMutationFn = ApolloReactCommon.MutationFunction<UpdateAnalysisCaloriesMutation, UpdateAnalysisCaloriesMutationVariables>;
+
+/**
+ * __useUpdateAnalysisCaloriesMutation__
+ *
+ * To run a mutation, you first call `useUpdateAnalysisCaloriesMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateAnalysisCaloriesMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateAnalysisCaloriesMutation, { data, loading, error }] = useUpdateAnalysisCaloriesMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateAnalysisCaloriesMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateAnalysisCaloriesMutation, UpdateAnalysisCaloriesMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateAnalysisCaloriesMutation, UpdateAnalysisCaloriesMutationVariables>(UpdateAnalysisCaloriesDocument, options);
+      }
+export type UpdateAnalysisCaloriesMutationHookResult = ReturnType<typeof useUpdateAnalysisCaloriesMutation>;
+export type UpdateAnalysisCaloriesMutationResult = ApolloReactCommon.MutationResult<UpdateAnalysisCaloriesMutation>;
+export type UpdateAnalysisCaloriesMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateAnalysisCaloriesMutation, UpdateAnalysisCaloriesMutationVariables>;
+export const UpdateDishNameDocument = gql`
+    mutation UpdateDishName($input: UpdateDishNameInput!) {
+  updateDishName(input: $input)
+}
+    `;
+export type UpdateDishNameMutationFn = ApolloReactCommon.MutationFunction<UpdateDishNameMutation, UpdateDishNameMutationVariables>;
+
+/**
+ * __useUpdateDishNameMutation__
+ *
+ * To run a mutation, you first call `useUpdateDishNameMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateDishNameMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateDishNameMutation, { data, loading, error }] = useUpdateDishNameMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateDishNameMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateDishNameMutation, UpdateDishNameMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateDishNameMutation, UpdateDishNameMutationVariables>(UpdateDishNameDocument, options);
+      }
+export type UpdateDishNameMutationHookResult = ReturnType<typeof useUpdateDishNameMutation>;
+export type UpdateDishNameMutationResult = ApolloReactCommon.MutationResult<UpdateDishNameMutation>;
+export type UpdateDishNameMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateDishNameMutation, UpdateDishNameMutationVariables>;
+export const UpdateIngredientQuantitiesDocument = gql`
+    mutation UpdateIngredientQuantities($input: UpdateIngredientQuantitiesInput!) {
+  updateIngredientQuantities(input: $input) {
+    id
+    calories
+    proteins
+    carbohydrates
+    lipids
+    fiber
+    sugar
+    sodium
+    mealHealthScore
+    isModified
+  }
+}
+    `;
+export type UpdateIngredientQuantitiesMutationFn = ApolloReactCommon.MutationFunction<UpdateIngredientQuantitiesMutation, UpdateIngredientQuantitiesMutationVariables>;
+
+/**
+ * __useUpdateIngredientQuantitiesMutation__
+ *
+ * To run a mutation, you first call `useUpdateIngredientQuantitiesMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateIngredientQuantitiesMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateIngredientQuantitiesMutation, { data, loading, error }] = useUpdateIngredientQuantitiesMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateIngredientQuantitiesMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateIngredientQuantitiesMutation, UpdateIngredientQuantitiesMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateIngredientQuantitiesMutation, UpdateIngredientQuantitiesMutationVariables>(UpdateIngredientQuantitiesDocument, options);
+      }
+export type UpdateIngredientQuantitiesMutationHookResult = ReturnType<typeof useUpdateIngredientQuantitiesMutation>;
+export type UpdateIngredientQuantitiesMutationResult = ApolloReactCommon.MutationResult<UpdateIngredientQuantitiesMutation>;
+export type UpdateIngredientQuantitiesMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateIngredientQuantitiesMutation, UpdateIngredientQuantitiesMutationVariables>;
 export const CoachDashboardDataDocument = gql`
     query CoachDashboardData {
   coachDashboardData {

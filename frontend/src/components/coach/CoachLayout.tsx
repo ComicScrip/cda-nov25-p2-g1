@@ -43,7 +43,7 @@ export default function CoachLayout({ children, pageTitle }: CoachLayoutProps) {
     { href: "/coach/dashboard", label: "Dashboard" },
     { href: "/coach/users", label: "utilisateurs" },
     { href: "/coach/recipes", label: "Recettes" },
-    { href: "/ai_chef", label: "Analyse IA" },
+    { href: "/nutritional_analysis", label: "Analyse IA" },
   ];
 
   const isActive = (href: string) => {
