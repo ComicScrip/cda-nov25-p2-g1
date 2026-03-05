@@ -13,8 +13,13 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ["@radix-ui/react-slot"],
-  // Turbopack configuration (empty to use defaults)
-  turbopack: {},
+  // Keep Turbopack scoped to this app instead of auto-detecting a parent workspace.
+  turbopack: {
+    root: process.cwd(),
+  },
+  watchOptions: {
+    pollIntervalMs: 1000,
+  },
 };
 
 export default nextConfig;
