@@ -11,13 +11,22 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
+    env:
+      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Create env file for tests
+        run: cp .env.example .env
       - name: Install dependencies
         run: npm ci
+      - name: Start test DB
+        run: npm run testDB
       - name: Run backend tests
         run: npm run test
+      - name: Stop test DB
+        if: always()
+        run: docker compose -f docker-compose.integration-tests.yml down --remove-orphans
