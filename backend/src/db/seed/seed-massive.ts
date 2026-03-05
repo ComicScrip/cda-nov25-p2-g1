@@ -218,9 +218,8 @@ async function seedUsersProfilesWeights(
   for (let i = 0; i < count; i++) {
     const email = faker.internet.email({ provider: "app.com" }).toLowerCase();
     const role = faker.helpers.weightedArrayElement([
-      { weight: 85, value: UserRole.Coachee },
-      { weight: 12, value: UserRole.Coach },
-      { weight: 3, value: UserRole.Admin },
+      { weight: 99, value: UserRole.Coachee },
+      { weight: 1, value: UserRole.Coach },
     ]);
 
     const user = await manager.save(
