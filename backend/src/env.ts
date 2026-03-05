@@ -14,5 +14,5 @@ export default load({
   TEST_DB_PORT: {
     type: Number,
     optional: true,
-  }
+  },
 });
