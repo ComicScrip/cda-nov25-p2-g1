@@ -4,15 +4,15 @@ import {
   Field,
   Float,
   InputType,
-  ObjectType,
   Mutation,
+  ObjectType,
   Resolver,
 } from "type-graphql";
 import {
+  geminiService,
   type IngredientEstimate,
   type NutritionalAnalysisResult,
   type NutritionalTotals,
-  geminiService,
 } from "../ai/services/geminiService";
 
 // GraphQL type for a single ingredient estimate
@@ -144,4 +144,3 @@ export default class NutritionalAnalystResolver {
     };
   }
 }
-

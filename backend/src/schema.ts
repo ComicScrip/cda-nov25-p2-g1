@@ -1,8 +1,8 @@
 import { buildSchema } from "type-graphql";
 import { authChecker } from "./auth";
+import CoachDashboardResolver from "./resolvers/CoachDashboardResolver";
 import MealAnalysisResolver from "./resolvers/MealAnalysisResolver";
 import NutritionalAnalystResolver from "./resolvers/NutritionalAnalystResolver";
-import CoachDashboardResolver from "./resolvers/CoachDashboardResolver";
 import UserDataResolver from "./resolvers/UserDataResolver";
 import UserResolver from "./resolvers/UserResolver";
 

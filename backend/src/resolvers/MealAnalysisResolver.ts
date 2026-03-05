@@ -8,15 +8,15 @@ import {
   Mutation,
   Resolver,
 } from "type-graphql";
+import { geminiService } from "../ai/services/geminiService";
 import { getCurrentUser } from "../auth";
 import { Dish } from "../entities/Dish";
 import { Dish_Ingredient } from "../entities/Dish_Ingredient";
+import { AnalysisStatus, MealType, Status, UserRole } from "../entities/enums";
 import { Ingredient } from "../entities/Ingredient";
 import { Meal } from "../entities/Meal";
 import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
-import { AnalysisStatus, MealType, Status, UserRole } from "../entities/enums";
 import type { GraphQLContext } from "../types";
-import { geminiService } from "../ai/services/geminiService";
 
 // Maps French meal type strings from Gemini to MealType enum values
 function mapMealTypeToEnum(mealType?: string): MealType | undefined {
@@ -26,10 +26,10 @@ function mapMealTypeToEnum(mealType?: string): MealType | undefined {
   const cleaned = normalized
     .replace(/^(type de repas|repas|meal type):\s*/i, "")
     .replace(/\s*$/, "");
-  
+
   if (
-    cleaned.includes("petit") && cleaned.includes("déjeuner") ||
-    cleaned.includes("petit") && cleaned.includes("dejeuner") ||
+    (cleaned.includes("petit") && cleaned.includes("déjeuner")) ||
+    (cleaned.includes("petit") && cleaned.includes("dejeuner")) ||
     cleaned.includes("breakfast") ||
     cleaned === "petit_dejeuner" ||
     cleaned === "petit déjeuner" ||
@@ -37,14 +37,16 @@ function mapMealTypeToEnum(mealType?: string): MealType | undefined {
   ) {
     return MealType.PetitDejeuner;
   }
-  
+
   if (
-    (cleaned.includes("déjeuner") || cleaned.includes("dejeuner") || cleaned.includes("lunch")) &&
+    (cleaned.includes("déjeuner") ||
+      cleaned.includes("dejeuner") ||
+      cleaned.includes("lunch")) &&
     !cleaned.includes("petit")
   ) {
     return MealType.Dejeuner;
   }
-  
+
   if (
     cleaned.includes("collation") ||
     cleaned.includes("snack") ||
@@ -54,7 +56,7 @@ function mapMealTypeToEnum(mealType?: string): MealType | undefined {
   ) {
     return MealType.Collation;
   }
-  
+
   if (
     cleaned.includes("dîner") ||
     cleaned.includes("diner") ||
@@ -212,19 +214,27 @@ export default class MealAnalysisResolver {
     // Call Gemini to get the authoritative analysis (source of truth)
     // Note: We use Gemini's results directly to ensure data integrity
     // The frontend data is only used for validation that the image matches
-    let geminiResult;
+    let geminiResult: any;
     try {
       geminiResult = await geminiService.analyzeMealImage(
         input.imageBase64,
         input.mimeType,
       );
     } catch (error) {
-      throw new Error(`Failed to analyze image with Gemini: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to analyze image with Gemini: ${(error as Error).message}`,
+      );
     }
 
     // Basic validation: ensure we got valid results from Gemini
-    if (!geminiResult || !geminiResult.dishName || geminiResult.ingredients.length === 0) {
-      throw new Error("Gemini analysis returned invalid results. Please try again.");
+    if (
+      !geminiResult ||
+      !geminiResult.dishName ||
+      geminiResult.ingredients.length === 0
+    ) {
+      throw new Error(
+        "Gemini analysis returned invalid results. Please try again.",
+      );
     }
 
     // Use Gemini's results as source of truth for nutritional values
@@ -300,7 +310,13 @@ export default class MealAnalysisResolver {
 
     const dish = await Dish.findOne({
       where: { id: input.dishId },
-      relations: ["meal", "meal.user", "analysis", "dish_ingredients", "dish_ingredients.ingredient"],
+      relations: [
+        "meal",
+        "meal.user",
+        "analysis",
+        "dish_ingredients",
+        "dish_ingredients.ingredient",
+      ],
     });
 
     if (!dish || !dish.meal) {
@@ -319,7 +335,9 @@ export default class MealAnalysisResolver {
     for (const update of input.ingredients) {
       const normalizedUpdateName = update.ingredientName.toLowerCase().trim();
       const dishIngredient = dish.dish_ingredients?.find((di) => {
-        const normalizedIngredientName = di.ingredient.name.toLowerCase().trim();
+        const normalizedIngredientName = di.ingredient.name
+          .toLowerCase()
+          .trim();
         return normalizedIngredientName === normalizedUpdateName;
       });
 
@@ -366,11 +384,12 @@ export default class MealAnalysisResolver {
       imageBase64 = dish.photoUrl;
     }
 
-    const recalculatedAnalysis = await geminiService.recalculateNutritionWithQuantities(
-      imageBase64,
-      ingredientQuantities,
-      mimeType,
-    );
+    const recalculatedAnalysis =
+      await geminiService.recalculateNutritionWithQuantities(
+        imageBase64,
+        ingredientQuantities,
+        mimeType,
+      );
 
     if (!dish.analysis) {
       throw new Error("Analysis not found");
@@ -405,7 +424,6 @@ export default class MealAnalysisResolver {
   @Authorized("coach", "admin")
   async updateAnalysisCalories(
     @Arg("input") input: UpdateAnalysisCaloriesInput,
-    @Ctx() context: GraphQLContext,
   ): Promise<Nutritional_Analysis> {
     const analysis = await Nutritional_Analysis.findOne({
       where: { id: input.analysisId },

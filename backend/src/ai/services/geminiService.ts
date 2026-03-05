@@ -75,10 +75,10 @@ export class GeminiService {
       "and provide a short health analysis. " +
       "IMPORTANT: All text responses (dishName, ingredient names, analysisSummary, warnings, mealType) must be in French. " +
       "Respond ONLY with valid JSON matching this TypeScript interface (no extra text): " +
-      "{ \"dishName\": string, " +
-      "\"ingredients\": {\"name\": string, \"estimatedQuantityGrams\"?: number, \"confidence\"?: number, \"calories\"?: number, \"protein\"?: number, \"carbs\"?: number, \"fat\"?: number }[], " +
-      "\"totalNutrition\": {\"calories\"?: number, \"protein\"?: number, \"carbs\"?: number, \"fat\"?: number, \"fiber\"?: number, \"sugar\"?: number, \"salt\"?: number }, " +
-      "\"analysisSummary\": string, \"healthScore\": number, \"warnings\": string[], \"mealType\"?: string }.";
+      '{ "dishName": string, ' +
+      '"ingredients": {"name": string, "estimatedQuantityGrams"?: number, "confidence"?: number, "calories"?: number, "protein"?: number, "carbs"?: number, "fat"?: number }[], ' +
+      '"totalNutrition": {"calories"?: number, "protein"?: number, "carbs"?: number, "fat"?: number, "fiber"?: number, "sugar"?: number, "salt"?: number }, ' +
+      '"analysisSummary": string, "healthScore": number, "warnings": string[], "mealType"?: string }.';
 
     const body = {
       contents: [
@@ -201,10 +201,10 @@ export class GeminiService {
       "based on these specific quantities. " +
       "IMPORTANT: All text responses (dishName, ingredient names, analysisSummary, warnings, mealType) must be in French. " +
       "Respond ONLY with valid JSON matching this TypeScript interface (no extra text): " +
-      "{ \"dishName\": string, " +
-      "\"ingredients\": {\"name\": string, \"estimatedQuantityGrams\": number, \"confidence\"?: number, \"calories\"?: number, \"protein\"?: number, \"carbs\"?: number, \"fat\"?: number }[], " +
-      "\"totalNutrition\": {\"calories\"?: number, \"protein\"?: number, \"carbs\"?: number, \"fat\"?: number, \"fiber\"?: number, \"sugar\"?: number, \"salt\"?: number }, " +
-      "\"analysisSummary\": string, \"healthScore\": number, \"warnings\": string[], \"mealType\"?: string }.\n\n" +
+      '{ "dishName": string, ' +
+      '"ingredients": {"name": string, "estimatedQuantityGrams": number, "confidence"?: number, "calories"?: number, "protein"?: number, "carbs"?: number, "fat"?: number }[], ' +
+      '"totalNutrition": {"calories"?: number, "protein"?: number, "carbs"?: number, "fat"?: number, "fiber"?: number, "sugar"?: number, "salt"?: number }, ' +
+      '"analysisSummary": string, "healthScore": number, "warnings": string[], "mealType"?: string }.\n\n' +
       "Updated ingredient quantities:\n" +
       ingredientsList;
 
@@ -299,4 +299,3 @@ export class GeminiService {
 
 // Shared Gemini service instance
 export const geminiService = new GeminiService(env.GEMINI_API_KEY);
-
