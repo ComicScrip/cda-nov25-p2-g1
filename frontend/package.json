@@ -10,7 +10,9 @@
     "format": "biome format --write && biome check --write",
     "codegen": "graphql-codegen --require dotenv/config --config codegen.ts --watch",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:login-profile": "playwright test __tests__/login-profile.spec.test.ts"
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",
@@ -35,6 +37,7 @@
     "@graphql-codegen/cli": "^6.1.0",
     "@graphql-codegen/typescript-react-apollo": "^4.3.3",
     "@parcel/watcher": "^2.5.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -47,7 +50,7 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "tailwindcss": "^4",
-    "ts-node": "^1.7.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
