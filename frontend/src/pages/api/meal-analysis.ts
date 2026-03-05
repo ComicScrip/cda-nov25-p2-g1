@@ -14,9 +14,8 @@ type MealAnalysisRequestBody = {
   geminiModel?: unknown;
 };
 
-type ParsedAnalysis = ReturnType<typeof parseScannerAnalysisResponse> extends infer T
-  ? Exclude<T, null>
-  : never;
+type ParsedAnalysis =
+  ReturnType<typeof parseScannerAnalysisResponse> extends infer T ? Exclude<T, null> : never;
 
 type ProviderAttemptError = {
   provider: MealAnalysisProvider;
@@ -117,7 +116,8 @@ const parsePositiveInteger = (value: string | undefined): number | null => {
 };
 
 const getProviderBudget = (provider: MealAnalysisProvider): number | null => {
-  const envValue = provider === "openai" ? process.env.OPENAI_TOKEN_BUDGET : process.env.GEMINI_TOKEN_BUDGET;
+  const envValue =
+    provider === "openai" ? process.env.OPENAI_TOKEN_BUDGET : process.env.GEMINI_TOKEN_BUDGET;
   return parsePositiveInteger(envValue);
 };
 
@@ -183,7 +183,9 @@ const parseProviderOrder = (value: string | undefined): MealAnalysisProvider[] =
   return unique;
 };
 
-export const orderProvidersForAuto = (providers: MealAnalysisProvider[]): MealAnalysisProvider[] => {
+export const orderProvidersForAuto = (
+  providers: MealAnalysisProvider[],
+): MealAnalysisProvider[] => {
   const fallbackIndex = new Map<MealAnalysisProvider, number>(
     providers.map((provider, index) => [provider, index]),
   );
@@ -235,7 +237,11 @@ const extractErrorMessage = (payload: unknown): string | null => {
   }
 
   const nestedError = payload.error;
-  if (isRecord(nestedError) && typeof nestedError.message === "string" && nestedError.message.trim()) {
+  if (
+    isRecord(nestedError) &&
+    typeof nestedError.message === "string" &&
+    nestedError.message.trim()
+  ) {
     return nestedError.message.trim();
   }
 
@@ -317,10 +323,14 @@ const callOpenAIProvider = async ({
     analysis,
     rawOutputText,
     usage: {
-      inputTokens: typeof response.usage?.input_tokens === "number" ? response.usage.input_tokens : undefined,
+      inputTokens:
+        typeof response.usage?.input_tokens === "number" ? response.usage.input_tokens : undefined,
       outputTokens:
-        typeof response.usage?.output_tokens === "number" ? response.usage.output_tokens : undefined,
-      totalTokens: typeof response.usage?.total_tokens === "number" ? response.usage.total_tokens : undefined,
+        typeof response.usage?.output_tokens === "number"
+          ? response.usage.output_tokens
+          : undefined,
+      totalTokens:
+        typeof response.usage?.total_tokens === "number" ? response.usage.total_tokens : undefined,
     },
   };
 };
@@ -423,7 +433,8 @@ const callGeminiProvider = async ({
 
   const analysis = parseAnalysisOrThrow(rawOutputText);
 
-  const usageMetadata = isRecord(payload) && isRecord(payload.usageMetadata) ? payload.usageMetadata : null;
+  const usageMetadata =
+    isRecord(payload) && isRecord(payload.usageMetadata) ? payload.usageMetadata : null;
 
   return {
     analysis,
@@ -477,7 +488,8 @@ export default async function handler(
     parseString(body.model) ??
     process.env.OPENAI_MEAL_SCAN_MODEL ??
     DEFAULT_OPENAI_MODEL;
-  const geminiModel = parseString(body.geminiModel) ?? process.env.GEMINI_MEAL_SCAN_MODEL ?? DEFAULT_GEMINI_MODEL;
+  const geminiModel =
+    parseString(body.geminiModel) ?? process.env.GEMINI_MEAL_SCAN_MODEL ?? DEFAULT_GEMINI_MODEL;
 
   if (!prompt) {
     res.status(400).json({ error: "Le champ 'prompt' est requis." });
@@ -518,7 +530,9 @@ export default async function handler(
     }
 
     const providerApiKey =
-      provider === "openai" ? process.env.OPENAI_API_KEY ?? process.env.api_key : process.env.GEMINI_API_KEY;
+      provider === "openai"
+        ? (process.env.OPENAI_API_KEY ?? process.env.api_key)
+        : process.env.GEMINI_API_KEY;
 
     if (!providerApiKey) {
       providerErrors.push({
@@ -571,7 +585,8 @@ export default async function handler(
   }
 
   const allMissingKeys =
-    providerErrors.length > 0 && providerErrors.every((providerError) => providerError.reason === "missing_api_key");
+    providerErrors.length > 0 &&
+    providerErrors.every((providerError) => providerError.reason === "missing_api_key");
   const allBudgetExceeded =
     providerErrors.length > 0 &&
     providerErrors.every((providerError) => providerError.reason === "budget_exceeded");

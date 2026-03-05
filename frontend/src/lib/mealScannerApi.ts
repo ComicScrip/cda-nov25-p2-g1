@@ -74,7 +74,8 @@ export const requestMealScannerAnalysis = async ({
     analysis,
     rawOutputText: typeof payload.rawOutputText === "string" ? payload.rawOutputText : undefined,
     provider:
-      typeof payload.provider === "string" && (payload.provider === "openai" || payload.provider === "gemini")
+      typeof payload.provider === "string" &&
+      (payload.provider === "openai" || payload.provider === "gemini")
         ? payload.provider
         : undefined,
   };
