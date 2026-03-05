@@ -156,7 +156,7 @@ describe("CoachLayout", () => {
       expect(screen.getByText("Dashboard")).toBeInTheDocument();
       expect(screen.getByText("utilisateurs")).toBeInTheDocument();
       expect(screen.getByText("Recettes")).toBeInTheDocument();
-      expect(screen.getByText("Chef IA")).toBeInTheDocument();
+      expect(screen.getByText("Analyse IA")).toBeInTheDocument();
     });
 
     it("should highlight the active menu item based on current pathname", () => {

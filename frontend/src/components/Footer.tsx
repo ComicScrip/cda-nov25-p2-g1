@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Legal Column */}
           <div>
-            <h3 className="font-semibold text-sm md:text-base mb-2">Légal</h3>
+            <h2 className="font-semibold text-sm md:text-base mb-2">Légal</h2>
             <ul className="space-y-1">
               <li>
                 <a
@@ -44,7 +44,7 @@ export default function Footer() {
 
           {/* About Column */}
           <div>
-            <h3 className="font-semibold text-sm md:text-base mb-2">A propos</h3>
+            <h2 className="font-semibold text-sm md:text-base mb-2">A propos</h2>
             <ul className="space-y-1">
               <li>
                 <a
@@ -59,7 +59,7 @@ export default function Footer() {
 
           {/* Contact Column */}
           <div>
-            <h3 className="font-semibold text-sm md:text-base mb-2">Contact</h3>
+            <h2 className="font-semibold text-sm md:text-base mb-2">Contact</h2>
             {/* Contact information can be added here later */}
           </div>
         </div>

@@ -1,0 +1,9 @@
+mutation UpdateAnalysisCalories($input: UpdateAnalysisCaloriesInput!) {
+  updateAnalysisCalories(input: $input) {
+    id
+    calories
+    isModified
+    validatedAt
+    status
+  }
+}
