@@ -16,6 +16,21 @@ jobs:
   build-and-push-client:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Resolve frontend path
+        id: frontend-path
+        run: |
+          if [ -f backend/frontend/Dockerfile.prod ] && [ -f backend/frontend/package.json ]; then
+            echo "dir=backend/frontend" >> "$GITHUB_OUTPUT"
+            echo "dockerfile=backend/frontend/Dockerfile.prod" >> "$GITHUB_OUTPUT"
+          elif [ -f frontend/Dockerfile.prod ] && [ -f frontend/package.json ]; then
+            echo "dir=frontend" >> "$GITHUB_OUTPUT"
+            echo "dockerfile=frontend/Dockerfile.prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "No frontend Docker context found." >&2
+            exit 1
+          fi
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -32,8 +47,8 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          context: "{{defaultContext}}:frontend"
-          file: "Dockerfile.prod"
+          context: ${{ steps.frontend-path.outputs.dir }}
+          file: ${{ steps.frontend-path.outputs.dockerfile }}
           tags: ${{ inputs.image_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

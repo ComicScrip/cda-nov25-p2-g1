@@ -2,23 +2,40 @@ name: Test frontend
 
 on:
   pull_request:
-    paths: [ 'frontend/**' ]
+    paths:
+      - "frontend/**"
+      - "backend/frontend/**"
+      - ".github/workflows/test-frontend.yml"
   workflow_call:
 
 jobs:
   testing-frontend:
     name: Testing frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
 
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve frontend path
+        id: frontend-path
+        run: |
+          if [ -f backend/frontend/package.json ] && [ -f backend/frontend/jest.config.ts ] && [ -f backend/frontend/jest.setup.ts ]; then
+            echo "dir=backend/frontend" >> "$GITHUB_OUTPUT"
+            echo "lockfile=backend/frontend/package-lock.json" >> "$GITHUB_OUTPUT"
+          elif [ -f frontend/package.json ] && [ -f frontend/jest.config.ts ] && [ -f frontend/jest.setup.ts ]; then
+            echo "dir=frontend" >> "$GITHUB_OUTPUT"
+            echo "lockfile=frontend/package-lock.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "No frontend test app with Jest setup found." >&2
+            exit 1
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ steps.frontend-path.outputs.lockfile }}
       - name: Install Dependencies
+        working-directory: ${{ steps.frontend-path.outputs.dir }}
         run: npm ci
       - name: Run Jest Tests
+        working-directory: ${{ steps.frontend-path.outputs.dir }}
         run: npm run test -- --passWithNoTests

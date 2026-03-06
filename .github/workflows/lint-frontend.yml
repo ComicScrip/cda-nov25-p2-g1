@@ -2,22 +2,34 @@ name: Lint frontend
 
 on:
   pull_request:
-    paths: [ 'frontend/**' ]
+    paths:
+      - "frontend/**"
+      - "backend/frontend/**"
+      - ".github/workflows/lint-frontend.yml"
 
 
 jobs:
   linting-frontend:
     name: Linting frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
 
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve frontend path
+        id: frontend-path
+        run: |
+          if [ -f backend/frontend/package.json ] && [ -f backend/frontend/biome.json ]; then
+            echo "dir=backend/frontend" >> "$GITHUB_OUTPUT"
+          elif [ -f frontend/package.json ] && [ -f frontend/biome.json ]; then
+            echo "dir=frontend" >> "$GITHUB_OUTPUT"
+          else
+            echo "No frontend app with Biome config found." >&2
+            exit 1
+          fi
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          working-dir: ./frontend
+          working-dir: ${{ steps.frontend-path.outputs.dir }}
       - name: Run Biome
+        working-directory: ${{ steps.frontend-path.outputs.dir }}
         run: biome ci .
