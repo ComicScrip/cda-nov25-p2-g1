@@ -1,21 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 import { type UserDashboardDataQuery, useUserDashboardDataQuery } from "@/graphql/generated/schema";
 
-const PAGE_SIZE = 10;
+const RECENT_ACTIVITY_LIMIT = 5;
 
 export default function DashboardPage() {
-  const [offset, setOffset] = useState(0);
   const { data, loading, error } = useUserDashboardDataQuery({
     fetchPolicy: "cache-and-network",
-    variables: { limit: PAGE_SIZE, offset },
+    variables: { limit: RECENT_ACTIVITY_LIMIT, offset: 0 },
   });
 
   const dashboard = data?.userDashboardData;
-  const hasMoreMeals = Boolean(dashboard?.hasMoreMeals);
   const stats = [
     {
       value: String(dashboard?.daysOfUse ?? 0),
@@ -42,7 +39,7 @@ export default function DashboardPage() {
   type DashboardMeal = NonNullable<
     UserDashboardDataQuery["userDashboardData"]
   >["recentMeals"][number];
-  const meals: DashboardMeal[] = dashboard?.recentMeals ?? [];
+  const meals: DashboardMeal[] = (dashboard?.recentMeals ?? []).slice(0, RECENT_ACTIVITY_LIMIT);
 
   return (
     <HomeLayout pageTitle="Dashboard" footerVariant="userSlim">
@@ -139,7 +136,7 @@ export default function DashboardPage() {
               const isSecondRow = index >= 2;
               const isRightColumn = index % 2 === 1;
               const mealKey = [
-                offset,
+                RECENT_ACTIVITY_LIMIT,
                 meal.name,
                 meal.calories,
                 meal.protein,
@@ -182,24 +179,6 @@ export default function DashboardPage() {
                 </Link>
               );
             })}
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setOffset((currentOffset) => Math.max(0, currentOffset - PAGE_SIZE))}
-              disabled={offset === 0}
-              className="rounded-md bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1f3d1f] shadow-[0_2px_4px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Repas précédents
-            </button>
-            <button
-              type="button"
-              onClick={() => setOffset((currentOffset) => currentOffset + PAGE_SIZE)}
-              disabled={!hasMoreMeals}
-              className="rounded-md bg-[#2596be] px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Repas suivants
-            </button>
           </div>
         </div>
       </UserPageLayout>
