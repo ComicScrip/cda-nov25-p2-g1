@@ -26,15 +26,25 @@ type SeedMassiveOptions = {
   usersCount: number; // 100
   days: number; // 90
   recipesCount: number; // ex: 250
-  maxMealsPerDay: number; // ex: 5
+  maxMealsPerDay: number; // ex: 4
 };
+
+const FIXED_COACH_EMAIL = "coach@app.com";
+const FIXED_COACH_PASSWORD = "SuperP@ssW0rd!";
 
 const DEFAULT_OPTS: SeedMassiveOptions = {
   usersCount: 100,
   days: 90,
   recipesCount: 250,
-  maxMealsPerDay: 5,
+  maxMealsPerDay: 4,
 };
+
+const MEAL_TIME_SLOTS = [
+  { mealType: MealType.PetitDejeuner, hour: 7, minute: 30 },
+  { mealType: MealType.Dejeuner, hour: 12, minute: 30 },
+  { mealType: MealType.Collation, hour: 16, minute: 0 },
+  { mealType: MealType.Diner, hour: 19, minute: 30 },
+] as const;
 
 function unsplashFoodUrl(kind: "meal" | "dish" | "recipe") {
   // URL simple, “realistic food images” sans API key.
@@ -55,6 +65,140 @@ function randEnum<T extends Record<string, string>>(e: T): T[keyof T] {
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function getSeedAnchorDate() {
+  const anchor = new Date();
+  anchor.setHours(0, 0, 0, 0);
+  anchor.setDate(anchor.getDate() - 1);
+  return anchor;
+}
+
+function buildMealDate(baseDate: Date, hour: number, minute: number) {
+  const mealDate = new Date(baseDate);
+  mealDate.setHours(hour, minute, 0, 0);
+  return mealDate;
+}
+
+function normalizeEmailPart(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .replace(/\.{2,}/g, ".");
+}
+
+function buildCoherentUserEmail(
+  firstName: string,
+  lastName: string,
+  usedEmails: Set<string>,
+) {
+  const normalizedFirstName = normalizeEmailPart(firstName) || "user";
+  const normalizedLastName = normalizeEmailPart(lastName) || "profile";
+
+  let email = "";
+
+  do {
+    const suffix = faker.number.int({ min: 10, max: 99 });
+    email = `${normalizedFirstName}.${normalizedLastName}${suffix}@app.com`;
+  } while (email === FIXED_COACH_EMAIL || usedEmails.has(email));
+
+  usedEmails.add(email);
+  return email;
+}
+
+async function seedWeightMeasures(
+  manager: EntityManager,
+  profile: User_profile,
+  days: number,
+) {
+  const measures: Weight_Measure[] = [];
+  const startWeight = faker.number.float({
+    min: 55,
+    max: 110,
+    fractionDigits: 1,
+  });
+  const trend = faker.helpers.arrayElement(["loss", "gain", "stable"]) as
+    | "loss"
+    | "gain"
+    | "stable";
+  const weeklyDelta =
+    trend === "loss"
+      ? faker.number.float({ min: -0.6, max: -0.1, fractionDigits: 2 })
+      : trend === "gain"
+        ? faker.number.float({ min: 0.1, max: 0.6, fractionDigits: 2 })
+        : faker.number.float({ min: -0.1, max: 0.1, fractionDigits: 2 });
+
+  let current = startWeight;
+
+  for (let d = days; d >= 0; d--) {
+    const date = faker.date.recent({ days });
+    const shouldMeasure = faker.number.int({ min: 1, max: 7 }) <= 2;
+    if (!shouldMeasure) continue;
+
+    current =
+      current +
+      weeklyDelta / 7 +
+      faker.number.float({ min: -0.15, max: 0.15, fractionDigits: 2 });
+    current = clamp(Number(current.toFixed(1)), 40, 160);
+
+    measures.push(
+      Weight_Measure.create({
+        measured_at: date as any,
+        weight: current as any,
+        user_profile: profile as any,
+      } as any),
+    );
+  }
+
+  const chunkSize = 300;
+  for (let j = 0; j < measures.length; j += chunkSize) {
+    await manager.save(measures.slice(j, j + chunkSize));
+  }
+}
+
+async function enforceSingleCoachSeed(manager: EntityManager, coachUser: User) {
+  await manager.query(
+    `
+      UPDATE users
+      SET role = $2,
+          coach_id = $1
+      WHERE id <> $1
+        AND role = $3
+    `,
+    [coachUser.id, UserRole.Coachee, UserRole.Coach],
+  );
+
+  await manager.query(
+    `
+      UPDATE users
+      SET coach_id = $1
+      WHERE id <> $1
+        AND role = $2
+        AND (coach_id IS NULL OR coach_id <> $1)
+    `,
+    [coachUser.id, UserRole.Coachee],
+  );
+
+  const roleRows = (await manager.query(
+    `
+      SELECT role, COUNT(*)::text AS count
+      FROM users
+      GROUP BY role
+    `,
+  )) as Array<{ role: UserRole; count: string }>;
+
+  const coachCount = Number(
+    roleRows.find((row) => row.role === UserRole.Coach)?.count ?? "0",
+  );
+
+  if (coachCount !== 1) {
+    throw new Error(
+      `seed:massive must create exactly one coach, found ${coachCount}`,
+    );
+  }
 }
 
 /**
@@ -214,19 +358,78 @@ async function seedUsersProfilesWeights(
 ) {
   const users: User[] = [];
   const profiles: User_profile[] = [];
+  const totalUsers = Math.max(1, count);
+  const usedEmails = new Set<string>([FIXED_COACH_EMAIL]);
 
-  for (let i = 0; i < count; i++) {
-    const email = faker.internet.email({ provider: "app.com" }).toLowerCase();
-    const role = faker.helpers.weightedArrayElement([
-      { weight: 99, value: UserRole.Coachee },
-      { weight: 1, value: UserRole.Coach },
-    ]);
+  const hashedCoachPassword = await hash(FIXED_COACH_PASSWORD);
+  const coachLastLoginAt = faker.date.recent({ days: 10 });
+
+  await manager.upsert(
+    User,
+    {
+      email: FIXED_COACH_EMAIL,
+      hashedPassword: hashedCoachPassword,
+      role: UserRole.Coach,
+      last_login_at: coachLastLoginAt,
+    },
+    ["email"],
+  );
+
+  const coachUser = await manager.findOneByOrFail(User, {
+    email: FIXED_COACH_EMAIL,
+  });
+  users.push(coachUser);
+
+  let coachProfile =
+    (await manager.findOne(User_profile, {
+      where: { user: { id: coachUser.id } },
+      relations: {
+        user: true,
+        pathologies: true,
+      },
+    })) ?? null;
+
+  if (!coachProfile) {
+    coachProfile = await manager.save(
+      User_profile.create({
+        first_name: "Coach",
+        last_name: "Demo",
+        date_of_birth: new Date("1988-06-12") as any,
+        gender: "femme" as any,
+        height: 1.72 as any,
+        goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
+        user: coachUser,
+        pathologies: [],
+      } as any),
+    );
+  } else {
+    coachProfile.first_name = "Coach";
+    coachProfile.last_name = "Demo";
+    coachProfile.date_of_birth = new Date("1988-06-12") as any;
+    coachProfile.gender = "femme" as any;
+    coachProfile.height = 1.72 as any;
+    coachProfile.goal =
+      "Accompagner les utilisateurs MyDietChef au quotidien." as any;
+    coachProfile.user = coachUser;
+    coachProfile.pathologies = [];
+    coachProfile = await manager.save(coachProfile);
+  }
+  const ensuredCoachProfile = coachProfile as User_profile;
+  profiles.push(ensuredCoachProfile);
+  await seedWeightMeasures(manager, ensuredCoachProfile, days);
+
+  for (let i = 1; i < totalUsers; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = buildCoherentUserEmail(firstName, lastName, usedEmails);
+    const role = UserRole.Coachee;
 
     const user = await manager.save(
       User.create({
         email,
         hashedPassword: await hash("SuperP@ssW0rd!"),
         role,
+        coach: role === UserRole.Coachee ? coachUser : null,
         last_login_at: faker.date.recent({ days: 10 }),
       }),
     );
@@ -234,8 +437,8 @@ async function seedUsersProfilesWeights(
 
     const profile = await manager.save(
       User_profile.create({
-        first_name: faker.person.firstName(),
-        last_name: faker.person.lastName(),
+        first_name: firstName,
+        last_name: lastName,
         date_of_birth: faker.date.birthdate({
           min: 1950,
           max: 2007,
@@ -260,54 +463,10 @@ async function seedUsersProfilesWeights(
       } as any),
     );
     profiles.push(profile);
-
-    // Weight measures (1–3 / semaine) sur 90 jours
-    const startWeight = faker.number.float({
-      min: 55,
-      max: 110,
-      fractionDigits: 1,
-    });
-    const trend = faker.helpers.arrayElement(["loss", "gain", "stable"]) as
-      | "loss"
-      | "gain"
-      | "stable";
-    const weeklyDelta =
-      trend === "loss"
-        ? faker.number.float({ min: -0.6, max: -0.1, fractionDigits: 2 })
-        : trend === "gain"
-          ? faker.number.float({ min: 0.1, max: 0.6, fractionDigits: 2 })
-          : faker.number.float({ min: -0.1, max: 0.1, fractionDigits: 2 });
-
-    const measures: Weight_Measure[] = [];
-    let current = startWeight;
-
-    for (let d = days; d >= 0; d--) {
-      const date = faker.date.recent({ days });
-      const shouldMeasure = faker.number.int({ min: 1, max: 7 }) <= 2; // ~2/7 jours
-      if (!shouldMeasure) continue;
-
-      // évolution + bruit
-      current =
-        current +
-        weeklyDelta / 7 +
-        faker.number.float({ min: -0.15, max: 0.15, fractionDigits: 2 });
-      current = clamp(Number(current.toFixed(1)), 40, 160);
-
-      measures.push(
-        Weight_Measure.create({
-          measured_at: date as any,
-          weight: current as any,
-          user_profile: profile as any, // IMPORTANT: relation singulière après correction entité
-        } as any),
-      );
-    }
-
-    // save en chunks
-    const chunkSize = 300;
-    for (let j = 0; j < measures.length; j += chunkSize) {
-      await manager.save(measures.slice(j, j + chunkSize));
-    }
+    await seedWeightMeasures(manager, profile, days);
   }
+
+  await enforceSingleCoachSeed(manager, coachUser);
 
   return { users, profiles };
 }
@@ -340,26 +499,21 @@ async function seedMealsDishesAnalyses(
   days: number,
   maxMealsPerDay: number,
 ) {
+  const seedAnchorDate = getSeedAnchorDate();
+  const mealsPerDay = Math.min(maxMealsPerDay, MEAL_TIME_SLOTS.length);
+  const timeSlots = MEAL_TIME_SLOTS.slice(0, mealsPerDay);
+
   for (const user of users) {
     for (let dayOffset = 0; dayOffset < days; dayOffset++) {
-      const dayDate = new Date();
-      dayDate.setDate(dayDate.getDate() - dayOffset);
-      dayDate.setHours(
-        faker.number.int({ min: 7, max: 21 }),
-        faker.number.int({ min: 0, max: 59 }),
-        0,
-        0,
-      );
+      const dayDate = new Date(seedAnchorDate);
+      dayDate.setDate(seedAnchorDate.getDate() - dayOffset);
 
-      const mealsCount = faker.number.int({ min: 2, max: maxMealsPerDay });
-
-      for (let m = 0; m < mealsCount; m++) {
-        const consumedAt = new Date(dayDate);
-        consumedAt.setHours(clamp(consumedAt.getHours() + m * 3, 6, 23));
+      for (const slot of timeSlots) {
+        const consumedAt = buildMealDate(dayDate, slot.hour, slot.minute);
 
         const meal = await manager.save(
           Meal.create({
-            mealType: randEnum(MealType),
+            mealType: slot.mealType,
             consumedAt,
             user,
             photoUrl: unsplashFoodUrl("meal") as any, // si tu ajoutes un champ photoUrl à Meal plus tard
@@ -376,7 +530,10 @@ async function seedMealsDishesAnalyses(
               ...nut,
               analyzedAt: consumedAt as any,
               validatedAt: faker.datatype.boolean()
-                ? faker.date.soon({ days: 3, refDate: consumedAt })
+                ? new Date(
+                    consumedAt.getTime() +
+                      faker.number.int({ min: 15, max: 120 }) * 60 * 1000,
+                  )
                 : null,
             } as any),
           );
@@ -394,9 +551,12 @@ async function seedMealsDishesAnalyses(
 
           // Dish ingredients (pivot)
           const diCount = faker.number.int({ min: 3, max: 10 });
-          const picked = faker.helpers.arrayElements(ingredients, diCount);
+          const picked: Ingredient[] = faker.helpers.arrayElements(
+            ingredients,
+            diCount,
+          );
 
-          const pivots = picked.map((ing) =>
+          const pivots = picked.map((ing: Ingredient) =>
             Dish_Ingredient.create({
               dish,
               ingredient: ing,
