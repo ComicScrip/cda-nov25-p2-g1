@@ -1,0 +1,16 @@
+query UserMealsData {
+  userMealsData {
+    id
+    name
+    consumedAt
+    calories
+    protein
+    carbs
+    fat
+    aiScore
+    photo
+    aiInsights
+    coachComment
+    coachName
+  }
+}

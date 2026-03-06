@@ -1,0 +1,9 @@
+query UserProfilePromptData {
+  userProfileData {
+    dateOfBirth
+    gender
+    height
+    currentWeight
+    medicalTags
+  }
+}

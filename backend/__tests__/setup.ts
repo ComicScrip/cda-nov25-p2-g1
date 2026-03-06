@@ -11,10 +11,12 @@ process.env.NODE_ENV = "test";
 process.env.DB_HOST = process.env.DB_HOST || "localhost";
 process.env.DB_PORT = process.env.DB_PORT || "5432";
 process.env.TEST_DB_PORT = process.env.TEST_DB_PORT || "5433";
-process.env.DB_USER = process.env.DB_USER || "test";
-process.env.DB_PASS = process.env.DB_PASS || "test";
-process.env.DB_NAME = process.env.DB_NAME || "test";
+process.env.DB_USER = process.env.DB_USER || "postgres";
+process.env.DB_PASS = process.env.DB_PASS || "postgres";
+process.env.DB_NAME = process.env.DB_NAME || "postgres";
 
 process.env.GRAPHQL_SERVER_PORT = process.env.GRAPHQL_SERVER_PORT || "4000";
 process.env.CORS_ALLOWED_ORIGINS =
   process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000";
+process.env.GEMINI_API_KEY =
+  process.env.GEMINI_API_KEY || "test-gemini-api-key";

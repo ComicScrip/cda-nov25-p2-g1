@@ -1,0 +1,3 @@
+mutation SaveScannerCoachSubmission($payloadJson: String!) {
+  saveScannerCoachSubmission(payloadJson: $payloadJson)
+}
