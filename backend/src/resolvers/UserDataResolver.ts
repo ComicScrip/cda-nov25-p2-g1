@@ -22,11 +22,9 @@ import {
   Resolver,
 } from "type-graphql";
 import { getCurrentUser } from "../auth";
-import { Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
 import { User_profile } from "../entities/User_Profile";
-import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
 
@@ -133,57 +131,6 @@ class UserMealData {
 
   @Field(() => String)
   coachName!: string;
-}
-
-@ObjectType()
-class RecipeData {
-  @Field(() => String)
-  id!: string;
-
-  @Field(() => String)
-  title!: string;
-
-  @Field(() => String)
-  source!: string;
-
-  @Field(() => String)
-  photo!: string;
-
-  @Field(() => String)
-  prepTime!: string;
-
-  @Field(() => Int)
-  servings!: number;
-
-  @Field(() => String)
-  difficulty!: string;
-
-  @Field(() => Int)
-  calories!: number;
-
-  @Field(() => Int)
-  protein!: number;
-
-  @Field(() => Int)
-  carbs!: number;
-
-  @Field(() => Int)
-  fat!: number;
-
-  @Field(() => Int)
-  fiber!: number;
-
-  @Field(() => String)
-  description!: string;
-
-  @Field(() => [String])
-  prepSteps!: string[];
-
-  @Field(() => [String])
-  benefits!: string[];
-
-  @Field(() => String)
-  coachNote!: string;
 }
 
 @ObjectType()
@@ -671,66 +618,6 @@ export default class UserDataResolver {
         coachName: dish.coachName?.trim() || "Coach",
       };
     });
-  }
-
-  @Query(() => [RecipeData])
-  @Authorized()
-  async userRecipesData(@Ctx() context: GraphQLContext): Promise<RecipeData[]> {
-    let currentUserId = "";
-    try {
-      const currentUser = await getCurrentUser(context);
-      currentUserId = currentUser.id;
-    } catch (_e) {
-      return [];
-    }
-
-    const userRecipes = await User_Recipe.find({
-      where: { user: { id: currentUserId } },
-      relations: ["recipe"],
-    });
-    const fallbackPhoto = "/MyDietChef_image.webp";
-
-    return userRecipes
-      .map((link) => link.recipe)
-      .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .map((recipe) => {
-        const source = recipe.status === Status.Publie ? "coach" : "favori";
-        const photo = recipe.photoUrl?.trim() || fallbackPhoto;
-        const prepSteps = (recipe.instructions ?? "")
-          .split("\n")
-          .map((step) => step.trim())
-          .filter(Boolean);
-
-        const benefits = Array.isArray(recipe.benefits)
-          ? recipe.benefits.map((line) => line.trim()).filter(Boolean)
-          : [];
-
-        const fallbackBenefits = [
-          `Apport proteique: ${toNumber(recipe.proteinsPerServing)} g par portion.`,
-          `Fibres: ${toNumber(recipe.fiberPerServing)} g pour la satiete.`,
-          "Recette equilibree pour soutenir la regularite alimentaire.",
-        ];
-
-        return {
-          id: recipe.id,
-          title: recipe.title,
-          source,
-          photo,
-          prepTime: `${recipe.preparationTime ?? 0} min`,
-          servings: recipe.servings ?? 1,
-          difficulty: recipe.difficultyLevel ?? "Facile",
-          calories: toNumber(recipe.caloriesPerServing),
-          protein: toNumber(recipe.proteinsPerServing),
-          carbs: toNumber(recipe.carbohydratesPerServing),
-          fat: toNumber(recipe.lipidsPerServing),
-          fiber: toNumber(recipe.fiberPerServing),
-          description: recipe.description ?? "",
-          prepSteps,
-          benefits: benefits.length > 0 ? benefits : fallbackBenefits,
-          coachNote: recipe.chefTips?.trim() ?? "",
-        };
-      });
   }
 
   @Authorized()
