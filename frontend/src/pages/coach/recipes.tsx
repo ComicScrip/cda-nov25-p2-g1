@@ -145,12 +145,10 @@ export default function CoachRecipes() {
           <div className="overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]">
             <div className="bg-[#f5fbf1] px-5 py-6 md:px-8 lg:flex lg:min-h-0 lg:flex-col">
               <div className="max-w-4xl text-[#2c2c2c]">
-                <h1 className="text-lg font-semibold">
-                  Recettes proposées par le coach
-                </h1>
+                <h1 className="text-lg font-semibold">Recettes proposées par le coach</h1>
                 <p className="mt-1 text-sm text-[#555]">
-                  Retrouve ici toutes les recettes proposées par le coach avec
-                  préparation détaillée, apports nutritionnels et bienfaits.
+                  Retrouve ici toutes les recettes proposées par le coach avec préparation
+                  détaillée, apports nutritionnels et bienfaits.
                 </p>
               </div>
 
