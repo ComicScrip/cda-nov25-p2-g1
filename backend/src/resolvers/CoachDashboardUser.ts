@@ -61,6 +61,9 @@ export class CoachDashoardUser {
     }
 
     const users = await User.find({
+      where: {
+        role: UserRole.Coachee,
+      },
       relations: {
         profile: {
           weight_measures: true,
