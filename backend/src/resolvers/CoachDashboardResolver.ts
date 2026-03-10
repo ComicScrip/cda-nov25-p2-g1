@@ -14,6 +14,7 @@ import { Meal } from "../entities/Meal";
 import { Recipe } from "../entities/Recipe";
 import { User } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
+import type { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
 
 /**
@@ -59,6 +60,15 @@ class RecentUserData {
 
   @Field(() => Float)
   score!: number;
+
+  @Field(() => Float, { nullable: true })
+  currentWeight?: number;
+
+  @Field(() => String, { nullable: true })
+  goal?: string;
+
+  @Field(() => Int, { nullable: true })
+  targetDailyCalories?: number;
 }
 
 /**
@@ -71,6 +81,9 @@ class RecentRecipeData {
 
   @Field(() => String)
   name!: string;
+
+  @Field(() => String)
+  photo!: string;
 
   @Field(() => Float)
   calories!: number;
@@ -265,6 +278,7 @@ export default class CoachDashboardResolver {
       recentUsersList.map(async (user) => {
         const profile = await User_profile.findOne({
           where: { user: { id: user.id } },
+          relations: ["weight_measures"],
         });
 
         // Get user's meals with dishes and analysis to calculate average score
@@ -285,10 +299,26 @@ export default class CoachDashboardResolver {
               userScores.length
             : 0;
 
+        const weights = (profile?.weight_measures ?? []) as Weight_Measure[];
+        const sortedWeights = weights
+          .filter((w) => w.measured_at != null)
+          .sort((a, b) => {
+            const aTime = a.measured_at ? new Date(a.measured_at).getTime() : 0;
+            const bTime = b.measured_at ? new Date(b.measured_at).getTime() : 0;
+            return bTime - aTime;
+          });
+        const currentWeight =
+          sortedWeights.length > 0
+            ? Number(sortedWeights[0].weight)
+            : undefined;
+
         return {
           name: getUserDisplayName(user, profile),
           email: user.email,
           score: userAverageScore,
+          currentWeight,
+          goal: profile?.goal?.trim() || undefined,
+          targetDailyCalories: 2000,
         };
       }),
     );
@@ -298,10 +328,13 @@ export default class CoachDashboardResolver {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 3);
 
+    const fallbackPhoto = "/MyDietChef_image.webp";
+
     const recentRecipesData: RecentRecipeData[] = recentRecipesList.map(
       (recipe) => ({
         id: recipe.id,
         name: recipe.title,
+        photo: recipe.photoUrl?.trim() || fallbackPhoto,
         calories: recipe.caloriesPerServing ?? 0,
         proteins: recipe.proteinsPerServing ?? 0,
         carbs: recipe.carbohydratesPerServing ?? 0,

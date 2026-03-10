@@ -1,0 +1,25 @@
+query CoachRecipesPageData($limit: Int!, $offset: Int!) {
+  coachRecipesPageData(limit: $limit, offset: $offset) {
+    recipes {
+      id
+      title
+      source
+      photo
+      prepTime
+      servings
+      difficulty
+      calories
+      protein
+      carbs
+      fat
+      fiber
+      description
+      prepSteps
+      benefits
+      coachNote
+    }
+    totalCount
+    coachCount
+    averageCalories
+  }
+}

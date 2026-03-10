@@ -1,4 +1,5 @@
 import { BookOpen, ChefHat, Loader2, TrendingUp, User, Users, UtensilsCrossed } from "lucide-react";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type RecentRecipeData,
@@ -172,28 +173,51 @@ export default function CoachDashboard() {
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentUsers.length > 0 ? (
-                    recentUsers.map((userItem: { name: string; email: string; score: number }) => (
-                      <Card key={userItem.email} className="bg-white/90 border-0 backdrop-blur-sm">
-                        <CardContent className="p-4 md:p-5">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
+                    recentUsers.map(
+                      (userItem: {
+                        name: string;
+                        email: string;
+                        score: number;
+                        currentWeight?: number | null;
+                        goal?: string | null;
+                        targetDailyCalories?: number | null;
+                      }) => (
+                        <Card
+                          key={userItem.email}
+                          className="bg-white/90 border-0 backdrop-blur-sm"
+                        >
+                          <CardContent className="p-4 md:p-5">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate min-w-0">
                                 {userItem.name}
                               </div>
-                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                                {userItem.email}
-                              </CardDescription>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
+                                <span className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
+                                  {Math.round(userItem.score)}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
-                              <span className="font-bold text-[#2c2c2c] text-sm md:text-base">
-                                {Math.round(userItem.score)}
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
+                            <CardDescription className="text-xs md:text-sm text-[#555] mt-1 block">
+                              {userItem.email}
+                            </CardDescription>
+                            <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                              Poids:{" "}
+                              {userItem.currentWeight != null
+                                ? `${userItem.currentWeight} kg`
+                                : "—"}
+                              {" | "}
+                              Objectif: {userItem.goal || "—"}
+                              {" | "}
+                              Objectif calorique:{" "}
+                              {userItem.targetDailyCalories != null
+                                ? `${userItem.targetDailyCalories} kcal/j`
+                                : "—"}
+                            </CardDescription>
+                          </CardContent>
+                        </Card>
+                      ),
+                    )
                   ) : (
                     <Card className="bg-white/90 border-0 backdrop-blur-sm">
                       <CardContent className="p-4 md:p-5">
@@ -219,18 +243,36 @@ export default function CoachDashboard() {
                     recentRecipes.map((recipe: RecentRecipeData) => (
                       <Card key={recipe.id} className="bg-white/90 border-0 backdrop-blur-sm">
                         <CardContent className="p-4 md:p-5">
-                          <div className="flex justify-between items-start mb-1">
-                            <div className="font-semibold text-[#2c2c2c] text-sm md:text-base">
-                              {recipe.name}
+                          <div className="flex items-start gap-3">
+                            <div className="relative h-16 w-20 md:h-20 md:w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc]">
+                              <Image
+                                src={recipe.photo}
+                                alt={recipe.name}
+                                fill
+                                sizes="80px"
+                                className="object-cover"
+                                loading="lazy"
+                                unoptimized={
+                                  recipe.photo.startsWith("data:") ||
+                                  recipe.photo.startsWith("blob:")
+                                }
+                              />
                             </div>
-                            <div className="font-bold text-[#2c2c2c] text-sm md:text-base">
-                              {Math.round(recipe.calories)} kcal
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate">
+                                  {recipe.name}
+                                </div>
+                                <div className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
+                                  {Math.round(recipe.calories)} kcal
+                                </div>
+                              </div>
+                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                                P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g |
+                                L: {Math.round(recipe.lipids)}g
+                              </CardDescription>
                             </div>
                           </div>
-                          <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                            P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g | L:{" "}
-                            {Math.round(recipe.lipids)}g
-                          </CardDescription>
                         </CardContent>
                       </Card>
                     ))

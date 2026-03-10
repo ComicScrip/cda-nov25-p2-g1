@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "source.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+      },
     ],
   },
   transpilePackages: ["@radix-ui/react-slot"],
