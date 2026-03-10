@@ -35,6 +35,8 @@ services:
   frontend:
     container_name: ${DEPLOY_ENV:-staging}-frontend
     image: mydietchief/mdc-mars26-front:${DEPLOY_ENV:-staging}
+    env_file:
+      - .env.production
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
       interval: 2s

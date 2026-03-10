@@ -15,4 +15,4 @@ COPY next.config.ts ./
 COPY postcss.config.mjs ./
 COPY tsconfig.json ./
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--webpack"]
