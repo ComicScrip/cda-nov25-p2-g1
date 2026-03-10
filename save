@@ -15,7 +15,7 @@ import {
 import {
   useProfileQuery,
   UserRole,
-  useCoachUserQuery,
+  useCoachUsersQuery,
 } from "@/graphql/generated/schema";
 
 import {
@@ -48,7 +48,7 @@ export default function CoachUsers() {
     data: usersData,
     loading: usersLoading,
     error: usersError,
-  } = useCoachUserQuery();
+  } = useCoachUsersQuery();
 
   useEffect(() => {
     if (!loading) {
@@ -116,61 +116,19 @@ export default function CoachUsers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Nom
-                      </div>
-                    </TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        Email
-                      </div>
-                    </TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <Scale className="w-4 h-4" />
-                        Poids initial
-                      </div>
-                    </TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <Scale className="w-4 h-4" />
-                        Poids actuel
-                      </div>
-                    </TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <Target className="w-4 h-4" />
-                        Objectif
-                      </div>
-                    </TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <UtensilsCrossed className="w-4 h-4" />
-                        Repas
-                      </div>
-                    </TableHead>
-
+                    <TableHead>Utilisateur</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Poids initial</TableHead>
+                    <TableHead>Poids actuel</TableHead>
+                    <TableHead>Objectif</TableHead>
+                    <TableHead>Repas</TableHead>
                     <TableHead>Score</TableHead>
-
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Inscription
-                      </div>
-                    </TableHead>
+                    <TableHead>Créé le</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {users.map((user: any) => (
+                  {users.map((user) => (
                     <TableRow
                       key={user.userId}
                       className="cursor-pointer hover:bg-muted/50"
@@ -178,35 +136,45 @@ export default function CoachUsers() {
                         router.push(`/coach/users/${user.userId}`)
                       }
                     >
-                      <TableCell>{user.displayName}</TableCell>
-
-                      <TableCell>
-                          {user.email}
+                      <TableCell className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {user.displayName}
                       </TableCell>
 
+                      <TableCell className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        {user.email}
+                      </TableCell>
 
-                      <TableCell>
-                          {user.initialWeight ?? "-"} kg
+                      <TableCell className="flex items-center gap-2">
+                        <Scale className="w-4 h-4" />
+                        {user.initialWeight ?? "-"} kg
+                      </TableCell>
+
+                      <TableCell className="flex items-center gap-2">
+                        <Scale className="w-4 h-4" />
+                        {user.currentWeight ?? "-"} kg
+                      </TableCell>
+
+                      <TableCell className="flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        {user.goalLabel ?? "-"}
+                      </TableCell>
+
+                      <TableCell className="flex items-center gap-2">
+                        <UtensilsCrossed className="w-4 h-4" />
+                        {user.mealsCount}
                       </TableCell>
 
                       <TableCell>
-                          {user.currentWeight ?? "-"} kg
+                        <Badge variant="secondary">
+                          {user.scoreRounded}
+                        </Badge>
                       </TableCell>
 
-                      <TableCell>
-                          {user.goalLabel ?? "-"}
-                      </TableCell>
-
-                      <TableCell>
-                          {user.mealsCount}
-                      </TableCell>
-
-                      <TableCell>
-                            {user.scoreRounded}%
-                      </TableCell>
-
-                      <TableCell>
-                          {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                      <TableCell className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(user.createdAt).toLocaleDateString("fr-FR")}
                       </TableCell>
                     </TableRow>
                   ))}
