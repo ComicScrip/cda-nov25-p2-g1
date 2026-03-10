@@ -1,29 +1,9 @@
+import { Calendar, Loader2, Mail, Scale, Target, User, Users, UtensilsCrossed } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import CoachLayout from "@/components/coach/CoachLayout";
-import {
-  Loader2,
-  Users,
-  Mail,
-  User,
-  Scale,
-  Target,
-  UtensilsCrossed,
-  Calendar,
-} from "lucide-react";
 
-import {
-  useProfileQuery,
-  UserRole,
-  useCoachUserQuery,
-} from "@/graphql/generated/schema";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
   Table,
@@ -33,8 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import { Badge } from "@/components/ui/badge";
+import { UserRole, useCoachUserQuery, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function CoachUsers() {
   const router = useRouter();
@@ -44,20 +23,13 @@ export default function CoachUsers() {
   });
 
   // 🔹 récupération des utilisateurs coachés
-  const {
-    data: usersData,
-    loading: usersLoading,
-    error: usersError,
-  } = useCoachUserQuery();
+  const { data: usersData, loading: usersLoading, error: usersError } = useCoachUserQuery();
 
   useEffect(() => {
     if (!loading) {
       if (!data?.me) {
         router.push("/login");
-      } else if (
-        data.me.role !== UserRole.Coach &&
-        data.me.role !== UserRole.Admin
-      ) {
+      } else if (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin) {
         if (data.me.role === UserRole.Coachee) {
           router.push("/dashboard_user");
         } else {
@@ -77,19 +49,14 @@ export default function CoachUsers() {
     );
   }
 
-  if (
-    !data?.me ||
-    (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)
-  ) {
+  if (!data?.me || (data.me.role !== UserRole.Coach && data.me.role !== UserRole.Admin)) {
     return null;
   }
 
   if (usersError) {
     return (
       <CoachLayout pageTitle="Utilisateurs">
-        <div className="p-6 text-red-500">
-          Erreur : {usersError.message}
-        </div>
+        <div className="p-6 text-red-500">Erreur : {usersError.message}</div>
       </CoachLayout>
     );
   }
@@ -100,7 +67,6 @@ export default function CoachUsers() {
     <CoachLayout pageTitle="Utilisateurs">
       <div className="bg-light-bg py-6 md:py-8 px-4 md:px-6 flex-1">
         <div className="max-w-7xl mx-auto">
-
           <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6" />
             Gestion des utilisateurs
@@ -174,40 +140,23 @@ export default function CoachUsers() {
                     <TableRow
                       key={user.userId}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() =>
-                        router.push(`/coach/users/${user.userId}`)
-                      }
+                      onClick={() => router.push(`/coach/users/${user.userId}`)}
                     >
                       <TableCell>{user.displayName}</TableCell>
 
-                      <TableCell>
-                          {user.email}
-                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
 
+                      <TableCell>{user.initialWeight ?? "-"} kg</TableCell>
 
-                      <TableCell>
-                          {user.initialWeight ?? "-"} kg
-                      </TableCell>
+                      <TableCell>{user.currentWeight ?? "-"} kg</TableCell>
 
-                      <TableCell>
-                          {user.currentWeight ?? "-"} kg
-                      </TableCell>
+                      <TableCell>{user.goalLabel ?? "-"}</TableCell>
 
-                      <TableCell>
-                          {user.goalLabel ?? "-"}
-                      </TableCell>
+                      <TableCell>{user.mealsCount}</TableCell>
 
-                      <TableCell>
-                          {user.mealsCount}
-                      </TableCell>
+                      <TableCell>{user.scoreRounded}%</TableCell>
 
-                      <TableCell>
-                            {user.scoreRounded}%
-                      </TableCell>
-
-                      <TableCell>
-                          {new Date(user.createdAt).toLocaleDateString("fr-FR")}
-                      </TableCell>
+                      <TableCell>{new Date(user.createdAt).toLocaleDateString("fr-FR")}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

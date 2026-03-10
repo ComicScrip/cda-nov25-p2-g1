@@ -9,11 +9,8 @@ import {
   Resolver,
 } from "type-graphql";
 import { getCurrentUser } from "../auth";
-import { Status, UserRole } from "../entities/enums";
-import { Meal } from "../entities/Meal";
+import { UserRole } from "../entities/enums";
 import { User } from "../entities/User";
-import { User_profile } from "../entities/User_Profile";
-import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
 
 @ObjectType()

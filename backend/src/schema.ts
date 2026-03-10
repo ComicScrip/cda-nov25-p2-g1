@@ -1,11 +1,11 @@
 import { buildSchema } from "type-graphql";
 import { authChecker } from "./auth";
 import CoachDashboardResolver from "./resolvers/CoachDashboardResolver";
+import { CoachDashoardUser } from "./resolvers/CoachDashboardUser";
 import MealAnalysisResolver from "./resolvers/MealAnalysisResolver";
 import NutritionalAnalystResolver from "./resolvers/NutritionalAnalystResolver";
 import UserDataResolver from "./resolvers/UserDataResolver";
 import UserResolver from "./resolvers/UserResolver";
-import { CoachDashoardUser } from "./resolvers/CoachDashboardUser";
 
 export async function getSchema() {
   return buildSchema({
@@ -15,6 +15,7 @@ export async function getSchema() {
       NutritionalAnalystResolver,
       MealAnalysisResolver,
       CoachDashboardResolver,
+      CoachDashoardUser,
     ],
     authChecker,
   });
