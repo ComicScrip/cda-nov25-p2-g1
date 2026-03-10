@@ -22,10 +22,14 @@ query CoachDashboardData {
       name
       email
       score
+      currentWeight
+      goal
+      targetDailyCalories
     }
     recentRecipes {
       id
       name
+      photo
       calories
       proteins
       carbs

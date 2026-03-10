@@ -39,17 +39,20 @@ const DEFAULT_OPTS: SeedMassiveOptions = {
   maxMealsPerDay: 5,
 };
 
-function unsplashFoodUrl(kind: "meal" | "dish" | "recipe") {
-  // URL simple, “realistic food images” sans API key.
-  // Le param "sig" aide à varier les images.
-  const sig = faker.number.int({ min: 1, max: 10_000_000 });
-  const query =
-    kind === "recipe"
-      ? "food,recipe"
-      : kind === "meal"
-        ? "food,meal"
-        : "food,dish";
-  return `https://source.unsplash.com/featured/800x800?${encodeURIComponent(query)}&sig=${sig}`;
+const PEXELS_FOOD_IMAGE_URLS = [
+  "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/2474661/pexels-photo-2474661.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/2087748/pexels-photo-2087748.jpeg?auto=compress&cs=tinysrgb&w=800",
+];
+
+function pexelsFoodUrl(_kind: "meal" | "dish" | "recipe") {
+  return faker.helpers.arrayElement(PEXELS_FOOD_IMAGE_URLS);
 }
 
 function randEnum<T extends Record<string, string>>(e: T): T[keyof T] {
@@ -190,6 +193,21 @@ function generateNutrition() {
   };
 }
 
+/** Valeurs nutritionnelles par portion pour une recette (cohérentes pour l’affichage). */
+function generateRecipeNutritionPerServing() {
+  const proteins = faker.number.int({ min: 8, max: 45 });
+  const carbohydrates = faker.number.int({ min: 15, max: 80 });
+  const lipids = faker.number.int({ min: 5, max: 40 });
+  const fiber = faker.number.int({ min: 1, max: 12 });
+  const baseCalories = 4 * (proteins + carbohydrates) + 9 * lipids;
+  const calories = clamp(
+    baseCalories + faker.number.int({ min: -30, max: 80 }),
+    120,
+    650,
+  );
+  return { calories, proteins, carbohydrates, lipids, fiber };
+}
+
 async function seedReferenceData(manager: EntityManager) {
   // Pathologies
   const pathologyNames = [
@@ -252,6 +270,7 @@ async function seedRecipes(
       "Overnight Oats",
       "Avocado Toast",
     ]);
+    const nutrition = generateRecipeNutritionPerServing();
 
     const recipe = await manager.save(
       Recipe.create({
@@ -265,7 +284,12 @@ async function seedRecipes(
         status: Status.Publie,
         mealType: randEnum(MealType),
         chefTips: faker.lorem.sentence(),
-        photoUrl: unsplashFoodUrl("recipe") as any, // si tu ajoutes un champ photoUrl à Recipe plus tard
+        photoUrl: pexelsFoodUrl("recipe") as any,
+        caloriesPerServing: nutrition.calories,
+        proteinsPerServing: nutrition.proteins,
+        carbohydratesPerServing: nutrition.carbohydrates,
+        lipidsPerServing: nutrition.lipids,
+        fiberPerServing: nutrition.fiber,
       }) as any,
     );
     recipes.push(recipe);
@@ -433,7 +457,7 @@ async function seedMealsDishesAnalyses(
             mealType: randEnum(MealType),
             consumedAt,
             user,
-            photoUrl: unsplashFoodUrl("meal") as any, // si tu ajoutes un champ photoUrl à Meal plus tard
+            photoUrl: pexelsFoodUrl("meal") as any, // si tu ajoutes un champ photoUrl à Meal plus tard
           } as any),
         );
 
@@ -457,7 +481,7 @@ async function seedMealsDishesAnalyses(
 
           const dish = await manager.save(
             Dish.create({
-              photoUrl: unsplashFoodUrl("dish"),
+              photoUrl: pexelsFoodUrl("dish"),
               dishType: randEnum(DishType),
               analysisStatus: AnalysisStatus.Complete,
               uploadedAt: consumedAt,
