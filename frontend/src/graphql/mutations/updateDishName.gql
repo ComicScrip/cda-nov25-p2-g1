@@ -1,0 +1,3 @@
+mutation UpdateDishName($input: UpdateDishNameInput!) {
+  updateDishName(input: $input)
+}
