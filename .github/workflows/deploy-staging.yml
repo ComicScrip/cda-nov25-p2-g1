@@ -8,17 +8,17 @@ on:
 jobs:
   client-tests:
     # To verify with Pierre whether we have the correct paths for the frontend tests (That's Ok now)
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-frontend.yml@dev
+    uses: ./.github/workflows/test-frontend.yml
 
   server-tests:
     # To verify with Pierre whether we have the correct paths for the backend tests (That's Ok now)
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/test-backend.yml@dev
+    uses: ./.github/workflows/test-backend.yml
 
   build-and-push-server:
-    needs: 
+    needs:
       - server-tests
     # To verify with Pierre whether we have the correct paths for the backend build
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-backend.yml@dev
+    uses: ./.github/workflows/build-backend.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -30,7 +30,7 @@ jobs:
     needs:
       - client-tests
     # To verify with Pierre whether we have the correct paths for the frontend build
-    uses: ComicScrip/cda-nov25-p2-g1/.github/workflows/build-frontend.yml@dev
+    uses: ./.github/workflows/build-frontend.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -40,11 +40,12 @@ jobs:
 
   notify-vps:
     needs:
-    - build-and-push-server
-    - build-and-push-client
+      - build-and-push-server
+      - build-and-push-client
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Webhook on VPS
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          curl -X POST -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-staging
-
+          curl -X POST -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-staging
