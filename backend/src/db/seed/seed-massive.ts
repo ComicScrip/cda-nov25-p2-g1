@@ -29,6 +29,9 @@ type SeedMassiveOptions = {
   maxMealsPerDay: number; // ex: 5
 };
 
+const FIXED_SEEDED_PASSWORD = "SuperP@ssW0rd!";
+const FIXED_COACH_EMAIL = "coach@app.com";
+
 const DEFAULT_OPTS: SeedMassiveOptions = {
   usersCount: 100,
   days: 90,
@@ -55,6 +58,92 @@ function randEnum<T extends Record<string, string>>(e: T): T[keyof T] {
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function getSeedAnchorDate() {
+  const anchor = new Date();
+  anchor.setHours(0, 0, 0, 0);
+  anchor.setDate(anchor.getDate() - 1);
+  return anchor;
+}
+
+function normalizeEmailPart(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .replace(/\.{2,}/g, ".");
+}
+
+function buildCoherentUserEmail(
+  firstName: string,
+  lastName: string,
+  usedEmails: Set<string>,
+) {
+  const normalizedFirstName = normalizeEmailPart(firstName) || "user";
+  const normalizedLastName = normalizeEmailPart(lastName) || "profile";
+
+  let email = "";
+
+  do {
+    const suffix = faker.number.int({ min: 10, max: 99 });
+    email = `${normalizedFirstName}.${normalizedLastName}${suffix}@app.com`;
+  } while (usedEmails.has(email));
+
+  usedEmails.add(email);
+  return email;
+}
+
+async function seedWeightMeasures(
+  manager: EntityManager,
+  profile: User_profile,
+  days: number,
+) {
+  const measures: Weight_Measure[] = [];
+  const startWeight = faker.number.float({
+    min: 55,
+    max: 110,
+    fractionDigits: 1,
+  });
+  const trend = faker.helpers.arrayElement(["loss", "gain", "stable"]) as
+    | "loss"
+    | "gain"
+    | "stable";
+  const weeklyDelta =
+    trend === "loss"
+      ? faker.number.float({ min: -0.6, max: -0.1, fractionDigits: 2 })
+      : trend === "gain"
+        ? faker.number.float({ min: 0.1, max: 0.6, fractionDigits: 2 })
+        : faker.number.float({ min: -0.1, max: 0.1, fractionDigits: 2 });
+
+  let current = startWeight;
+
+  for (let d = days; d >= 0; d--) {
+    const date = faker.date.recent({ days });
+    const shouldMeasure = faker.number.int({ min: 1, max: 7 }) <= 2;
+    if (!shouldMeasure) continue;
+
+    current =
+      current +
+      weeklyDelta / 7 +
+      faker.number.float({ min: -0.15, max: 0.15, fractionDigits: 2 });
+    current = clamp(Number(current.toFixed(1)), 40, 160);
+
+    measures.push(
+      Weight_Measure.create({
+        measured_at: date as any,
+        weight: current as any,
+        user_profile: profile as any,
+      } as any),
+    );
+  }
+
+  const chunkSize = 300;
+  for (let j = 0; j < measures.length; j += chunkSize) {
+    await manager.save(measures.slice(j, j + chunkSize));
+  }
 }
 
 /**
@@ -214,19 +303,45 @@ async function seedUsersProfilesWeights(
 ) {
   const users: User[] = [];
   const profiles: User_profile[] = [];
+  const totalUsers = Math.max(1, count);
+  const usedEmails = new Set<string>([FIXED_COACH_EMAIL]);
+  const hashedSeedPassword = await hash(FIXED_SEEDED_PASSWORD);
 
-  for (let i = 0; i < count; i++) {
-    const email = faker.internet.email({ provider: "app.com" }).toLowerCase();
-    const role = faker.helpers.weightedArrayElement([
-      { weight: 99, value: UserRole.Coachee },
-      { weight: 1, value: UserRole.Coach },
-    ]);
+  const coachUser = await manager.save(
+    User.create({
+      email: FIXED_COACH_EMAIL,
+      hashedPassword: hashedSeedPassword,
+      role: UserRole.Coach,
+      last_login_at: faker.date.recent({ days: 10 }),
+    }),
+  );
+  users.push(coachUser);
+
+  const coachProfile = await manager.save(
+    User_profile.create({
+      first_name: "Coach",
+      last_name: "Demo",
+      date_of_birth: new Date("1988-06-12") as any,
+      gender: "femme" as any,
+      height: 1.72 as any,
+      goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
+      user: coachUser,
+      pathologies: [],
+    } as any),
+  );
+  profiles.push(coachProfile);
+  await seedWeightMeasures(manager, coachProfile, days);
+
+  for (let i = 1; i < totalUsers; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = buildCoherentUserEmail(firstName, lastName, usedEmails);
 
     const user = await manager.save(
       User.create({
         email,
-        hashedPassword: await hash("SuperP@ssW0rd!"),
-        role,
+        hashedPassword: hashedSeedPassword,
+        role: UserRole.Coachee,
         last_login_at: faker.date.recent({ days: 10 }),
       }),
     );
@@ -234,8 +349,8 @@ async function seedUsersProfilesWeights(
 
     const profile = await manager.save(
       User_profile.create({
-        first_name: faker.person.firstName(),
-        last_name: faker.person.lastName(),
+        first_name: firstName,
+        last_name: lastName,
         date_of_birth: faker.date.birthdate({
           min: 1950,
           max: 2007,
@@ -260,53 +375,7 @@ async function seedUsersProfilesWeights(
       } as any),
     );
     profiles.push(profile);
-
-    // Weight measures (1–3 / semaine) sur 90 jours
-    const startWeight = faker.number.float({
-      min: 55,
-      max: 110,
-      fractionDigits: 1,
-    });
-    const trend = faker.helpers.arrayElement(["loss", "gain", "stable"]) as
-      | "loss"
-      | "gain"
-      | "stable";
-    const weeklyDelta =
-      trend === "loss"
-        ? faker.number.float({ min: -0.6, max: -0.1, fractionDigits: 2 })
-        : trend === "gain"
-          ? faker.number.float({ min: 0.1, max: 0.6, fractionDigits: 2 })
-          : faker.number.float({ min: -0.1, max: 0.1, fractionDigits: 2 });
-
-    const measures: Weight_Measure[] = [];
-    let current = startWeight;
-
-    for (let d = days; d >= 0; d--) {
-      const date = faker.date.recent({ days });
-      const shouldMeasure = faker.number.int({ min: 1, max: 7 }) <= 2; // ~2/7 jours
-      if (!shouldMeasure) continue;
-
-      // évolution + bruit
-      current =
-        current +
-        weeklyDelta / 7 +
-        faker.number.float({ min: -0.15, max: 0.15, fractionDigits: 2 });
-      current = clamp(Number(current.toFixed(1)), 40, 160);
-
-      measures.push(
-        Weight_Measure.create({
-          measured_at: date as any,
-          weight: current as any,
-          user_profile: profile as any, // IMPORTANT: relation singulière après correction entité
-        } as any),
-      );
-    }
-
-    // save en chunks
-    const chunkSize = 300;
-    for (let j = 0; j < measures.length; j += chunkSize) {
-      await manager.save(measures.slice(j, j + chunkSize));
-    }
+    await seedWeightMeasures(manager, profile, days);
   }
 
   return { users, profiles };
@@ -340,10 +409,12 @@ async function seedMealsDishesAnalyses(
   days: number,
   maxMealsPerDay: number,
 ) {
+  const seedAnchorDate = getSeedAnchorDate();
+
   for (const user of users) {
     for (let dayOffset = 0; dayOffset < days; dayOffset++) {
-      const dayDate = new Date();
-      dayDate.setDate(dayDate.getDate() - dayOffset);
+      const dayDate = new Date(seedAnchorDate);
+      dayDate.setDate(seedAnchorDate.getDate() - dayOffset);
       dayDate.setHours(
         faker.number.int({ min: 7, max: 21 }),
         faker.number.int({ min: 0, max: 59 }),
@@ -376,7 +447,10 @@ async function seedMealsDishesAnalyses(
               ...nut,
               analyzedAt: consumedAt as any,
               validatedAt: faker.datatype.boolean()
-                ? faker.date.soon({ days: 3, refDate: consumedAt })
+                ? new Date(
+                    consumedAt.getTime() +
+                      faker.number.int({ min: 15, max: 120 }) * 60 * 1000,
+                  )
                 : null,
             } as any),
           );
