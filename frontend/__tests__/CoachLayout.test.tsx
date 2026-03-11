@@ -18,7 +18,6 @@ jest.mock("next/image", () => ({
   default: (props: any) => {
     // Filter out Next.js specific props that are not valid HTML attributes
     const { priority, ...imgProps } = props;
-    // biome-ignore lint/performance/noImgElement: Mock for testing purposes
     // biome-ignore lint/a11y/useAltText: Mock component, alt text comes from props
     return <img {...imgProps} />;
   },

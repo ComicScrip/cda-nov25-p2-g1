@@ -1,5 +1,4 @@
-const linkClass =
-  "text-gray-300 hover:text-white transition-colors text-xs md:text-sm";
+const linkClass = "text-gray-300 hover:text-white transition-colors text-xs md:text-sm";
 
 export default function Footer() {
   return (
