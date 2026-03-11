@@ -181,7 +181,7 @@ export default function CoachRecipes() {
                 </Card>
               ) : (
                 <div className="mt-6 grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[1.35fr_1fr]">
-                  <Card className="border-[#d3d8cf] bg-[#eef4e8] shadow-none lg:flex lg:min-h-0 lg:flex-col">
+                  <Card className="order-2 border-[#d3d8cf] bg-[#eef4e8] shadow-none lg:order-1 lg:flex lg:min-h-0 lg:flex-col">
                     <CardHeader className="p-4 md:p-5 pb-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <CardTitle className="text-sm font-semibold text-[#2e3a2d] flex items-center gap-2">
@@ -288,7 +288,7 @@ export default function CoachRecipes() {
                   </Card>
 
                   {selectedRecipe && (
-                    <Card className="border-[#d3d8cf] bg-white shadow-[0_2px_5px_rgba(0,0,0,0.1)] lg:min-h-0 lg:overflow-y-auto">
+                    <Card className="order-1 border-[#d3d8cf] bg-white shadow-[0_2px_5px_rgba(0,0,0,0.1)] lg:order-2 lg:min-h-0 lg:overflow-y-auto">
                       <CardContent className="p-4 md:p-5">
                         <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">
                           <Image
