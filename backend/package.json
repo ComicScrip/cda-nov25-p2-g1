@@ -9,7 +9,7 @@
     "resetDB": "ts-node src/db/reset.ts",
     "resetDB:jane": "ts-node src/db/reset-Db-Jane.ts",
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node build/src/index.js",
     "lint": "biome check",
     "format": "biome format --write && biome check --write",
     "testDB": "docker compose -f docker-compose.integration-tests.yml up testDB --wait",
