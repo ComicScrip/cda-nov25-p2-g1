@@ -19,24 +19,17 @@ query CoachDashboardData {
       }
     }
     recentUsers {
-      id
       name
       email
       score
-      scannedMeals
-      lastMealAt
-    }
-    coachedUsers {
-      id
-      name
-      email
-      score
-      scannedMeals
-      lastMealAt
+      currentWeight
+      goal
+      targetDailyCalories
     }
     recentRecipes {
       id
       name
+      photo
       calories
       proteins
       carbs

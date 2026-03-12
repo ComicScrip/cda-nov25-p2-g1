@@ -12,7 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
-    "test:e2e:login-profile": "playwright test __tests__/login-profile.spec.test.ts"
+    "test:e2e:login-profile": "playwright test __tests__/login-profile.spec.test.ts",
+    "all:install": "npm i && npx shadcn@latest add table && npx shadcn@latest add badge"
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",

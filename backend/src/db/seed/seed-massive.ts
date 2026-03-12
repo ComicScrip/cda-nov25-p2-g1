@@ -26,37 +26,33 @@ type SeedMassiveOptions = {
   usersCount: number; // 100
   days: number; // 90
   recipesCount: number; // ex: 250
-  maxMealsPerDay: number; // ex: 4
+  maxMealsPerDay: number; // ex: 5
 };
 
+const FIXED_SEEDED_PASSWORD = "SuperP@ssW0rd!";
 const FIXED_COACH_EMAIL = "coach@app.com";
-const FIXED_COACH_PASSWORD = "SuperP@ssW0rd!";
 
 const DEFAULT_OPTS: SeedMassiveOptions = {
   usersCount: 100,
   days: 90,
   recipesCount: 250,
-  maxMealsPerDay: 4,
+  maxMealsPerDay: 5,
 };
 
-const MEAL_TIME_SLOTS = [
-  { mealType: MealType.PetitDejeuner, hour: 7, minute: 30 },
-  { mealType: MealType.Dejeuner, hour: 12, minute: 30 },
-  { mealType: MealType.Collation, hour: 16, minute: 0 },
-  { mealType: MealType.Diner, hour: 19, minute: 30 },
-] as const;
+const PEXELS_FOOD_IMAGE_URLS = [
+  "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/2474661/pexels-photo-2474661.jpeg?auto=compress&cs=tinysrgb&w=800",
+  "https://images.pexels.com/photos/2087748/pexels-photo-2087748.jpeg?auto=compress&cs=tinysrgb&w=800",
+];
 
-function unsplashFoodUrl(kind: "meal" | "dish" | "recipe") {
-  // URL simple, “realistic food images” sans API key.
-  // Le param "sig" aide à varier les images.
-  const sig = faker.number.int({ min: 1, max: 10_000_000 });
-  const query =
-    kind === "recipe"
-      ? "food,recipe"
-      : kind === "meal"
-        ? "food,meal"
-        : "food,dish";
-  return `https://source.unsplash.com/featured/800x800?${encodeURIComponent(query)}&sig=${sig}`;
+function pexelsFoodUrl(_kind: "meal" | "dish" | "recipe") {
+  return faker.helpers.arrayElement(PEXELS_FOOD_IMAGE_URLS);
 }
 
 function randEnum<T extends Record<string, string>>(e: T): T[keyof T] {
@@ -72,12 +68,6 @@ function getSeedAnchorDate() {
   anchor.setHours(0, 0, 0, 0);
   anchor.setDate(anchor.getDate() - 1);
   return anchor;
-}
-
-function buildMealDate(baseDate: Date, hour: number, minute: number) {
-  const mealDate = new Date(baseDate);
-  mealDate.setHours(hour, minute, 0, 0);
-  return mealDate;
 }
 
 function normalizeEmailPart(value: string) {
@@ -103,7 +93,7 @@ function buildCoherentUserEmail(
   do {
     const suffix = faker.number.int({ min: 10, max: 99 });
     email = `${normalizedFirstName}.${normalizedLastName}${suffix}@app.com`;
-  } while (email === FIXED_COACH_EMAIL || usedEmails.has(email));
+  } while (usedEmails.has(email));
 
   usedEmails.add(email);
   return email;
@@ -159,48 +149,6 @@ async function seedWeightMeasures(
   }
 }
 
-async function enforceSingleCoachSeed(manager: EntityManager, coachUser: User) {
-  await manager.query(
-    `
-      UPDATE users
-      SET role = $2,
-          coach_id = $1
-      WHERE id <> $1
-        AND role = $3
-    `,
-    [coachUser.id, UserRole.Coachee, UserRole.Coach],
-  );
-
-  await manager.query(
-    `
-      UPDATE users
-      SET coach_id = $1
-      WHERE id <> $1
-        AND role = $2
-        AND (coach_id IS NULL OR coach_id <> $1)
-    `,
-    [coachUser.id, UserRole.Coachee],
-  );
-
-  const roleRows = (await manager.query(
-    `
-      SELECT role, COUNT(*)::text AS count
-      FROM users
-      GROUP BY role
-    `,
-  )) as Array<{ role: UserRole; count: string }>;
-
-  const coachCount = Number(
-    roleRows.find((row) => row.role === UserRole.Coach)?.count ?? "0",
-  );
-
-  if (coachCount !== 1) {
-    throw new Error(
-      `seed:massive must create exactly one coach, found ${coachCount}`,
-    );
-  }
-}
-
 /**
  * Génère une analyse nutritionnelle cohérente (ordre de grandeur plausible).
  * calories ≈ 4*(prot+carbs) + 9*lipids + bonus
@@ -243,6 +191,21 @@ function generateNutrition() {
     suggestions:
       mealHealthScore < 55 ? "Reduce salt/sugar; add vegetables" : null,
   };
+}
+
+/** Valeurs nutritionnelles par portion pour une recette (cohérentes pour l’affichage). */
+function generateRecipeNutritionPerServing() {
+  const proteins = faker.number.int({ min: 8, max: 45 });
+  const carbohydrates = faker.number.int({ min: 15, max: 80 });
+  const lipids = faker.number.int({ min: 5, max: 40 });
+  const fiber = faker.number.int({ min: 1, max: 12 });
+  const baseCalories = 4 * (proteins + carbohydrates) + 9 * lipids;
+  const calories = clamp(
+    baseCalories + faker.number.int({ min: -30, max: 80 }),
+    120,
+    650,
+  );
+  return { calories, proteins, carbohydrates, lipids, fiber };
 }
 
 async function seedReferenceData(manager: EntityManager) {
@@ -307,6 +270,7 @@ async function seedRecipes(
       "Overnight Oats",
       "Avocado Toast",
     ]);
+    const nutrition = generateRecipeNutritionPerServing();
 
     const recipe = await manager.save(
       Recipe.create({
@@ -320,7 +284,12 @@ async function seedRecipes(
         status: Status.Publie,
         mealType: randEnum(MealType),
         chefTips: faker.lorem.sentence(),
-        photoUrl: unsplashFoodUrl("recipe") as any, // si tu ajoutes un champ photoUrl à Recipe plus tard
+        photoUrl: pexelsFoodUrl("recipe") as any,
+        caloriesPerServing: nutrition.calories,
+        proteinsPerServing: nutrition.proteins,
+        carbohydratesPerServing: nutrition.carbohydrates,
+        lipidsPerServing: nutrition.lipids,
+        fiberPerServing: nutrition.fiber,
       }) as any,
     );
     recipes.push(recipe);
@@ -360,77 +329,43 @@ async function seedUsersProfilesWeights(
   const profiles: User_profile[] = [];
   const totalUsers = Math.max(1, count);
   const usedEmails = new Set<string>([FIXED_COACH_EMAIL]);
+  const hashedSeedPassword = await hash(FIXED_SEEDED_PASSWORD);
 
-  const hashedCoachPassword = await hash(FIXED_COACH_PASSWORD);
-  const coachLastLoginAt = faker.date.recent({ days: 10 });
-
-  await manager.upsert(
-    User,
-    {
+  const coachUser = await manager.save(
+    User.create({
       email: FIXED_COACH_EMAIL,
-      hashedPassword: hashedCoachPassword,
+      hashedPassword: hashedSeedPassword,
       role: UserRole.Coach,
-      last_login_at: coachLastLoginAt,
-      coach: null,
-    },
-    ["email"],
+      last_login_at: faker.date.recent({ days: 10 }),
+    }),
   );
-
-  const coachUser = await manager.findOneByOrFail(User, {
-    email: FIXED_COACH_EMAIL,
-  });
   users.push(coachUser);
 
-  let coachProfile =
-    (await manager.findOne(User_profile, {
-      where: { user: { id: coachUser.id } },
-      relations: {
-        user: true,
-        pathologies: true,
-      },
-    })) ?? null;
-
-  if (!coachProfile) {
-    coachProfile = await manager.save(
-      User_profile.create({
-        first_name: "Coach",
-        last_name: "Demo",
-        date_of_birth: new Date("1988-06-12") as any,
-        gender: "femme" as any,
-        height: 1.72 as any,
-        goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
-        user: coachUser,
-        pathologies: [],
-      } as any),
-    );
-  } else {
-    coachProfile.first_name = "Coach";
-    coachProfile.last_name = "Demo";
-    coachProfile.date_of_birth = new Date("1988-06-12") as any;
-    coachProfile.gender = "femme" as any;
-    coachProfile.height = 1.72 as any;
-    coachProfile.goal =
-      "Accompagner les utilisateurs MyDietChef au quotidien." as any;
-    coachProfile.user = coachUser;
-    coachProfile.pathologies = [];
-    coachProfile = await manager.save(coachProfile);
-  }
-  const ensuredCoachProfile = coachProfile as User_profile;
-  profiles.push(ensuredCoachProfile);
-  await seedWeightMeasures(manager, ensuredCoachProfile, days);
+  const coachProfile = await manager.save(
+    User_profile.create({
+      first_name: "Coach",
+      last_name: "Demo",
+      date_of_birth: new Date("1988-06-12") as any,
+      gender: "femme" as any,
+      height: 1.72 as any,
+      goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
+      user: coachUser,
+      pathologies: [],
+    } as any),
+  );
+  profiles.push(coachProfile);
+  await seedWeightMeasures(manager, coachProfile, days);
 
   for (let i = 1; i < totalUsers; i++) {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
     const email = buildCoherentUserEmail(firstName, lastName, usedEmails);
-    const role = UserRole.Coachee;
 
     const user = await manager.save(
       User.create({
         email,
-        hashedPassword: await hash("SuperP@ssW0rd!"),
-        role,
-        coach: role === UserRole.Coachee ? coachUser : null,
+        hashedPassword: hashedSeedPassword,
+        role: UserRole.Coachee,
         last_login_at: faker.date.recent({ days: 10 }),
       }),
     );
@@ -467,8 +402,6 @@ async function seedUsersProfilesWeights(
     await seedWeightMeasures(manager, profile, days);
   }
 
-  await enforceSingleCoachSeed(manager, coachUser);
-
   return { users, profiles };
 }
 
@@ -501,23 +434,30 @@ async function seedMealsDishesAnalyses(
   maxMealsPerDay: number,
 ) {
   const seedAnchorDate = getSeedAnchorDate();
-  const mealsPerDay = Math.min(maxMealsPerDay, MEAL_TIME_SLOTS.length);
-  const timeSlots = MEAL_TIME_SLOTS.slice(0, mealsPerDay);
 
   for (const user of users) {
     for (let dayOffset = 0; dayOffset < days; dayOffset++) {
       const dayDate = new Date(seedAnchorDate);
       dayDate.setDate(seedAnchorDate.getDate() - dayOffset);
+      dayDate.setHours(
+        faker.number.int({ min: 7, max: 21 }),
+        faker.number.int({ min: 0, max: 59 }),
+        0,
+        0,
+      );
 
-      for (const slot of timeSlots) {
-        const consumedAt = buildMealDate(dayDate, slot.hour, slot.minute);
+      const mealsCount = faker.number.int({ min: 2, max: maxMealsPerDay });
+
+      for (let m = 0; m < mealsCount; m++) {
+        const consumedAt = new Date(dayDate);
+        consumedAt.setHours(clamp(consumedAt.getHours() + m * 3, 6, 23));
 
         const meal = await manager.save(
           Meal.create({
-            mealType: slot.mealType,
+            mealType: randEnum(MealType),
             consumedAt,
             user,
-            photoUrl: unsplashFoodUrl("meal") as any, // si tu ajoutes un champ photoUrl à Meal plus tard
+            photoUrl: pexelsFoodUrl("meal") as any, // si tu ajoutes un champ photoUrl à Meal plus tard
           } as any),
         );
 
@@ -541,7 +481,7 @@ async function seedMealsDishesAnalyses(
 
           const dish = await manager.save(
             Dish.create({
-              photoUrl: unsplashFoodUrl("dish"),
+              photoUrl: pexelsFoodUrl("dish"),
               dishType: randEnum(DishType),
               analysisStatus: AnalysisStatus.Complete,
               uploadedAt: consumedAt,
@@ -552,12 +492,9 @@ async function seedMealsDishesAnalyses(
 
           // Dish ingredients (pivot)
           const diCount = faker.number.int({ min: 3, max: 10 });
-          const picked: Ingredient[] = faker.helpers.arrayElements(
-            ingredients,
-            diCount,
-          );
+          const picked = faker.helpers.arrayElements(ingredients, diCount);
 
-          const pivots = picked.map((ing: Ingredient) =>
+          const pivots = picked.map((ing) =>
             Dish_Ingredient.create({
               dish,
               ingredient: ing,

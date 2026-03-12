@@ -22,7 +22,8 @@ export default function CoachLayout({
     { href: "/coach/dashboard", label: "Dashboard" },
     { href: "/coach/users", label: "utilisateurs" },
     { href: "/coach/recipes", label: "Recettes" },
-    { href: "/ai_chef", label: "Chef IA" },
+    { href: "/coach/recipes/new", label: "Créer une recette" },
+    { href: "/nutritional_analysis", label: "Analyse IA" },
   ];
 
   const isActive = (href: string) => {

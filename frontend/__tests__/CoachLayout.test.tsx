@@ -19,7 +19,6 @@ jest.mock("next/image", () => ({
   default: (props: any) => {
     // Filter out Next.js specific props that are not valid HTML attributes
     const { priority, ...imgProps } = props;
-    // biome-ignore lint/performance/noImgElement: Mock for testing purposes
     // biome-ignore lint/a11y/useAltText: Mock component, alt text comes from props
     return <img {...imgProps} />;
   },
@@ -156,7 +155,7 @@ describe("CoachLayout", () => {
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
       expect(screen.getByText("utilisateurs")).toBeInTheDocument();
       expect(screen.getByText("Recettes")).toBeInTheDocument();
-      expect(screen.getByText("Chef IA")).toBeInTheDocument();
+      expect(screen.getByText("Analyse IA")).toBeInTheDocument();
     });
 
     it("should highlight the active menu item based on current pathname", () => {

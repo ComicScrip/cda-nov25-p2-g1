@@ -15,7 +15,7 @@ jobs:
     uses: ./.github/workflows/test-backend.yml
 
   build-and-push-server:
-    needs: 
+    needs:
       - server-tests
     # To verify with Pierre whether we have the correct paths for the backend build
     uses: ./.github/workflows/build-backend.yml
@@ -40,10 +40,12 @@ jobs:
 
   notify-vps:
     needs:
-    - build-and-push-server
-    - build-and-push-client
+      - build-and-push-server
+      - build-and-push-client
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Webhook on VPS
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          curl -X POST -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-prod
+          curl -X POST -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" https://ops.cda-nov25-p2g1.duckdns.org/hooks/redeploy-mdc-prod
