@@ -1,0 +1,3 @@
+mutation AssignRecipeToUser($recipeId: String!, $userId: String!) {
+  assignRecipeToUser(recipeId: $recipeId, userId: $userId)
+}
