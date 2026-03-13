@@ -1,0 +1,14 @@
+mutation UpdateIngredientQuantities($input: UpdateIngredientQuantitiesInput!) {
+  updateIngredientQuantities(input: $input) {
+    id
+    calories
+    proteins
+    carbohydrates
+    lipids
+    fiber
+    sugar
+    sodium
+    mealHealthScore
+    isModified
+  }
+}
