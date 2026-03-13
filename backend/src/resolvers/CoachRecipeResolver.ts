@@ -265,23 +265,21 @@ export default class CoachRecipeResolver {
   ): Promise<Recipe | null> {
     await getCurrentUser(context);
 
-    const status =
-      input.status === "publie"
-        ? Status.Publie
-        : input.status === "archive"
-          ? Status.Archive
-          : Status.Brouillon;
+    const STATUS_MAP: Record<string, Status> = {
+      publie: Status.Publie,
+      archive: Status.Archive,
+    };
+    const status = STATUS_MAP[input.status ?? ""] ?? Status.Brouillon;
 
-    const mealType =
-      input.mealType === "petit_dejeuner"
-        ? MealType.PetitDejeuner
-        : input.mealType === "dejeuner"
-          ? MealType.Dejeuner
-          : input.mealType === "collation"
-            ? MealType.Collation
-            : input.mealType === "diner"
-              ? MealType.Diner
-              : undefined;
+    const MEAL_TYPE_MAP: Record<string, MealType> = {
+      petit_dejeuner: MealType.PetitDejeuner,
+      dejeuner: MealType.Dejeuner,
+      collation: MealType.Collation,
+      diner: MealType.Diner,
+    };
+    const mealType = input.mealType
+      ? (MEAL_TYPE_MAP[input.mealType] ?? undefined)
+      : undefined;
 
     const recipe = Recipe.create({
       title: input.title.trim(),
