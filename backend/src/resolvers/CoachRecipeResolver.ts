@@ -14,6 +14,7 @@ import {
 import { getCurrentUser } from "../auth";
 import { MealType, Status } from "../entities/enums";
 import { Recipe } from "../entities/Recipe";
+import { User } from "../entities/User";
 import { User_Recipe } from "../entities/User_Recipe";
 import type { GraphQLContext } from "../types";
 
@@ -202,7 +203,14 @@ export default class CoachRecipeResolver {
     return userRecipes
       .map((link) => link.recipe)
       .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort((a, b) => {
+        const aIsCoach = a.status === Status.Publie ? 1 : 0;
+        const bIsCoach = b.status === Status.Publie ? 1 : 0;
+        if (aIsCoach !== bIsCoach) {
+          return bIsCoach - aIsCoach;
+        }
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      })
       .map(mapRecipeToRecipeData);
   }
 
@@ -257,23 +265,21 @@ export default class CoachRecipeResolver {
   ): Promise<Recipe | null> {
     await getCurrentUser(context);
 
-    const status =
-      input.status === "publie"
-        ? Status.Publie
-        : input.status === "archive"
-          ? Status.Archive
-          : Status.Brouillon;
+    const STATUS_MAP: Record<string, Status> = {
+      publie: Status.Publie,
+      archive: Status.Archive,
+    };
+    const status = STATUS_MAP[input.status ?? ""] ?? Status.Brouillon;
 
-    const mealType =
-      input.mealType === "petit_dejeuner"
-        ? MealType.PetitDejeuner
-        : input.mealType === "dejeuner"
-          ? MealType.Dejeuner
-          : input.mealType === "collation"
-            ? MealType.Collation
-            : input.mealType === "diner"
-              ? MealType.Diner
-              : undefined;
+    const MEAL_TYPE_MAP: Record<string, MealType> = {
+      petit_dejeuner: MealType.PetitDejeuner,
+      dejeuner: MealType.Dejeuner,
+      collation: MealType.Collation,
+      diner: MealType.Diner,
+    };
+    const mealType = input.mealType
+      ? (MEAL_TYPE_MAP[input.mealType] ?? undefined)
+      : undefined;
 
     const recipe = Recipe.create({
       title: input.title.trim(),
@@ -300,5 +306,37 @@ export default class CoachRecipeResolver {
 
     const saved = await recipe.save();
     return saved as Recipe;
+  }
+
+  @Mutation(() => Boolean)
+  @Authorized("coach", "admin")
+  async assignRecipeToUser(
+    @Ctx() context: GraphQLContext,
+    @Arg("recipeId", () => String) recipeId: string,
+    @Arg("userId", () => String) userId: string,
+  ): Promise<boolean> {
+    await getCurrentUser(context);
+
+    const [recipe, user] = await Promise.all([
+      Recipe.findOne({ where: { id: recipeId } }),
+      User.findOne({ where: { id: userId } }),
+    ]);
+
+    if (!recipe || !user) {
+      return false;
+    }
+
+    const existingLink = await User_Recipe.findOne({
+      where: { recipe: { id: recipe.id }, user: { id: user.id } },
+    });
+
+    if (existingLink) {
+      return true;
+    }
+
+    const link = User_Recipe.create({ recipe, user });
+    await link.save();
+
+    return true;
   }
 }
