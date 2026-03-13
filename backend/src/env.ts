@@ -10,6 +10,14 @@ export default load({
   DB_USER: String,
   DB_PASS: String,
   DB_NAME: String,
+  OPENAI_API_KEY: {
+    type: String,
+    optional: true,
+  },
+  OPENAI_MEAL_SCAN_MODEL: {
+    type: String,
+    optional: true,
+  },
   GEMINI_API_KEY: String,
   TEST_DB_PORT: {
     type: Number,

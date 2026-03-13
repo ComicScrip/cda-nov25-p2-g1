@@ -1,0 +1,12 @@
+query UserProfileData {
+  userProfileData {
+    firstName
+    lastName
+    dateOfBirth
+    gender
+    height
+    currentWeight
+    goal
+    medicalTags
+  }
+}

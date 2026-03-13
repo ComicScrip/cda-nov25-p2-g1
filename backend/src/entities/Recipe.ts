@@ -50,11 +50,11 @@ export class Recipe extends BaseEntity {
   @Column({ name: "difficulty_level", type: "text", nullable: true })
   difficultyLevel?: string;
 
-  @Field({ nullable: true })
+  @Field(() => Status, { nullable: true })
   @Column({ type: "enum", enum: Status, nullable: true })
   status?: Status;
 
-  @Field({ nullable: true })
+  @Field(() => MealType, { nullable: true })
   @Column({ name: "meal_type", type: "enum", enum: MealType, nullable: true })
   mealType?: MealType;
 

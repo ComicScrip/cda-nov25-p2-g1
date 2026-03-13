@@ -51,7 +51,7 @@ export class CoachUser {
 
 @Resolver()
 export class CoachDashoardUser {
-  @Authorized(UserRole.Coach)
+  @Authorized(UserRole.Coach, UserRole.Admin)
   @Query(() => [CoachUser])
   async coachUsers(@Ctx() ctx: GraphQLContext): Promise<CoachUser[]> {
     const currentUser = await getCurrentUser(ctx);

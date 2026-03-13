@@ -1,0 +1,8 @@
+query UserEvolutionData {
+  userEvolutionData {
+    week
+    weight
+    calories
+    score
+  }
+}

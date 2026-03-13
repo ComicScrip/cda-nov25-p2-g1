@@ -12,9 +12,12 @@
 
 # testing
 /coverage
+/test-results/
+/test-results/.last-run.json
 
 # next.js
 /.next/
+/.next_premerge_backup_*
 /out/
 
 # production

@@ -1,4 +1,5 @@
 import env from "../../env";
+import { hasUsableApiKey, normalizeApiKey } from "./providerUtils";
 
 // Represents a single ingredient with its estimated nutritional values
 export interface IngredientEstimate {
@@ -50,9 +51,13 @@ export class GeminiService {
   private readonly apiVersion: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey ?? process.env.GEMINI_API_KEY;
+    this.apiKey = normalizeApiKey(apiKey ?? process.env.GEMINI_API_KEY);
     this.modelName = "gemini-2.5-flash";
     this.apiVersion = "v1beta";
+  }
+
+  canAttempt(): boolean {
+    return hasUsableApiKey(this.apiKey);
   }
 
   // Analyzes a dish image and returns structured nutritional analysis

@@ -21,9 +21,12 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
+import { In } from "typeorm";
 import { getCurrentUser } from "../auth";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
+import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
+import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
@@ -175,6 +178,69 @@ class UserProfileData {
   medicalTags!: string[];
 }
 
+@ObjectType()
+class CoachScannerSubmissionTestData {
+  @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
+  userId!: string;
+
+  @Field(() => String, { nullable: true })
+  userEmail?: string | null;
+
+  @Field(() => String)
+  createdAt!: string;
+
+  @Field(() => String)
+  payloadJson!: string;
+}
+
+@ObjectType()
+class CoachUserMealTestData {
+  @Field(() => String)
+  id!: string;
+
+  @Field(() => String)
+  userId!: string;
+
+  @Field(() => String, { nullable: true })
+  userEmail?: string | null;
+
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => String)
+  consumedAt!: string;
+
+  @Field(() => Int)
+  calories!: number;
+
+  @Field(() => Int)
+  protein!: number;
+
+  @Field(() => Int)
+  carbs!: number;
+
+  @Field(() => Int)
+  fat!: number;
+
+  @Field(() => Int)
+  aiScore!: number;
+
+  @Field(() => String)
+  photo!: string;
+
+  @Field(() => [String])
+  aiInsights!: string[];
+
+  @Field(() => String)
+  coachComment!: string;
+
+  @Field(() => String)
+  coachName!: string;
+}
+
 @InputType()
 class UserProfileUpdateInput {
   @Field(() => String)
@@ -286,6 +352,27 @@ function parseCoachSuggestion(suggestion?: string): {
     coachName: coachName || undefined,
     coachComment: coachComment || undefined,
   };
+}
+
+async function resolveVisibleUserIds(
+  currentUser: User,
+): Promise<string[] | null> {
+  if (currentUser.role === UserRole.Admin) {
+    return null;
+  }
+
+  if (currentUser.role === UserRole.Coach) {
+    const coachedUsers = await User.find({
+      where: {
+        role: UserRole.Coachee,
+        coach: { id: currentUser.id },
+      },
+    });
+
+    return coachedUsers.map((user) => user.id);
+  }
+
+  return [currentUser.id];
 }
 
 type DishEntry = {
@@ -493,20 +580,183 @@ export default class UserDataResolver {
     return this.buildUserProfilePayload(currentUserId, currentUser.email);
   }
 
+  @Authorized()
+  @Mutation(() => Boolean)
+  async saveScannerCoachSubmission(
+    @Arg("payloadJson", () => String)
+    payloadJson: string,
+    @Ctx() context: GraphQLContext,
+  ): Promise<boolean> {
+    const currentUser = await getCurrentUser(context);
+
+    let parsedPayload: unknown;
+    try {
+      parsedPayload = JSON.parse(payloadJson);
+    } catch (_e) {
+      return false;
+    }
+
+    if (!parsedPayload || typeof parsedPayload !== "object") {
+      return false;
+    }
+
+    const submission = Scanner_Coach_Submission.create({
+      payload: parsedPayload as Record<string, unknown>,
+    });
+    (submission as unknown as { user: { id: string } }).user = {
+      id: currentUser.id,
+    };
+
+    await submission.save();
+    return true;
+  }
+
+  @Authorized()
+  @Query(() => [CoachScannerSubmissionTestData])
+  async coachScannerSubmissionsTestData(
+    @Ctx() context: GraphQLContext,
+    @Arg("userId", () => String, { nullable: true }) userId?: string,
+    @Arg("limit", () => Int, { nullable: true }) limit?: number,
+  ): Promise<CoachScannerSubmissionTestData[]> {
+    const currentUser = await getCurrentUser(context);
+    const visibleUserIds = await resolveVisibleUserIds(currentUser);
+    const clampedLimit =
+      typeof limit === "number" && Number.isFinite(limit)
+        ? Math.min(Math.max(limit, 1), 200)
+        : 120;
+
+    if (visibleUserIds && visibleUserIds.length === 0) {
+      return [];
+    }
+
+    if (userId && visibleUserIds && !visibleUserIds.includes(userId)) {
+      return [];
+    }
+
+    const submissions = await Scanner_Coach_Submission.find({
+      where: userId
+        ? { user: { id: userId } }
+        : visibleUserIds
+          ? { user: { id: In(visibleUserIds) } }
+          : undefined,
+      relations: ["user"],
+      order: { createdAt: "DESC" },
+      take: clampedLimit,
+    });
+
+    return submissions.map((submission) => ({
+      id: submission.id,
+      userId: submission.user?.id ?? currentUser.id,
+      userEmail: submission.user?.email ?? null,
+      createdAt:
+        submission.createdAt?.toISOString?.() ?? new Date().toISOString(),
+      payloadJson: JSON.stringify(submission.payload ?? {}),
+    }));
+  }
+
+  @Authorized()
+  @Query(() => [CoachUserMealTestData])
+  async coachUserMealsTestData(
+    @Ctx() context: GraphQLContext,
+    @Arg("userId", () => String, { nullable: true }) userId?: string,
+    @Arg("limit", () => Int, { nullable: true }) limit?: number,
+  ): Promise<CoachUserMealTestData[]> {
+    const currentUser = await getCurrentUser(context);
+    const visibleUserIds = await resolveVisibleUserIds(currentUser);
+    const clampedLimit =
+      typeof limit === "number" && Number.isFinite(limit)
+        ? Math.min(Math.max(limit, 1), 200)
+        : 120;
+
+    if (visibleUserIds && visibleUserIds.length === 0) {
+      return [];
+    }
+
+    if (userId && visibleUserIds && !visibleUserIds.includes(userId)) {
+      return [];
+    }
+
+    const meals = await Meal.find({
+      where: userId
+        ? { user: { id: userId } }
+        : visibleUserIds
+          ? { user: { id: In(visibleUserIds) } }
+          : undefined,
+      relations: ["user", "dishes", "dishes.analysis"],
+      order: { consumedAt: "DESC" },
+      take: clampedLimit,
+    });
+
+    const fallbackPhoto = "/MyDietChef_image.webp";
+
+    return meals
+      .flatMap((meal) =>
+        (meal.dishes ?? []).map((dish, index) => {
+          const analysis = dish.analysis;
+          const consumedAt =
+            safeDate(meal.consumedAt) ??
+            safeDate(dish.uploadedAt) ??
+            new Date();
+          const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
+          const aiInsights = (analysis?.warnings ?? "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+          const fallbackName = `Repas ${index + 1}`;
+          const name =
+            meal.name?.trim() ||
+            formatMealTypeLabel(meal.mealType) ||
+            fallbackName;
+
+          return {
+            id: dish.id,
+            userId: meal.user?.id ?? currentUser.id,
+            userEmail: meal.user?.email ?? null,
+            name,
+            consumedAt: consumedAt.toISOString(),
+            calories: Math.round(analysis?.calories ?? 0),
+            protein: Math.round(analysis?.proteins ?? 0),
+            carbs: Math.round(analysis?.carbohydrates ?? 0),
+            fat: Math.round(analysis?.lipids ?? 0),
+            aiScore: Math.round(analysis?.mealHealthScore ?? 0),
+            photo: dish.photoUrl?.trim() || fallbackPhoto,
+            aiInsights:
+              aiInsights.length > 0
+                ? aiInsights
+                : ["Aucune indication IA disponible pour ce repas."],
+            coachComment:
+              coachSuggestion.coachComment?.trim() ||
+              "Continue sur cette dynamique pour garder des repas equilibres.",
+            coachName: coachSuggestion.coachName?.trim() || "Coach",
+          };
+        }),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.consumedAt).getTime() - new Date(a.consumedAt).getTime(),
+      );
+  }
+
   @Query(() => DashboardData, { nullable: true })
   @Authorized()
   async userDashboardData(
     @Args(() => DashboardPaginationArgs, { validate: true })
     pagination: DashboardPaginationArgs,
+    @Arg("userId", () => String, { nullable: true }) userId: string | undefined,
     @Ctx() context: GraphQLContext,
   ): Promise<DashboardData | null> {
     const currentUser = await getCurrentUser(context);
-    const currentUserId = currentUser.id;
     const { limit, offset } = pagination;
+    const requestedUserId = userId?.trim() || currentUser.id;
+    const visibleUserIds = await resolveVisibleUserIds(currentUser);
+
+    if (visibleUserIds && !visibleUserIds.includes(requestedUserId)) {
+      return null;
+    }
 
     const [profile, dishes] = await Promise.all([
-      User_profile.findOne({ where: { user: { id: currentUserId } } }),
-      this.loadUserDishEntries(currentUserId),
+      User_profile.findOne({ where: { user: { id: requestedUserId } } }),
+      this.loadUserDishEntries(requestedUserId),
     ]);
 
     const paginatedDishes = dishes.slice(offset, offset + limit);

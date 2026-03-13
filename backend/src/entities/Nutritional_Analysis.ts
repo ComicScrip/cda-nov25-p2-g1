@@ -95,7 +95,7 @@ export class Nutritional_Analysis extends BaseEntity {
   })
   confidenceScore?: number;
 
-  @Field({ nullable: true })
+  @Field(() => Status, { nullable: true })
   @Column({ type: "enum", enum: Status, nullable: true })
   status?: Status;
 

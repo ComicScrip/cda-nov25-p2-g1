@@ -1,21 +1,16 @@
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useProfileQuery } from "@/graphql/generated/schema";
+import { useLoginMutation } from "@/graphql/generated/schema";
+import { useState } from "react";
+import { LoginInput } from "@/graphql/generated/schema";
 import HomeLayout from "@/components/HomeLayout";
+import { Eye, EyeOff, Link, Loader2 } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input"; //shadcn npx shadcn@latest add input
-import { Label } from "@/components/ui/label"; //shadcn npx shadcn@latest add label
-import { type LoginInput, useLoginMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Login() {
   const router = useRouter();

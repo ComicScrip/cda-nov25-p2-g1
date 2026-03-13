@@ -22,7 +22,7 @@ export class Recipe_Ingredient extends BaseEntity {
   @Column({ type: "numeric", nullable: true })
   quantity?: number;
 
-  @Field({ nullable: true })
+  @Field(() => Unit, { nullable: true })
   @Column({ type: "enum", enum: Unit, nullable: true })
   unit?: Unit;
 

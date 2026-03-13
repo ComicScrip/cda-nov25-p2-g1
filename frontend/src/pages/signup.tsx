@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type SignupInput, useSignupMutation } from "@/graphql/generated/schema";
 
+type SignupFormValues = SignupInput & { confirmPassword: string };
+
 export default function Signup() {
   const router = useRouter();
   const [signup, { loading: isSubmitting, error }] = useSignupMutation();
@@ -34,9 +36,10 @@ export default function Signup() {
 
   const passwordValue = watch("password");
 
-  const onSubmit = async (data: SignupInput & { confirmPassword: string }) => {
+  const onSubmit = async (data: SignupFormValues) => {
     try {
       const { confirmPassword, ...signupData } = data;
+      void confirmPassword;
 
       await signup({ variables: { data: signupData } });
 

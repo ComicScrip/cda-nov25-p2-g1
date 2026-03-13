@@ -7,6 +7,7 @@ import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Pathology } from "../entities/Pathology";
 import { Recipe } from "../entities/Recipe";
 import { Recipe_Ingredient } from "../entities/Recipe_Ingredient";
+import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import { User } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
@@ -34,6 +35,7 @@ const db = new DataSource({
     Recipe,
     Recipe_Ingredient,
     User_Recipe,
+    Scanner_Coach_Submission,
   ],
   synchronize: env.NODE_ENV !== "production",
   //logging: true
