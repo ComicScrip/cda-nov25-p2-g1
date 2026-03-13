@@ -8,6 +8,7 @@ RUN apk add --no-cache curl ca-certificates
 COPY package*.json ./
 
 RUN npm ci
+RUN mkdir .config
 
 COPY src ./src
 COPY public ./public

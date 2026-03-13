@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RecipeData } from "@/graphql/generated/schema";
 import {
   UserRole,
+  useAssignRecipeToUserMutation,
   useCoachRecipesPageDataLazyQuery,
   useCoachRecipesPageDataQuery,
+  useCoachUserQuery,
   useProfileQuery,
 } from "@/graphql/generated/schema";
 
@@ -30,7 +32,11 @@ export default function CoachRecipes() {
     fetchPolicy: "cache-and-network",
   });
 
+  const { data: coachUsersData } = useCoachUserQuery();
+  const [assignRecipeToUser, { loading: assigning }] = useAssignRecipeToUserMutation();
+
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [allRecipes, setAllRecipes] = useState<RecipeData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
@@ -119,6 +125,12 @@ export default function CoachRecipes() {
     }
     return recipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
   }, [selectedRecipeId, recipes]);
+
+  const coachees =
+    coachUsersData?.coachUsers?.map((user) => ({
+      id: user.userId,
+      name: user.displayName || user.email,
+    })) ?? [];
 
   // Loader plein écran uniquement au premier chargement des recettes
   if (profileLoading || (initialLoading && allRecipes.length === 0)) {
@@ -289,7 +301,7 @@ export default function CoachRecipes() {
 
                   {selectedRecipe && (
                     <Card className="order-1 border-[#d3d8cf] bg-white shadow-[0_2px_5px_rgba(0,0,0,0.1)] lg:order-2 lg:min-h-0 lg:overflow-y-auto">
-                      <CardContent className="p-4 md:p-5">
+                      <CardContent className="space-y-4 p-4 md:p-5">
                         <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">
                           <Image
                             src={selectedRecipe.photo}
@@ -398,6 +410,80 @@ export default function CoachRecipes() {
                           </h3>
                           <p className="mt-2">{selectedRecipe.coachNote}</p>
                         </div>
+
+                        {coachees.length > 0 && (
+                          <div className="mt-2 rounded-md bg-[#f0f4ec] p-3 text-xs text-[#274427] space-y-2">
+                            <h3 className="text-sm font-semibold flex items-center justify-between gap-2">
+                              <span>Assigner cette recette à un coachee</span>
+                            </h3>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <div className="grid max-h-32 w-full grid-cols-1 gap-1 overflow-y-auto rounded-md border border-[#cdd6cb] bg-white px-2 py-1 text-xs shadow-sm">
+                                {coachees.map((user) => {
+                                  const checked = selectedUserIds.includes(user.id);
+                                  return (
+                                    <label
+                                      key={user.id}
+                                      className="flex cursor-pointer items-center gap-2 text-[#2e3a2d]"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="h-3 w-3 rounded border-[#cdd6cb] text-[#73916f] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#73916f]"
+                                        checked={checked}
+                                        onChange={(e) => {
+                                          setSelectedUserIds((prev) => {
+                                            if (e.target.checked) {
+                                              return prev.includes(user.id)
+                                                ? prev
+                                                : [...prev, user.id];
+                                            }
+                                            return prev.filter((id) => id !== user.id);
+                                          });
+                                        }}
+                                      />
+                                      <span className="truncate">{user.name}</span>
+                                    </label>
+                                  );
+                                })}
+                                {coachees.length === 0 && (
+                                  <span className="text-[#7a8a78]">Aucun coachee disponible</span>
+                                )}
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={selectedUserIds.length === 0 || assigning}
+                                className="bg-[#2d5a27] text-white hover:bg-[#234a20]"
+                                onClick={async () => {
+                                  if (selectedUserIds.length === 0 || !selectedRecipe?.id) return;
+                                  try {
+                                    await Promise.all(
+                                      selectedUserIds.map((userId) =>
+                                        assignRecipeToUser({
+                                          variables: {
+                                            recipeId: selectedRecipe.id,
+                                            userId,
+                                          },
+                                        }),
+                                      ),
+                                    );
+                                    setSelectedUserIds([]);
+                                  } catch {
+                                    // noop for now
+                                  }
+                                }}
+                              >
+                                {assigning ? (
+                                  <>
+                                    <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                                    Assignation…
+                                  </>
+                                ) : (
+                                  "Assigner"
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}

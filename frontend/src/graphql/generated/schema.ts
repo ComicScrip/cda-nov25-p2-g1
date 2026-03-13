@@ -160,6 +160,7 @@ export type Meal = {
 export type Mutation = {
   __typename?: 'Mutation';
   analyzeMealImage: NutritionalAnalysisType;
+  assignRecipeToUser: Scalars['Boolean']['output'];
   createRecipe?: Maybe<Recipe>;
   login: Scalars['String']['output'];
   logout: Scalars['Boolean']['output'];
@@ -174,6 +175,12 @@ export type Mutation = {
 
 export type MutationAnalyzeMealImageArgs = {
   input: AnalyzeMealImageInput;
+};
+
+
+export type MutationAssignRecipeToUserArgs = {
+  recipeId: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -494,6 +501,14 @@ export type AnalyzeMealImageMutationVariables = Exact<{
 
 export type AnalyzeMealImageMutation = { __typename?: 'Mutation', analyzeMealImage: { __typename?: 'NutritionalAnalysisType', dishName: string, analysisSummary: string, healthScore: number, mealType?: string | null, warnings: Array<string>, totalNutrition: { __typename?: 'NutritionalTotalsType', calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null, fiber?: number | null, sugar?: number | null, salt?: number | null }, ingredients: Array<{ __typename?: 'IngredientEstimateType', name: string, estimatedQuantityGrams?: number | null, confidence?: number | null, calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null }> } };
 
+export type AssignRecipeToUserMutationVariables = Exact<{
+  recipeId: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type AssignRecipeToUserMutation = { __typename?: 'Mutation', assignRecipeToUser: boolean };
+
 export type CreateRecipeMutationVariables = Exact<{
   input: CreateRecipeInput;
 }>;
@@ -635,6 +650,38 @@ export function useAnalyzeMealImageMutation(baseOptions?: ApolloReactHooks.Mutat
 export type AnalyzeMealImageMutationHookResult = ReturnType<typeof useAnalyzeMealImageMutation>;
 export type AnalyzeMealImageMutationResult = ApolloReactCommon.MutationResult<AnalyzeMealImageMutation>;
 export type AnalyzeMealImageMutationOptions = ApolloReactCommon.BaseMutationOptions<AnalyzeMealImageMutation, AnalyzeMealImageMutationVariables>;
+export const AssignRecipeToUserDocument = gql`
+    mutation AssignRecipeToUser($recipeId: String!, $userId: String!) {
+  assignRecipeToUser(recipeId: $recipeId, userId: $userId)
+}
+    `;
+export type AssignRecipeToUserMutationFn = ApolloReactCommon.MutationFunction<AssignRecipeToUserMutation, AssignRecipeToUserMutationVariables>;
+
+/**
+ * __useAssignRecipeToUserMutation__
+ *
+ * To run a mutation, you first call `useAssignRecipeToUserMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAssignRecipeToUserMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [assignRecipeToUserMutation, { data, loading, error }] = useAssignRecipeToUserMutation({
+ *   variables: {
+ *      recipeId: // value for 'recipeId'
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useAssignRecipeToUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AssignRecipeToUserMutation, AssignRecipeToUserMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AssignRecipeToUserMutation, AssignRecipeToUserMutationVariables>(AssignRecipeToUserDocument, options);
+      }
+export type AssignRecipeToUserMutationHookResult = ReturnType<typeof useAssignRecipeToUserMutation>;
+export type AssignRecipeToUserMutationResult = ApolloReactCommon.MutationResult<AssignRecipeToUserMutation>;
+export type AssignRecipeToUserMutationOptions = ApolloReactCommon.BaseMutationOptions<AssignRecipeToUserMutation, AssignRecipeToUserMutationVariables>;
 export const CreateRecipeDocument = gql`
     mutation CreateRecipe($input: CreateRecipeInput!) {
   createRecipe(input: $input) {
