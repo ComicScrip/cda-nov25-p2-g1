@@ -1,9 +1,10 @@
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import HomeLayout from "@/components/HomeLayout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type SignupInput, useSignupMutation } from "@/graphql/generated/schema";
@@ -37,12 +37,12 @@ export default function Signup() {
   const onSubmit = async (data: SignupInput & { confirmPassword: string }) => {
     try {
       const { confirmPassword, ...signupData } = data;
-    
+
       await signup({ variables: { data: signupData } });
-    
+
       // ✅ Notification succès
       alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");
-    
+
       router.push("/login");
     } catch (err: any) {
       setError("root", {
@@ -66,9 +66,7 @@ export default function Signup() {
         <div className="w-full max-w-md relative z-10">
           <Card className="border-border/50 shadow-lg bg-card/80 backdrop-blur-sm">
             <CardHeader className="space-y-0.5 text-center pb-4">
-              <CardTitle className="text-xl md:text-2xl font-bold">
-                Créer un compte
-              </CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold">Créer un compte</CardTitle>
               <CardDescription className="text-xs md:text-sm">
                 Inscrivez-vous pour accéder à votre espace MyDietChef
               </CardDescription>
@@ -95,11 +93,7 @@ export default function Signup() {
                     className="h-10 text-sm border-gray-300"
                     disabled={isSubmitting}
                   />
-                  {errors.email && (
-                    <p className="text-xs text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
+                  {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
                 </div>
 
                 {/* PASSWORD */}
@@ -117,8 +111,7 @@ export default function Signup() {
                         required: "Le mot de passe est requis",
                         minLength: {
                           value: 8,
-                          message:
-                            "Le mot de passe doit contenir au moins 8 caractères",
+                          message: "Le mot de passe doit contenir au moins 8 caractères",
                         },
                       })}
                       className="h-10 pr-10 text-sm border-gray-300"
@@ -135,9 +128,7 @@ export default function Signup() {
                   </div>
 
                   {errors.password && (
-                    <p className="text-xs text-red-500">
-                      {errors.password.message}
-                    </p>
+                    <p className="text-xs text-red-500">{errors.password.message}</p>
                   )}
                 </div>
 
@@ -153,11 +144,9 @@ export default function Signup() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="••••••••"
                       {...register("confirmPassword", {
-                        required:
-                          "La confirmation du mot de passe est requise",
+                        required: "La confirmation du mot de passe est requise",
                         validate: (value) =>
-                          value === passwordValue ||
-                          "Les mots de passe ne correspondent pas",
+                          value === passwordValue || "Les mots de passe ne correspondent pas",
                       })}
                       className="h-10 pr-10 text-sm border-gray-300"
                       disabled={isSubmitting}
@@ -165,23 +154,15 @@ export default function Signup() {
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
 
                   {errors.confirmPassword && (
-                    <p className="text-xs text-red-500">
-                      {errors.confirmPassword.message}
-                    </p>
+                    <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
                   )}
                 </div>
 
