@@ -39,7 +39,11 @@ export default function CoachUsers() {
     fetchPolicy: "cache-and-network",
   });
 
-  const { data: pageData, loading: usersLoading, error: usersError } = useCoachUsersPageQuery({
+  const {
+    data: pageData,
+    loading: usersLoading,
+    error: usersError,
+  } = useCoachUsersPageQuery({
     fetchPolicy: "network-only",
     variables: { limit: USERS_PER_PAGE, offset: 0 },
   });
@@ -149,10 +153,7 @@ export default function CoachUsers() {
             </CardHeader>
 
             <CardContent>
-              <div
-                ref={listScrollContainerRef}
-                className="overflow-auto max-h-[70vh]"
-              >
+              <div ref={listScrollContainerRef} className="overflow-auto max-h-[70vh]">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -231,7 +232,10 @@ export default function CoachUsers() {
                   </TableBody>
                 </Table>
 
-                <div ref={loadMoreSentinelRef} className="h-4 flex items-center justify-center py-4">
+                <div
+                  ref={loadMoreSentinelRef}
+                  className="h-4 flex items-center justify-center py-4"
+                >
                   {loadMoreLoading && (
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   )}

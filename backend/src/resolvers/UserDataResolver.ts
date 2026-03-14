@@ -1033,9 +1033,7 @@ export default class UserDataResolver {
       weights.length > 0 ? weights[weights.length - 1].weight : null;
     const height = profile.height ?? null;
     const imc =
-      currentWeight !== null &&
-      height !== null &&
-      height > 0
+      currentWeight !== null && height !== null && height > 0
         ? Number((currentWeight / (height / 100) ** 2).toFixed(1))
         : null;
 
@@ -1075,13 +1073,11 @@ export default class UserDataResolver {
         };
       });
 
-    const displayName = [
-      profile.first_name ?? "",
-      profile.last_name ?? "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim() || user.email;
+    const displayName =
+      [profile.first_name ?? "", profile.last_name ?? ""]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || user.email;
 
     return {
       displayName,

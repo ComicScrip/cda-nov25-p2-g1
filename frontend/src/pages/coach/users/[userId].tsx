@@ -1,9 +1,3 @@
-import type { CoachUserDetailQuery } from "@/graphql/generated/schema";
-import {
-  UserRole,
-  useCoachUserDetailQuery,
-  useProfileQuery,
-} from "@/graphql/generated/schema";
 import {
   Activity,
   ArrowLeft,
@@ -20,6 +14,8 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 import CoachLayout from "@/components/coach/CoachLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { CoachUserDetailQuery } from "@/graphql/generated/schema";
+import { UserRole, useCoachUserDetailQuery, useProfileQuery } from "@/graphql/generated/schema";
 
 type EvolutionPoint = NonNullable<
   NonNullable<CoachUserDetailQuery["coachUserDetail"]>["evolutionData"]
@@ -48,10 +44,7 @@ export default function CoachUserDetailPage() {
     if (!profileLoading) {
       if (!profileData?.me) {
         router.push("/login");
-      } else if (
-        profileData.me.role !== UserRole.Coach &&
-        profileData.me.role !== UserRole.Admin
-      ) {
+      } else if (profileData.me.role !== UserRole.Coach && profileData.me.role !== UserRole.Admin) {
         router.push("/");
       }
     }
@@ -67,7 +60,10 @@ export default function CoachUserDetailPage() {
     );
   }
 
-  if (!profileData?.me || (profileData.me.role !== UserRole.Coach && profileData.me.role !== UserRole.Admin)) {
+  if (
+    !profileData?.me ||
+    (profileData.me.role !== UserRole.Coach && profileData.me.role !== UserRole.Admin)
+  ) {
     return null;
   }
 
@@ -185,9 +181,7 @@ export default function CoachUserDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg font-semibold">
-                  {detail.imc != null ? detail.imc : "–"}
-                </p>
+                <p className="text-lg font-semibold">{detail.imc != null ? detail.imc : "–"}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {detail.imc != null && detail.imc > 0
                     ? detail.imc < 18.5
@@ -357,9 +351,7 @@ export default function CoachUserDetailPage() {
                           Score {meal.aiScore}%
                         </p>
                         {meal.aiInsights.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {meal.aiInsights[0]}
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{meal.aiInsights[0]}</p>
                         )}
                         {meal.coachComment && (
                           <p className="text-xs mt-1 italic text-muted-foreground">

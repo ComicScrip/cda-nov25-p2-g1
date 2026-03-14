@@ -1,17 +1,22 @@
-import { useRouter } from "next/router";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useProfileQuery } from "@/graphql/generated/schema";
-import { useLoginMutation } from "@/graphql/generated/schema";
-import { useState } from "react";
-import { LoginInput } from "@/graphql/generated/schema";
-import HomeLayout from "@/components/HomeLayout";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import HomeLayout from "@/components/HomeLayout";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { LoginInput } from "@/graphql/generated/schema";
+import { useLoginMutation, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function Login() {
   const router = useRouter();
@@ -63,14 +68,14 @@ export default function Login() {
         const returnUrl = router.query.returnUrl as string | undefined;
 
         if (returnUrl) {
-          router.push(returnUrl);
+          router.replace(returnUrl);
         } else {
           const { data: updatedProfile } = await refetchProfile();
 
           if (updatedProfile?.me?.role === "Coach") {
-            router.push("/coach/dashboard");
+            router.replace("/coach/dashboard");
           } else {
-            router.push("/dashboard_user");
+            router.replace("/dashboard_user");
           }
         }
       } else {

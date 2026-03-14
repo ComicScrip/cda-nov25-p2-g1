@@ -63,45 +63,45 @@ export class CoachUser {
 
 function mapUsersToCoachUsers(users: User[]): CoachUser[] {
   return users.map((user) => {
-      const profile = user.profile;
+    const profile = user.profile;
 
-      let initialWeight: number | null = null;
-      let currentWeight: number | null = null;
+    let initialWeight: number | null = null;
+    let currentWeight: number | null = null;
 
-      if (profile?.weight_measures?.length) {
-        const sorted = [...profile.weight_measures].sort(
-          (a, b) =>
-            new Date(a.measured_at ?? 0).getTime() -
-            new Date(b.measured_at ?? 0).getTime(),
-        );
+    if (profile?.weight_measures?.length) {
+      const sorted = [...profile.weight_measures].sort(
+        (a, b) =>
+          new Date(a.measured_at ?? 0).getTime() -
+          new Date(b.measured_at ?? 0).getTime(),
+      );
 
-        initialWeight = sorted[0]?.weight ?? null;
-        currentWeight = sorted[sorted.length - 1]?.weight ?? null;
-      }
+      initialWeight = sorted[0]?.weight ?? null;
+      currentWeight = sorted[sorted.length - 1]?.weight ?? null;
+    }
 
-      const meals = user.meals ?? [];
-      const mealsCount = user.meals?.length ?? 0;
-      const FIXED_MEAL_SCORE = 80;
-      const score =
-        mealsCount > 0
-          ? meals.reduce((sum: number) => {
-              return sum + FIXED_MEAL_SCORE;
-            }, 0) / mealsCount
-          : 0;
-      const FIXED_CALORIC_GOAL = 2000;
-      return {
-        userId: user.id,
-        email: user.email,
-        displayName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`,
-        role: user.role,
-        initialWeight,
-        currentWeight,
-        goalLabel: profile?.goal ?? null,
-        caloricGoal: FIXED_CALORIC_GOAL,
-        mealsCount,
-        scoreRounded: Math.round(score),
-        createdAt: user.createdAt.toISOString(),
-      };
+    const meals = user.meals ?? [];
+    const mealsCount = user.meals?.length ?? 0;
+    const FIXED_MEAL_SCORE = 80;
+    const score =
+      mealsCount > 0
+        ? meals.reduce((sum: number) => {
+            return sum + FIXED_MEAL_SCORE;
+          }, 0) / mealsCount
+        : 0;
+    const FIXED_CALORIC_GOAL = 2000;
+    return {
+      userId: user.id,
+      email: user.email,
+      displayName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`,
+      role: user.role,
+      initialWeight,
+      currentWeight,
+      goalLabel: profile?.goal ?? null,
+      caloricGoal: FIXED_CALORIC_GOAL,
+      mealsCount,
+      scoreRounded: Math.round(score),
+      createdAt: user.createdAt.toISOString(),
+    };
   });
 }
 
@@ -127,7 +127,10 @@ export class CoachDashoardUser {
   @Query(() => CoachUsersPage)
   async coachUsersPage(
     @Ctx() ctx: GraphQLContext,
-    @Arg("limit", () => Int, { nullable: true, defaultValue: DEFAULT_PAGE_SIZE })
+    @Arg("limit", () => Int, {
+      nullable: true,
+      defaultValue: DEFAULT_PAGE_SIZE,
+    })
     limit: number = DEFAULT_PAGE_SIZE,
     @Arg("offset", () => Int, { nullable: true, defaultValue: 0 })
     offset: number = 0,
