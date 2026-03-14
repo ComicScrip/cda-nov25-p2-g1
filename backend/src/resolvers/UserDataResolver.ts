@@ -21,7 +21,8 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-import { In } from "typeorm";
+import { Between, In } from "typeorm";
+import db from "../db";
 import { getCurrentUser } from "../auth";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
@@ -417,6 +418,32 @@ async function resolveVisibleUserIds(
   return [currentUser.id];
 }
 
+/** Début et fin du jour courant (UTC) pour filtrer les repas "dans la journée". */
+function getTodayBounds(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+/**
+ * Retourne les IDs des repas correspondant aux 4 derniers repas du jour par utilisateur.
+ * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
+ */
+async function getLast4MealIdsTodayByUserIds(userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const result = await db.query(
+    `WITH ranked AS (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY consumed_at DESC NULLS LAST) AS rn
+      FROM meal
+      WHERE consumed_at::date = CURRENT_DATE AND user_id = ANY($1::uuid[])
+    ) SELECT id FROM ranked WHERE rn <= 4`,
+    [userIds],
+  );
+  const rows = Array.isArray(result) ? result : (result as { rows?: { id: string }[] }).rows ?? [];
+  return rows.map((r: { id: string }) => r.id);
+}
+
 type DishEntryIngredient = {
   name: string;
   quantity: number | null;
@@ -439,11 +466,21 @@ type DishEntry = {
   ingredients: DishEntryIngredient[];
 };
 
+const MAX_LAST_MEALS_TODAY = 4;
+
 @Resolver()
 export default class UserDataResolver {
-  private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
+  /** Charge uniquement les 4 derniers repas du jour pour un utilisateur (pour limiter la mémoire). */
+  private async loadUserDishEntriesForToday(
+    userId: string,
+    limit: number = MAX_LAST_MEALS_TODAY,
+  ): Promise<DishEntry[]> {
+    const { start, end } = getTodayBounds();
     const meals = await Meal.find({
-      where: { user: { id: userId } },
+      where: {
+        user: { id: userId },
+        consumedAt: Between(start, end),
+      },
       relations: [
         "dishes",
         "dishes.analysis",
@@ -451,8 +488,12 @@ export default class UserDataResolver {
         "dishes.dish_ingredients.ingredient",
       ],
       order: { consumedAt: "DESC" },
+      take: limit,
     });
+    return this.mealsToDishEntries(meals);
+  }
 
+  private mealsToDishEntries(meals: Meal[]): DishEntry[] {
     const dishEntries = meals
       .flatMap((meal) =>
         (meal.dishes ?? []).map((dish) => {
@@ -496,6 +537,20 @@ export default class UserDataResolver {
     return dishEntries.sort(
       (a, b) => b.consumedAt.getTime() - a.consumedAt.getTime(),
     );
+  }
+
+  private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
+    const meals = await Meal.find({
+      where: { user: { id: userId } },
+      relations: [
+        "dishes",
+        "dishes.analysis",
+        "dishes.dish_ingredients",
+        "dishes.dish_ingredients.ingredient",
+      ],
+      order: { consumedAt: "DESC" },
+    });
+    return this.mealsToDishEntries(meals);
   }
 
   private async buildUserProfilePayload(
@@ -719,14 +774,10 @@ export default class UserDataResolver {
   async coachUserMealsTestData(
     @Ctx() context: GraphQLContext,
     @Arg("userId", () => String, { nullable: true }) userId?: string,
-    @Arg("limit", () => Int, { nullable: true }) limit?: number,
+    @Arg("limit", () => Int, { nullable: true }) _limit?: number,
   ): Promise<CoachUserMealTestData[]> {
     const currentUser = await getCurrentUser(context);
     const visibleUserIds = await resolveVisibleUserIds(currentUser);
-    const clampedLimit =
-      typeof limit === "number" && Number.isFinite(limit)
-        ? Math.min(Math.max(limit, 1), 200)
-        : 120;
 
     if (visibleUserIds && visibleUserIds.length === 0) {
       return [];
@@ -736,15 +787,14 @@ export default class UserDataResolver {
       return [];
     }
 
+    const userIdsToLoad = userId ? [userId] : visibleUserIds ?? [];
+    const mealIds = await getLast4MealIdsTodayByUserIds(userIdsToLoad);
+    if (mealIds.length === 0) return [];
+
     const meals = await Meal.find({
-      where: userId
-        ? { user: { id: userId } }
-        : visibleUserIds
-          ? { user: { id: In(visibleUserIds) } }
-          : undefined,
+      where: { id: In(mealIds) },
       relations: ["user", "dishes", "dishes.analysis"],
       order: { consumedAt: "DESC" },
-      take: clampedLimit,
     });
 
     const fallbackPhoto = "/MyDietChef_image.webp";
@@ -1073,13 +1123,9 @@ export default class UserDataResolver {
 
     const evolutionData = await this.buildEvolutionDataForUser(userId);
 
-    const dishes = await this.loadUserDishEntries(userId);
-    const todayKey = toDateKey(new Date());
+    const dishes = await this.loadUserDishEntriesForToday(userId, MAX_LAST_MEALS_TODAY);
     const fallbackPhoto = "/MyDietChef_image.webp";
-    const todayMeals = dishes
-      .filter((d) => toDateKey(d.consumedAt) === todayKey)
-      .slice(0, 20)
-      .map((dish, index) => {
+    const todayMeals = dishes.map((dish, index) => {
         const fallbackName = `Repas ${index + 1}`;
         const name =
           dish.mealName?.trim() ||

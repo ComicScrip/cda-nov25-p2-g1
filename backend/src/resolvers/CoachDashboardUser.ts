@@ -63,7 +63,24 @@ export class CoachUser {
   createdAt!: string;
 }
 
-function mapUsersToCoachUsers(users: User[]): CoachUser[] {
+/** Récupère le nombre de repas par user_id (une seule requête, évite de charger tous les repas en mémoire). */
+async function getMealsCountByUserId(userIds: string[]): Promise<Map<string, number>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await Meal.createQueryBuilder("m")
+    .select("m.user_id", "userId")
+    .addSelect("COUNT(*)", "count")
+    .where("m.user_id IN (:...ids)", { ids: userIds })
+    .groupBy("m.user_id")
+    .getRawMany<{ userId: string; count: string }>();
+  const map = new Map<string, number>();
+  for (const r of rows) map.set(r.userId, Number(r.count));
+  return map;
+}
+
+function mapUsersToCoachUsers(
+  users: User[],
+  mealsCountByUserId: Map<string, number>,
+): CoachUser[] {
   return users.map((user) => {
     const profile = user.profile;
 
@@ -81,15 +98,9 @@ function mapUsersToCoachUsers(users: User[]): CoachUser[] {
       currentWeight = sorted[sorted.length - 1]?.weight ?? null;
     }
 
-    const meals = user.meals ?? [];
-    const mealsCount = user.meals?.length ?? 0;
+    const mealsCount = mealsCountByUserId.get(user.id) ?? 0;
     const FIXED_MEAL_SCORE = 80;
-    const score =
-      mealsCount > 0
-        ? meals.reduce((sum: number) => {
-            return sum + FIXED_MEAL_SCORE;
-          }, 0) / mealsCount
-        : 0;
+    const score = mealsCount > 0 ? FIXED_MEAL_SCORE : 0;
     const FIXED_CALORIC_GOAL = 2000;
     return {
       userId: user.id,
@@ -124,11 +135,11 @@ export class CoachDashoardUser {
       where,
       relations: {
         profile: { weight_measures: true },
-        meals: true,
         ...(currentUser.role === UserRole.Coach ? { coach: true } : {}),
       },
     });
-    return mapUsersToCoachUsers(users);
+    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
+    return mapUsersToCoachUsers(users, mealsCountByUserId);
   }
 
   /** Coachees ayant le plus récemment scanné un repas (pour affichage progressif). */
@@ -163,12 +174,12 @@ export class CoachDashoardUser {
       where: { id: In(ids) },
       relations: {
         profile: { weight_measures: true },
-        meals: true,
         ...(currentUser.role === UserRole.Coach ? { coach: true } : {}),
       },
     });
     users.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-    return mapUsersToCoachUsers(users);
+    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
+    return mapUsersToCoachUsers(users, mealsCountByUserId);
   }
 
   @Authorized(UserRole.Coach, UserRole.Admin)
@@ -195,13 +206,13 @@ export class CoachDashoardUser {
       where,
       relations: {
         profile: { weight_measures: true },
-        meals: true,
         ...(currentUser.role === UserRole.Coach ? { coach: true } : {}),
       },
       order: { createdAt: "DESC" },
       take: limit,
       skip: offset,
     });
-    return { users: mapUsersToCoachUsers(users), totalCount };
+    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
+    return { users: mapUsersToCoachUsers(users, mealsCountByUserId), totalCount };
   }
 }

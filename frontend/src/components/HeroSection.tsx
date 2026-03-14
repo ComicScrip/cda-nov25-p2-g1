@@ -15,7 +15,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative w-full h-1/2 flex items-center justify-center overflow-hidden shrink-0 min-h-0">
+    <section className="relative w-full flex items-center justify-center overflow-hidden shrink-0 min-h-[70vh] md:min-h-0 md:h-1/2 border-b-2 border-[#2d5a2d]/40 py-6 md:py-0">
       {/* Background avec image culinaire */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-dark-base"
@@ -27,31 +27,31 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-black/60" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 text-center px-4 md:px-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6">
+      {/* Content avec bordure — optimisé mobile */}
+      <div className="relative z-10 text-center w-[92%] max-w-4xl mx-auto px-4 py-6 sm:px-5 sm:py-7 md:px-10 md:py-10 rounded-xl border-2 border-white/30 bg-black/20 shadow-xl backdrop-blur-sm">
+        <h1 className="text-2xl leading-tight sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6">
           Bienvenue sur MyDietChef
         </h1>
-        <p className="text-base md:text-lg lg:text-xl text-white mb-8 md:mb-12">
-          Plateforme conçue pour vous aider à atteindre vos objectifs diététiques en maître encore!
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/95 mb-6 sm:mb-8 md:mb-12 leading-snug max-w-xl mx-auto">
+          Plateforme conçue pour vous aider à atteindre vos objectifs diététiques
         </p>
 
-        {/* Buttons */}
-        <div className="flex flex-row gap-2 md:gap-4 justify-center items-center px-2">
+        {/* Buttons — empilés sur mobile, côte à côte sur desktop */}
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-stretch sm:items-center">
           <Button
             type="button"
             onClick={handleRequestDemo}
-            variant="secondary"
+            variant="outline"
             size="sm"
-            className="bg-gray-200 text-gray-800 hover:bg-gray-300 border border-gray-300 text-xs md:text-sm px-3 md:px-6 py-2 md:py-3"
+            className="w-full sm:w-auto border-2 border-white/70 bg-transparent text-white hover:bg-white/15 text-xs md:text-sm px-4 md:px-6 py-3 sm:py-2.5 md:py-3 rounded-lg min-h-[44px] sm:min-h-0"
           >
             Demander une démo
           </Button>
           <Button
             type="button"
             onClick={handleTryFree}
-            size="sm"
-            className="bg-success text-white hover:bg-success-hover text-xs md:text-sm px-3 md:px-6 py-2 md:py-3"
+            size="lg"
+            className="w-full sm:w-auto bg-white text-[#1e4a1e] hover:bg-white/95 font-semibold text-sm md:text-base px-6 md:px-8 py-3.5 sm:py-3 md:py-4 rounded-xl border-2 border-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 min-h-[48px] sm:min-h-0"
           >
             Essayez gratuitement
           </Button>
