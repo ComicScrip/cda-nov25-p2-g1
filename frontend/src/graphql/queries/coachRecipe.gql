@@ -1,0 +1,20 @@
+query CoachRecipe($id: String!) {
+  coachRecipe(id: $id) {
+    id
+    title
+    source
+    photo
+    prepTime
+    servings
+    difficulty
+    calories
+    protein
+    carbs
+    fat
+    fiber
+    description
+    prepSteps
+    benefits
+    coachNote
+  }
+}

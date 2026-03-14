@@ -188,7 +188,13 @@ export default function RepasUtilisateurPage() {
                   <button
                     key={meal.id}
                     type="button"
-                    onClick={() => setSelectedMealId(meal.id)}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                        router.push(`/user_meals/${meal.id}`);
+                      } else {
+                        setSelectedMealId(meal.id);
+                      }
+                    }}
                     className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
@@ -231,7 +237,7 @@ export default function RepasUtilisateurPage() {
             </div>
           </section>
 
-          <aside className="rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:min-h-0 lg:overflow-y-auto">
+          <aside className="hidden rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:block lg:min-h-0 lg:overflow-y-auto">
             {selectedMeal ? (
               <>
                 <div className="mb-3 rounded-md bg-[#eef4e8] px-3 py-2 text-[#3d4e3c]">

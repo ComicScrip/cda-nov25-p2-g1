@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
@@ -36,6 +37,7 @@ const sourceBadgeStyles: Record<RecipeSource, string> = {
 };
 
 export default function RecettesUserPage() {
+  const router = useRouter();
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const { data, loading, error, observable } = useUserRecipesDataQuery({
     fetchPolicy: "cache-and-network",
@@ -137,7 +139,13 @@ export default function RecettesUserPage() {
                   <button
                     key={recipe.id}
                     type="button"
-                    onClick={() => setSelectedRecipeId(recipe.id)}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                        router.push(`/user_recipe/${recipe.id}`);
+                      } else {
+                        setSelectedRecipeId(recipe.id);
+                      }
+                    }}
                     className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
@@ -183,7 +191,7 @@ export default function RecettesUserPage() {
             </div>
           </section>
 
-          <aside className="rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:min-h-0 lg:overflow-y-auto">
+          <aside className="hidden rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5 lg:block lg:min-h-0 lg:overflow-y-auto">
             {selectedRecipe ? (
               <>
                 <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">

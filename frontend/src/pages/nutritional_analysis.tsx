@@ -79,30 +79,22 @@ export default function NutritionalAnalysisPage() {
 
   const handleSaveAnalysis = async () => {
     const result = await nutritionalAnalysis.handleSaveAnalysis();
-    if (result) {
-      alert(result.message);
-    }
+    if (result && !result.success) alert(result.message);
   };
 
   const handleUpdateQuantities = async () => {
     const result = await nutritionalAnalysis.handleUpdateQuantities();
-    if (result) {
-      alert(result.message);
-    }
+    if (result && !result.success) alert(result.message);
   };
 
   const handleUpdateCalories = async () => {
     const result = await nutritionalAnalysis.handleUpdateCalories();
-    if (result) {
-      alert(result.message);
-    }
+    if (result && !result.success) alert(result.message);
   };
 
   const handleUpdateDishName = async () => {
     const result = await nutritionalAnalysis.handleUpdateDishName();
-    if (result) {
-      alert(result.message);
-    }
+    if (result && !result.success) alert(result.message);
   };
 
   const pageContent = (
@@ -203,7 +195,7 @@ export default function NutritionalAnalysisPage() {
                                 const result = await nutritionalAnalysis.loadCoachDishAnalysis(
                                   meal.id,
                                 );
-                                alert(result.message);
+                                if (result && !result.success) alert(result.message);
                               }}
                               disabled={nutritionalAnalysis.loadingCoachDish}
                               className="w-full text-left px-3 py-2 rounded bg-[#f5fbf1] hover:bg-[#e8f3e4] text-[#2c2c2c] disabled:opacity-50 flex items-center justify-between gap-2"
@@ -304,19 +296,23 @@ export default function NutritionalAnalysisPage() {
               <div className="overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]">
                 <div className="bg-[#f1f5ee] px-3 py-2 text-[11px] font-semibold text-[#3c3c3c] flex items-center justify-between">
                   <span>Plat analysé</span>
-                  <label
-                    htmlFor="meal-image-new"
-                    className="cursor-pointer text-[#1e4a1e] hover:text-[#0f2f0f] underline text-[10px]"
-                  >
-                    Changer l&apos;image
-                  </label>
-                  <input
-                    id="meal-image-new"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                  />
+                  {!isCoach && (
+                    <>
+                      <label
+                        htmlFor="meal-image-new"
+                        className="cursor-pointer text-[#1e4a1e] hover:text-[#0f2f0f] underline text-[10px]"
+                      >
+                        Changer l&apos;image
+                      </label>
+                      <input
+                        id="meal-image-new"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                      />
+                    </>
+                  )}
                 </div>
                 <div className="max-h-[600px] w-full overflow-auto bg-black/5 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

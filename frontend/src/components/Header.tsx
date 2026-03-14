@@ -14,6 +14,7 @@ const USER_MOBILE_NAV_LINKS = [
   { href: "/evolution_user", label: "Mon Evolution" },
   { href: "/user_profile", label: "Mon Profile" },
   { href: "/meals_scanning", label: "IA Assiste" },
+  { href: "/nutritional_analysis", label: "Analyse IA" },
 ] as const;
 
 const COACH_MOBILE_NAV_LINKS = [
@@ -159,9 +160,19 @@ export default function Header() {
         </button>
       </nav>
 
+      {/* Fond cliquable : ferme le menu burger au clic à l'extérieur (mobile uniquement) */}
+      {isMenuOpen && !isCoachOrAdmin && (
+        <button
+          type="button"
+          aria-label="Fermer le menu"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
       {/* Menu mobile (dropdown) : masqué pour coach/admin, ils utilisent la sidebar */}
       {isMenuOpen && !isCoachOrAdmin && (
-        <div className="md:hidden bg-dark-header border-t border-gray-700">
+        <div className="relative z-50 md:hidden bg-dark-header border-t border-gray-700">
           <div className="flex flex-col px-4 py-4 gap-4">
             {!loading &&
               (user ? (

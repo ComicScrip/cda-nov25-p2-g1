@@ -444,6 +444,24 @@ async function getLast4MealIdsTodayByUserIds(userIds: string[]): Promise<string[
   return rows.map((r: { id: string }) => r.id);
 }
 
+/**
+ * Retourne les IDs des 4 derniers repas par utilisateur sur les 3 derniers jours (pour l’analyse nutritionnelle coach).
+ * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
+ */
+async function getLast4MealIdsLast3DaysByUserIds(userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const result = await db.query(
+    `WITH ranked AS (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY consumed_at DESC NULLS LAST) AS rn
+      FROM meal
+      WHERE consumed_at >= (CURRENT_DATE - INTERVAL '3 days') AND user_id = ANY($1::uuid[])
+    ) SELECT id FROM ranked WHERE rn <= 4`,
+    [userIds],
+  );
+  const rows = Array.isArray(result) ? result : (result as { rows?: { id: string }[] }).rows ?? [];
+  return rows.map((r: { id: string }) => r.id);
+}
+
 type DishEntryIngredient = {
   name: string;
   quantity: number | null;
@@ -788,7 +806,7 @@ export default class UserDataResolver {
     }
 
     const userIdsToLoad = userId ? [userId] : visibleUserIds ?? [];
-    const mealIds = await getLast4MealIdsTodayByUserIds(userIdsToLoad);
+    const mealIds = await getLast4MealIdsLast3DaysByUserIds(userIdsToLoad);
     if (mealIds.length === 0) return [];
 
     const meals = await Meal.find({
@@ -982,6 +1000,49 @@ export default class UserDataResolver {
         coachName: dish.coachName?.trim() || "Coach",
       };
     });
+  }
+
+  @Query(() => UserMealData, { nullable: true })
+  @Authorized()
+  async userMeal(
+    @Ctx() context: GraphQLContext,
+    @Arg("id", () => String) id: string,
+  ): Promise<UserMealData | null> {
+    const currentUser = await getCurrentUser(context);
+    const dishes = await this.loadUserDishEntries(currentUser.id);
+    const dish = dishes.find((d) => d.id === id);
+    if (!dish) return null;
+
+    const fallbackPhoto = "/MyDietChef_image.webp";
+    const name =
+      dish.mealName?.trim() ||
+      formatMealTypeLabel(dish.mealType) ||
+      "Repas";
+    const aiInsights =
+      dish.aiInsights.length > 0
+        ? dish.aiInsights
+        : ["Aucune indication IA disponible pour ce repas."];
+
+    return {
+      id: dish.id,
+      name,
+      consumedAt: dish.consumedAt.toISOString(),
+      calories: Math.round(dish.calories),
+      protein: Math.round(dish.proteins),
+      carbs: Math.round(dish.carbs),
+      fat: Math.round(dish.fats),
+      aiScore: Math.round(dish.score),
+      photo: dish.photoUrl?.trim() || fallbackPhoto,
+      ingredients: dish.ingredients.map((ing) => ({
+        name: ing.name,
+        quantity: ing.quantity,
+      })),
+      aiInsights,
+      coachComment:
+        dish.coachComment?.trim() ||
+        "Continue sur cette dynamique pour garder des repas equilibres.",
+      coachName: dish.coachName?.trim() || "Coach",
+    };
   }
 
   private async buildEvolutionDataForUser(

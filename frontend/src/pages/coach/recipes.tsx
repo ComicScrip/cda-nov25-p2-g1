@@ -233,7 +233,13 @@ export default function CoachRecipes() {
                             <button
                               key={recipe.id}
                               type="button"
-                              onClick={() => setSelectedRecipeId(recipe.id)}
+                              onClick={() => {
+                                if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                                  router.push(`/coach/recipes/${recipe.id}`);
+                                } else {
+                                  setSelectedRecipeId(recipe.id);
+                                }
+                              }}
                               className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
                                 isSelected
                                   ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
@@ -300,7 +306,7 @@ export default function CoachRecipes() {
                   </Card>
 
                   {selectedRecipe && (
-                    <Card className="order-1 border-[#d3d8cf] bg-white shadow-[0_2px_5px_rgba(0,0,0,0.1)] lg:order-2 lg:min-h-0 lg:overflow-y-auto">
+                    <Card className="order-1 hidden border-[#d3d8cf] bg-white shadow-[0_2px_5px_rgba(0,0,0,0.1)] lg:order-2 lg:block lg:min-h-0 lg:overflow-y-auto">
                       <CardContent className="space-y-4 p-4 md:p-5">
                         <div className="relative overflow-hidden rounded-md border border-[#d6ddd2]">
                           <Image
