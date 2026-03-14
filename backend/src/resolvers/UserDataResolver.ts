@@ -152,6 +152,36 @@ class EvolutionDataPoint {
 }
 
 @ObjectType()
+class CoachUserDetail {
+  @Field()
+  displayName!: string;
+
+  @Field()
+  email!: string;
+
+  @Field(() => Float, { nullable: true })
+  height!: number | null;
+
+  @Field(() => Float, { nullable: true })
+  currentWeight!: number | null;
+
+  @Field(() => String, { nullable: true })
+  goal!: string | null;
+
+  @Field(() => [String])
+  pathologies!: string[];
+
+  @Field(() => Float, { nullable: true })
+  imc!: number | null;
+
+  @Field(() => [EvolutionDataPoint])
+  evolutionData!: EvolutionDataPoint[];
+
+  @Field(() => [UserMealData])
+  todayMeals!: UserMealData[];
+}
+
+@ObjectType()
 class UserProfileData {
   @Field(() => String)
   firstName!: string;
@@ -870,21 +900,11 @@ export default class UserDataResolver {
     });
   }
 
-  @Authorized()
-  @Query(() => [EvolutionDataPoint])
-  async userEvolutionData(
-    @Ctx() context: GraphQLContext,
+  private async buildEvolutionDataForUser(
+    userId: string,
   ): Promise<EvolutionDataPoint[]> {
-    let currentUserId = "";
-    try {
-      const currentUser = await getCurrentUser(context);
-      currentUserId = currentUser.id;
-    } catch (_e) {
-      return [];
-    }
-
     const profile = await User_profile.findOne({
-      where: { user: { id: currentUserId } },
+      where: { user: { id: userId } },
       relations: ["weight_measures"],
     });
 
@@ -894,11 +914,9 @@ export default class UserDataResolver {
       )
       .sort((a, b) => a.measured_at.getTime() - b.measured_at.getTime());
 
-    if (weights.length === 0) {
-      return [];
-    }
+    if (weights.length === 0) return [];
 
-    const dishes = await this.loadUserDishEntries(currentUserId);
+    const dishes = await this.loadUserDishEntries(userId);
     const weeklyStats = new Map<
       string,
       { calories: number[]; scores: number[] }
@@ -973,5 +991,108 @@ export default class UserDataResolver {
         score,
       };
     });
+  }
+
+  @Authorized()
+  @Query(() => [EvolutionDataPoint])
+  async userEvolutionData(
+    @Ctx() context: GraphQLContext,
+  ): Promise<EvolutionDataPoint[]> {
+    let currentUserId = "";
+    try {
+      const currentUser = await getCurrentUser(context);
+      currentUserId = currentUser.id;
+    } catch (_e) {
+      return [];
+    }
+    return this.buildEvolutionDataForUser(currentUserId);
+  }
+
+  @Authorized(UserRole.Coach, UserRole.Admin)
+  @Query(() => CoachUserDetail, { nullable: true })
+  async coachUserDetail(
+    @Ctx() context: GraphQLContext,
+    @Arg("userId") userId: string,
+  ): Promise<CoachUserDetail | null> {
+    await getCurrentUser(context);
+
+    const user = await User.findOne({
+      where: { id: userId, role: UserRole.Coachee },
+      relations: ["profile", "profile.pathologies", "profile.weight_measures"],
+    });
+    if (!user?.profile) return null;
+
+    const profile = user.profile;
+    const weights = [...(profile.weight_measures ?? [])]
+      .filter((measure): measure is Weight_Measure & { measured_at: Date } =>
+        Boolean(measure.measured_at),
+      )
+      .sort((a, b) => a.measured_at.getTime() - b.measured_at.getTime());
+
+    const currentWeight =
+      weights.length > 0 ? weights[weights.length - 1].weight : null;
+    const height = profile.height ?? null;
+    const imc =
+      currentWeight !== null &&
+      height !== null &&
+      height > 0
+        ? Number((currentWeight / (height / 100) ** 2).toFixed(1))
+        : null;
+
+    const evolutionData = await this.buildEvolutionDataForUser(userId);
+
+    const dishes = await this.loadUserDishEntries(userId);
+    const todayKey = toDateKey(new Date());
+    const fallbackPhoto = "/MyDietChef_image.webp";
+    const todayMeals = dishes
+      .filter((d) => toDateKey(d.consumedAt) === todayKey)
+      .slice(0, 20)
+      .map((dish, index) => {
+        const fallbackName = `Repas ${index + 1}`;
+        const name =
+          dish.mealName?.trim() ||
+          formatMealTypeLabel(dish.mealType) ||
+          fallbackName;
+        const aiInsights =
+          dish.aiInsights.length > 0
+            ? dish.aiInsights
+            : ["Aucune indication IA disponible pour ce repas."];
+        return {
+          id: dish.id,
+          name,
+          consumedAt: dish.consumedAt.toISOString(),
+          calories: Math.round(dish.calories),
+          protein: Math.round(dish.proteins),
+          carbs: Math.round(dish.carbs),
+          fat: Math.round(dish.fats),
+          aiScore: Math.round(dish.score),
+          photo: dish.photoUrl?.trim() || fallbackPhoto,
+          aiInsights,
+          coachComment:
+            dish.coachComment?.trim() ||
+            "Continue sur cette dynamique pour garder des repas équilibrés.",
+          coachName: dish.coachName?.trim() || "Coach",
+        };
+      });
+
+    const displayName = [
+      profile.first_name ?? "",
+      profile.last_name ?? "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || user.email;
+
+    return {
+      displayName,
+      email: user.email,
+      height,
+      currentWeight,
+      goal: profile.goal ?? null,
+      pathologies: (profile.pathologies ?? []).map((p) => p.name),
+      imc,
+      evolutionData,
+      todayMeals,
+    };
   }
 }

@@ -15,6 +15,11 @@
 /test-results/
 /test-results/.last-run.json
 
+# Playwright
+/playwright-report/
+/blob-report/
+/.playwright/
+
 # next.js
 /.next/
 /.next_premerge_backup_*
@@ -23,8 +28,15 @@
 # production
 /build
 
+# variables d'environnement (ne pas commiter les secrets)
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # misc
 .DS_Store
+Thumbs.db
 *.pem
 
 # debug
@@ -33,11 +45,24 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# cache & outils
+.cache/
+.turbo/
+.eslintcache
+.biome-cache/
+
 # vercel
 .vercel
 
-# typescript
+# typescript & build
 *.tsbuildinfo
 next-env.d.ts
-.env
+
+# SWC (Next.js)
 .swc
+
+# IDE / éditeur
+.idea/
+*.swp
+*.swo
+*~

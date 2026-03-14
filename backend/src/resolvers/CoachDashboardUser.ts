@@ -1,4 +1,5 @@
 import {
+  Arg,
   Authorized,
   Ctx,
   Field,
@@ -12,6 +13,17 @@ import { getCurrentUser } from "../auth";
 import { UserRole } from "../entities/enums";
 import { User } from "../entities/User";
 import type { GraphQLContext } from "../types";
+
+const DEFAULT_PAGE_SIZE = 15;
+
+@ObjectType()
+export class CoachUsersPage {
+  @Field(() => [CoachUser])
+  users!: CoachUser[];
+
+  @Field(() => Int)
+  totalCount!: number;
+}
 
 @ObjectType()
 export class CoachUser {
@@ -49,30 +61,8 @@ export class CoachUser {
   createdAt!: string;
 }
 
-@Resolver()
-export class CoachDashoardUser {
-  @Authorized(UserRole.Coach, UserRole.Admin)
-  @Query(() => [CoachUser])
-  async coachUsers(@Ctx() ctx: GraphQLContext): Promise<CoachUser[]> {
-    const currentUser = await getCurrentUser(ctx);
-
-    if (!currentUser) {
-      throw new Error("Unauthorized");
-    }
-
-    const users = await User.find({
-      where: {
-        role: UserRole.Coachee,
-      },
-      relations: {
-        profile: {
-          weight_measures: true,
-        },
-        meals: true,
-      },
-    });
-
-    const result: CoachUser[] = users.map((user) => {
+function mapUsersToCoachUsers(users: User[]): CoachUser[] {
+  return users.map((user) => {
       const profile = user.profile;
 
       let initialWeight: number | null = null;
@@ -112,8 +102,49 @@ export class CoachDashoardUser {
         scoreRounded: Math.round(score),
         createdAt: user.createdAt.toISOString(),
       };
-    });
+  });
+}
 
-    return result;
+@Resolver()
+export class CoachDashoardUser {
+  @Authorized(UserRole.Coach, UserRole.Admin)
+  @Query(() => [CoachUser])
+  async coachUsers(@Ctx() ctx: GraphQLContext): Promise<CoachUser[]> {
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
+
+    const users = await User.find({
+      where: { role: UserRole.Coachee },
+      relations: {
+        profile: { weight_measures: true },
+        meals: true,
+      },
+    });
+    return mapUsersToCoachUsers(users);
+  }
+
+  @Authorized(UserRole.Coach, UserRole.Admin)
+  @Query(() => CoachUsersPage)
+  async coachUsersPage(
+    @Ctx() ctx: GraphQLContext,
+    @Arg("limit", () => Int, { nullable: true, defaultValue: DEFAULT_PAGE_SIZE })
+    limit: number = DEFAULT_PAGE_SIZE,
+    @Arg("offset", () => Int, { nullable: true, defaultValue: 0 })
+    offset: number = 0,
+  ): Promise<CoachUsersPage> {
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
+
+    const [users, totalCount] = await User.findAndCount({
+      where: { role: UserRole.Coachee },
+      relations: {
+        profile: { weight_measures: true },
+        meals: true,
+      },
+      order: { createdAt: "DESC" },
+      take: limit,
+      skip: offset,
+    });
+    return { users: mapUsersToCoachUsers(users), totalCount };
   }
 }

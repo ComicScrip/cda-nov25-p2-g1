@@ -118,12 +118,6 @@ export default function Header() {
                 <Link href="/signup" className="text-white hover:text-gray-300 transition-colors">
                   Essayer gratuitement
                 </Link>
-                <Link
-                  href="/coach/login"
-                  className="text-white hover:text-gray-300 transition-colors"
-                >
-                  Espace coach
-                </Link>
               </>
             ))}
         </div>

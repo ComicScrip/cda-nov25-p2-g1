@@ -1,3 +1,47 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Build & compilé
+build/
+dist/
+*.tsbuildinfo
+
+# Variables d'environnement (ne pas commiter les secrets)
 .env
-build
+.env.local
+.env.*.local
+!.env.example
+
+# Logs & runtime
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+coverage/
+.nyc_output/
+*.lcov
+
+# Cache & outils
+.cache/
+.turbo/
+.eslintcache
+.biome-cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / éditeur (optionnel, si pas géré à la racine)
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker (fichiers générés localement)
+docker-compose.override.yml
+
+# Dépendances optionnelles
+optional_dependencies/
