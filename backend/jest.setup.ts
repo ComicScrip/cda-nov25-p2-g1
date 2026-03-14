@@ -19,8 +19,7 @@ process.env.DB_USER = process.env.DB_USER || "postgres";
 process.env.DB_PASS = process.env.DB_PASS || "postgres";
 process.env.DB_NAME = process.env.DB_NAME || "postgres";
 
-process.env.GRAPHQL_SERVER_PORT =
-  process.env.GRAPHQL_SERVER_PORT || "4000";
+process.env.GRAPHQL_SERVER_PORT = process.env.GRAPHQL_SERVER_PORT || "4000";
 process.env.CORS_ALLOWED_ORIGINS =
   process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000";
 
@@ -30,7 +29,10 @@ const { initApollo } = require("./src/apollo");
 const { initFastify } = require("./src/fastify");
 const { print } = require("graphql");
 
-let testServer: { start: () => Promise<void>; executeOperation: (...args: unknown[]) => Promise<unknown> };
+let testServer: {
+  start: () => Promise<void>;
+  executeOperation: (...args: unknown[]) => Promise<unknown>;
+};
 
 beforeAll(async () => {
   await db.initialize();
