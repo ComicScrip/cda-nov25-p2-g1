@@ -40,6 +40,41 @@ export type CoachDashboardStats = {
   users: StatData;
 };
 
+export type CoachDishAnalysisResult = {
+  __typename?: 'CoachDishAnalysisResult';
+  analysisId: Scalars['String']['output'];
+  analysisSummary: Scalars['String']['output'];
+  dishId: Scalars['String']['output'];
+  dishName: Scalars['String']['output'];
+  healthScore: Scalars['Float']['output'];
+  ingredients: Array<CoachDishIngredientType>;
+  mealType?: Maybe<Scalars['String']['output']>;
+  photoUrl?: Maybe<Scalars['String']['output']>;
+  totalNutrition: CoachDishTotalsType;
+  warnings: Array<Scalars['String']['output']>;
+};
+
+export type CoachDishIngredientType = {
+  __typename?: 'CoachDishIngredientType';
+  calories?: Maybe<Scalars['Float']['output']>;
+  carbs?: Maybe<Scalars['Float']['output']>;
+  estimatedQuantityGrams?: Maybe<Scalars['Float']['output']>;
+  fat?: Maybe<Scalars['Float']['output']>;
+  name: Scalars['String']['output'];
+  protein?: Maybe<Scalars['Float']['output']>;
+};
+
+export type CoachDishTotalsType = {
+  __typename?: 'CoachDishTotalsType';
+  calories?: Maybe<Scalars['Float']['output']>;
+  carbs?: Maybe<Scalars['Float']['output']>;
+  fat?: Maybe<Scalars['Float']['output']>;
+  fiber?: Maybe<Scalars['Float']['output']>;
+  protein?: Maybe<Scalars['Float']['output']>;
+  salt?: Maybe<Scalars['Float']['output']>;
+  sugar?: Maybe<Scalars['Float']['output']>;
+};
+
 export type CoachRecipesPageData = {
   __typename?: 'CoachRecipesPageData';
   averageCalories: Scalars['Int']['output'];
@@ -72,6 +107,19 @@ export type CoachUser = {
   userId: Scalars['String']['output'];
 };
 
+export type CoachUserDetail = {
+  __typename?: 'CoachUserDetail';
+  currentWeight?: Maybe<Scalars['Float']['output']>;
+  displayName: Scalars['String']['output'];
+  email: Scalars['String']['output'];
+  evolutionData: Array<EvolutionDataPoint>;
+  goal?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Float']['output']>;
+  imc?: Maybe<Scalars['Float']['output']>;
+  pathologies: Array<Scalars['String']['output']>;
+  todayMeals: Array<UserMealData>;
+};
+
 export type CoachUserMealTestData = {
   __typename?: 'CoachUserMealTestData';
   aiInsights: Array<Scalars['String']['output']>;
@@ -96,17 +144,9 @@ export type CoachUsersPage = {
   users: Array<CoachUser>;
 };
 
-export type CoachUserDetail = {
-  __typename?: 'CoachUserDetail';
-  currentWeight?: Maybe<Scalars['Float']['output']>;
-  displayName: Scalars['String']['output'];
-  email: Scalars['String']['output'];
-  evolutionData: Array<EvolutionDataPoint>;
-  goal?: Maybe<Scalars['String']['output']>;
-  height?: Maybe<Scalars['Float']['output']>;
-  imc?: Maybe<Scalars['Float']['output']>;
-  pathologies: Array<Scalars['String']['output']>;
-  todayMeals: Array<UserMealData>;
+export type CreateDishFromScannerSubmissionInput = {
+  calories: Scalars['Float']['input'];
+  submissionId: Scalars['String']['input'];
 };
 
 export type CreateRecipeInput = {
@@ -214,6 +254,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   analyzeMealImage: NutritionalAnalysisType;
   assignRecipeToUser: Scalars['Boolean']['output'];
+  createDishFromScannerSubmission: Scalars['String']['output'];
   createRecipe?: Maybe<Recipe>;
   login: Scalars['String']['output'];
   loginCoach: Scalars['String']['output'];
@@ -236,6 +277,11 @@ export type MutationAnalyzeMealImageArgs = {
 export type MutationAssignRecipeToUserArgs = {
   recipeId: Scalars['String']['input'];
   userId: Scalars['String']['input'];
+};
+
+
+export type MutationCreateDishFromScannerSubmissionArgs = {
+  input: CreateDishFromScannerSubmissionInput;
 };
 
 
@@ -350,11 +396,13 @@ export type Pathology = {
 export type Query = {
   __typename?: 'Query';
   coachDashboardData?: Maybe<CoachDashboardData>;
+  coachGetDishAnalysis?: Maybe<CoachDishAnalysisResult>;
   coachRecipesPageData?: Maybe<CoachRecipesPageData>;
   coachScannerSubmissionsTestData: Array<CoachScannerSubmissionTestData>;
-  coachUserMealsTestData: Array<CoachUserMealTestData>;
   coachUserDetail?: Maybe<CoachUserDetail>;
+  coachUserMealsTestData: Array<CoachUserMealTestData>;
   coachUsers: Array<CoachUser>;
+  coachUsersRecentScanners: Array<CoachUser>;
   coachUsersPage: CoachUsersPage;
   me?: Maybe<User>;
   userDashboardData?: Maybe<DashboardData>;
@@ -363,6 +411,11 @@ export type Query = {
   userProfileData?: Maybe<UserProfileData>;
   userRecipesData: Array<RecipeData>;
   users: Array<User>;
+};
+
+
+export type QueryCoachGetDishAnalysisArgs = {
+  dishId: Scalars['String']['input'];
 };
 
 
@@ -378,19 +431,24 @@ export type QueryCoachScannerSubmissionsTestDataArgs = {
 };
 
 
+export type QueryCoachUserDetailArgs = {
+  userId: Scalars['String']['input'];
+};
+
+
 export type QueryCoachUserMealsTestDataArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   userId?: InputMaybe<Scalars['String']['input']>;
 };
 
 
+export type QueryCoachUsersRecentScannersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QueryCoachUsersPageArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
-};
-
-export type QueryCoachUserDetailArgs = {
-  userId: Scalars['String']['input'];
 };
 
 
@@ -521,6 +579,12 @@ export type User = {
   uploaded_at: Scalars['DateTimeISO']['output'];
 };
 
+export type UserMealIngredientData = {
+  __typename?: 'UserMealIngredientData';
+  name: Scalars['String']['output'];
+  quantity?: Maybe<Scalars['Float']['output']>;
+};
+
 export type UserMealData = {
   __typename?: 'UserMealData';
   aiInsights: Array<Scalars['String']['output']>;
@@ -532,6 +596,7 @@ export type UserMealData = {
   consumedAt: Scalars['String']['output'];
   fat: Scalars['Int']['output'];
   id: Scalars['String']['output'];
+  ingredients: Array<UserMealIngredientData>;
   name: Scalars['String']['output'];
   photo: Scalars['String']['output'];
   protein: Scalars['Int']['output'];
@@ -607,6 +672,13 @@ export type AssignRecipeToUserMutationVariables = Exact<{
 
 export type AssignRecipeToUserMutation = { __typename?: 'Mutation', assignRecipeToUser: boolean };
 
+export type CreateDishFromScannerSubmissionMutationVariables = Exact<{
+  input: CreateDishFromScannerSubmissionInput;
+}>;
+
+
+export type CreateDishFromScannerSubmissionMutation = { __typename?: 'Mutation', createDishFromScannerSubmission: string };
+
 export type CreateRecipeMutationVariables = Exact<{
   input: CreateRecipeInput;
 }>;
@@ -680,6 +752,13 @@ export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number, currentWeight?: number | null, goal?: string | null, targetDailyCalories?: number | null }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, photo: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
 
+export type CoachGetDishAnalysisQueryVariables = Exact<{
+  dishId: Scalars['String']['input'];
+}>;
+
+
+export type CoachGetDishAnalysisQuery = { __typename?: 'Query', coachGetDishAnalysis?: { __typename?: 'CoachDishAnalysisResult', dishId: string, analysisId: string, dishName: string, analysisSummary: string, healthScore: number, warnings: Array<string>, mealType?: string | null, photoUrl?: string | null, ingredients: Array<{ __typename?: 'CoachDishIngredientType', name: string, estimatedQuantityGrams?: number | null, calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null }>, totalNutrition: { __typename?: 'CoachDishTotalsType', calories?: number | null, protein?: number | null, carbs?: number | null, fat?: number | null, fiber?: number | null, sugar?: number | null, salt?: number | null } } | null };
+
 export type CoachRecipesPageDataQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
   offset: Scalars['Int']['input'];
@@ -688,10 +767,39 @@ export type CoachRecipesPageDataQueryVariables = Exact<{
 
 export type CoachRecipesPageDataQuery = { __typename?: 'Query', coachRecipesPageData?: { __typename?: 'CoachRecipesPageData', totalCount: number, coachCount: number, averageCalories: number, recipes: Array<{ __typename?: 'RecipeData', id: string, title: string, source: string, photo: string, prepTime: string, servings: number, difficulty: string, calories: number, protein: number, carbs: number, fat: number, fiber: number, description: string, prepSteps: Array<string>, benefits: Array<string>, coachNote: string }> } | null };
 
+export type CoachScannerSubmissionsTestDataQueryVariables = Exact<{
+  userId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type CoachScannerSubmissionsTestDataQuery = { __typename?: 'Query', coachScannerSubmissionsTestData: Array<{ __typename?: 'CoachScannerSubmissionTestData', id: string, userId: string, userEmail?: string | null, createdAt: string, payloadJson: string }> };
+
+export type CoachUserDetailQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type CoachUserDetailQuery = { __typename?: 'Query', coachUserDetail?: { __typename?: 'CoachUserDetail', displayName: string, email: string, height?: number | null, currentWeight?: number | null, goal?: string | null, pathologies: Array<string>, imc?: number | null, evolutionData: Array<{ __typename?: 'EvolutionDataPoint', week: string, weight: number, calories: number, score: number }>, todayMeals: Array<{ __typename?: 'UserMealData', id: string, name: string, consumedAt: string, calories: number, protein: number, carbs: number, fat: number, aiScore: number, photo: string, aiInsights: Array<string>, coachComment: string, coachName: string }> } | null };
+
+export type CoachUserMealsTestDataQueryVariables = Exact<{
+  userId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type CoachUserMealsTestDataQuery = { __typename?: 'Query', coachUserMealsTestData: Array<{ __typename?: 'CoachUserMealTestData', id: string, userId: string, userEmail?: string | null, name: string, consumedAt: string, calories: number, protein: number, carbs: number, fat: number, aiScore: number, photo: string, aiInsights: Array<string>, coachComment: string, coachName: string }> };
+
 export type CoachUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type CoachUserQuery = { __typename?: 'Query', coachUsers: Array<{ __typename?: 'CoachUser', userId: string, email: string, displayName: string, initialWeight?: number | null, currentWeight?: number | null, goalLabel?: string | null, caloricGoal?: number | null, mealsCount: number, scoreRounded?: number | null, createdAt: string }> };
+
+export type CoachUsersRecentScannersQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type CoachUsersRecentScannersQuery = { __typename?: 'Query', coachUsersRecentScanners: Array<{ __typename?: 'CoachUser', userId: string, email: string, displayName: string, initialWeight?: number | null, currentWeight?: number | null, goalLabel?: string | null, caloricGoal?: number | null, mealsCount: number, scoreRounded?: number | null, createdAt: string }> };
 
 export type CoachUsersPageQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -700,12 +808,6 @@ export type CoachUsersPageQueryVariables = Exact<{
 
 
 export type CoachUsersPageQuery = { __typename?: 'Query', coachUsersPage: { __typename?: 'CoachUsersPage', totalCount: number, users: Array<{ __typename?: 'CoachUser', userId: string, email: string, displayName: string, role: string, initialWeight?: number | null, currentWeight?: number | null, goalLabel?: string | null, caloricGoal?: number | null, mealsCount: number, scoreRounded?: number | null, createdAt: string }> } };
-
-export type CoachUserDetailQueryVariables = Exact<{
-  userId: Scalars['String']['input'];
-}>;
-
-export type CoachUserDetailQuery = { __typename?: 'Query', coachUserDetail?: { __typename?: 'CoachUserDetail', displayName: string, email: string, height?: number | null, currentWeight?: number | null, goal?: string | null, pathologies: Array<string>, imc?: number | null, evolutionData: Array<{ __typename?: 'EvolutionDataPoint', week: string, weight: number, calories: number, score: number }>, todayMeals: Array<{ __typename?: 'UserMealData', id: string, name: string, consumedAt: string, calories: number, protein: number, carbs: number, fat: number, aiScore: number, photo: string, aiInsights: Array<string>, coachComment: string, coachName: string }> } | null };
 
 export type ProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -725,10 +827,12 @@ export type UserEvolutionDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type UserEvolutionDataQuery = { __typename?: 'Query', userEvolutionData: Array<{ __typename?: 'EvolutionDataPoint', week: string, weight: number, calories: number, score: number }> };
 
-export type UserMealsDataQueryVariables = Exact<{ [key: string]: never; }>;
+export type UserMealsDataQueryVariables = Exact<{
+  includeIngredients?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
 
 
-export type UserMealsDataQuery = { __typename?: 'Query', userMealsData: Array<{ __typename?: 'UserMealData', id: string, name: string, consumedAt: string, calories: number, protein: number, carbs: number, fat: number, aiScore: number, photo: string, aiInsights: Array<string>, coachComment: string, coachName: string }> };
+export type UserMealsDataQuery = { __typename?: 'Query', userMealsData: Array<{ __typename?: 'UserMealData', id: string, name: string, consumedAt: string, calories: number, protein: number, carbs: number, fat: number, aiScore: number, photo: string, ingredients?: Array<{ __typename?: 'UserMealIngredientData', name: string, quantity?: number | null }>, aiInsights: Array<string>, coachComment: string, coachName: string }> };
 
 export type UserProfileDataQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -833,6 +937,37 @@ export function useAssignRecipeToUserMutation(baseOptions?: ApolloReactHooks.Mut
 export type AssignRecipeToUserMutationHookResult = ReturnType<typeof useAssignRecipeToUserMutation>;
 export type AssignRecipeToUserMutationResult = ApolloReactCommon.MutationResult<AssignRecipeToUserMutation>;
 export type AssignRecipeToUserMutationOptions = ApolloReactCommon.BaseMutationOptions<AssignRecipeToUserMutation, AssignRecipeToUserMutationVariables>;
+export const CreateDishFromScannerSubmissionDocument = gql`
+    mutation CreateDishFromScannerSubmission($input: CreateDishFromScannerSubmissionInput!) {
+  createDishFromScannerSubmission(input: $input)
+}
+    `;
+export type CreateDishFromScannerSubmissionMutationFn = ApolloReactCommon.MutationFunction<CreateDishFromScannerSubmissionMutation, CreateDishFromScannerSubmissionMutationVariables>;
+
+/**
+ * __useCreateDishFromScannerSubmissionMutation__
+ *
+ * To run a mutation, you first call `useCreateDishFromScannerSubmissionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateDishFromScannerSubmissionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createDishFromScannerSubmissionMutation, { data, loading, error }] = useCreateDishFromScannerSubmissionMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateDishFromScannerSubmissionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateDishFromScannerSubmissionMutation, CreateDishFromScannerSubmissionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateDishFromScannerSubmissionMutation, CreateDishFromScannerSubmissionMutationVariables>(CreateDishFromScannerSubmissionDocument, options);
+      }
+export type CreateDishFromScannerSubmissionMutationHookResult = ReturnType<typeof useCreateDishFromScannerSubmissionMutation>;
+export type CreateDishFromScannerSubmissionMutationResult = ApolloReactCommon.MutationResult<CreateDishFromScannerSubmissionMutation>;
+export type CreateDishFromScannerSubmissionMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateDishFromScannerSubmissionMutation, CreateDishFromScannerSubmissionMutationVariables>;
 export const CreateRecipeDocument = gql`
     mutation CreateRecipe($input: CreateRecipeInput!) {
   createRecipe(input: $input) {
@@ -1252,6 +1387,73 @@ export type CoachDashboardDataQueryHookResult = ReturnType<typeof useCoachDashbo
 export type CoachDashboardDataLazyQueryHookResult = ReturnType<typeof useCoachDashboardDataLazyQuery>;
 export type CoachDashboardDataSuspenseQueryHookResult = ReturnType<typeof useCoachDashboardDataSuspenseQuery>;
 export type CoachDashboardDataQueryResult = ApolloReactCommon.QueryResult<CoachDashboardDataQuery, CoachDashboardDataQueryVariables>;
+export const CoachGetDishAnalysisDocument = gql`
+    query CoachGetDishAnalysis($dishId: String!) {
+  coachGetDishAnalysis(dishId: $dishId) {
+    dishId
+    analysisId
+    dishName
+    ingredients {
+      name
+      estimatedQuantityGrams
+      calories
+      protein
+      carbs
+      fat
+    }
+    totalNutrition {
+      calories
+      protein
+      carbs
+      fat
+      fiber
+      sugar
+      salt
+    }
+    analysisSummary
+    healthScore
+    warnings
+    mealType
+    photoUrl
+  }
+}
+    `;
+
+/**
+ * __useCoachGetDishAnalysisQuery__
+ *
+ * To run a query within a React component, call `useCoachGetDishAnalysisQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCoachGetDishAnalysisQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCoachGetDishAnalysisQuery({
+ *   variables: {
+ *      dishId: // value for 'dishId'
+ *   },
+ * });
+ */
+export function useCoachGetDishAnalysisQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables> & ({ variables: CoachGetDishAnalysisQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>(CoachGetDishAnalysisDocument, options);
+      }
+export function useCoachGetDishAnalysisLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>(CoachGetDishAnalysisDocument, options);
+        }
+// @ts-ignore
+export function useCoachGetDishAnalysisSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>;
+export function useCoachGetDishAnalysisSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachGetDishAnalysisQuery | undefined, CoachGetDishAnalysisQueryVariables>;
+export function useCoachGetDishAnalysisSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>(CoachGetDishAnalysisDocument, options);
+        }
+export type CoachGetDishAnalysisQueryHookResult = ReturnType<typeof useCoachGetDishAnalysisQuery>;
+export type CoachGetDishAnalysisLazyQueryHookResult = ReturnType<typeof useCoachGetDishAnalysisLazyQuery>;
+export type CoachGetDishAnalysisSuspenseQueryHookResult = ReturnType<typeof useCoachGetDishAnalysisSuspenseQuery>;
+export type CoachGetDishAnalysisQueryResult = ApolloReactCommon.QueryResult<CoachGetDishAnalysisQuery, CoachGetDishAnalysisQueryVariables>;
 export const CoachRecipesPageDataDocument = gql`
     query CoachRecipesPageData($limit: Int!, $offset: Int!) {
   coachRecipesPageData(limit: $limit, offset: $offset) {
@@ -1316,6 +1518,180 @@ export type CoachRecipesPageDataQueryHookResult = ReturnType<typeof useCoachReci
 export type CoachRecipesPageDataLazyQueryHookResult = ReturnType<typeof useCoachRecipesPageDataLazyQuery>;
 export type CoachRecipesPageDataSuspenseQueryHookResult = ReturnType<typeof useCoachRecipesPageDataSuspenseQuery>;
 export type CoachRecipesPageDataQueryResult = ApolloReactCommon.QueryResult<CoachRecipesPageDataQuery, CoachRecipesPageDataQueryVariables>;
+export const CoachScannerSubmissionsTestDataDocument = gql`
+    query CoachScannerSubmissionsTestData($userId: String, $limit: Int) {
+  coachScannerSubmissionsTestData(userId: $userId, limit: $limit) {
+    id
+    userId
+    userEmail
+    createdAt
+    payloadJson
+  }
+}
+    `;
+
+/**
+ * __useCoachScannerSubmissionsTestDataQuery__
+ *
+ * To run a query within a React component, call `useCoachScannerSubmissionsTestDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCoachScannerSubmissionsTestDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCoachScannerSubmissionsTestDataQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useCoachScannerSubmissionsTestDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>(CoachScannerSubmissionsTestDataDocument, options);
+      }
+export function useCoachScannerSubmissionsTestDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>(CoachScannerSubmissionsTestDataDocument, options);
+        }
+// @ts-ignore
+export function useCoachScannerSubmissionsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>;
+export function useCoachScannerSubmissionsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachScannerSubmissionsTestDataQuery | undefined, CoachScannerSubmissionsTestDataQueryVariables>;
+export function useCoachScannerSubmissionsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>(CoachScannerSubmissionsTestDataDocument, options);
+        }
+export type CoachScannerSubmissionsTestDataQueryHookResult = ReturnType<typeof useCoachScannerSubmissionsTestDataQuery>;
+export type CoachScannerSubmissionsTestDataLazyQueryHookResult = ReturnType<typeof useCoachScannerSubmissionsTestDataLazyQuery>;
+export type CoachScannerSubmissionsTestDataSuspenseQueryHookResult = ReturnType<typeof useCoachScannerSubmissionsTestDataSuspenseQuery>;
+export type CoachScannerSubmissionsTestDataQueryResult = ApolloReactCommon.QueryResult<CoachScannerSubmissionsTestDataQuery, CoachScannerSubmissionsTestDataQueryVariables>;
+export const CoachUserDetailDocument = gql`
+    query CoachUserDetail($userId: String!) {
+  coachUserDetail(userId: $userId) {
+    displayName
+    email
+    height
+    currentWeight
+    goal
+    pathologies
+    imc
+    evolutionData {
+      week
+      weight
+      calories
+      score
+    }
+    todayMeals {
+      id
+      name
+      consumedAt
+      calories
+      protein
+      carbs
+      fat
+      aiScore
+      photo
+      aiInsights
+      coachComment
+      coachName
+    }
+  }
+}
+    `;
+
+/**
+ * __useCoachUserDetailQuery__
+ *
+ * To run a query within a React component, call `useCoachUserDetailQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCoachUserDetailQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCoachUserDetailQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useCoachUserDetailQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables> & ({ variables: CoachUserDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachUserDetailQuery, CoachUserDetailQueryVariables>(CoachUserDetailDocument, options);
+      }
+export function useCoachUserDetailLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CoachUserDetailQuery, CoachUserDetailQueryVariables>(CoachUserDetailDocument, options);
+        }
+// @ts-ignore
+export function useCoachUserDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachUserDetailQuery, CoachUserDetailQueryVariables>;
+export function useCoachUserDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachUserDetailQuery | undefined, CoachUserDetailQueryVariables>;
+export function useCoachUserDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CoachUserDetailQuery, CoachUserDetailQueryVariables>(CoachUserDetailDocument, options);
+        }
+export type CoachUserDetailQueryHookResult = ReturnType<typeof useCoachUserDetailQuery>;
+export type CoachUserDetailLazyQueryHookResult = ReturnType<typeof useCoachUserDetailLazyQuery>;
+export type CoachUserDetailSuspenseQueryHookResult = ReturnType<typeof useCoachUserDetailSuspenseQuery>;
+export type CoachUserDetailQueryResult = ApolloReactCommon.QueryResult<CoachUserDetailQuery, CoachUserDetailQueryVariables>;
+export const CoachUserMealsTestDataDocument = gql`
+    query CoachUserMealsTestData($userId: String, $limit: Int) {
+  coachUserMealsTestData(userId: $userId, limit: $limit) {
+    id
+    userId
+    userEmail
+    name
+    consumedAt
+    calories
+    protein
+    carbs
+    fat
+    aiScore
+    photo
+    aiInsights
+    coachComment
+    coachName
+  }
+}
+    `;
+
+/**
+ * __useCoachUserMealsTestDataQuery__
+ *
+ * To run a query within a React component, call `useCoachUserMealsTestDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCoachUserMealsTestDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCoachUserMealsTestDataQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useCoachUserMealsTestDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>(CoachUserMealsTestDataDocument, options);
+      }
+export function useCoachUserMealsTestDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>(CoachUserMealsTestDataDocument, options);
+        }
+// @ts-ignore
+export function useCoachUserMealsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>;
+export function useCoachUserMealsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CoachUserMealsTestDataQuery | undefined, CoachUserMealsTestDataQueryVariables>;
+export function useCoachUserMealsTestDataSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>(CoachUserMealsTestDataDocument, options);
+        }
+export type CoachUserMealsTestDataQueryHookResult = ReturnType<typeof useCoachUserMealsTestDataQuery>;
+export type CoachUserMealsTestDataLazyQueryHookResult = ReturnType<typeof useCoachUserMealsTestDataLazyQuery>;
+export type CoachUserMealsTestDataSuspenseQueryHookResult = ReturnType<typeof useCoachUserMealsTestDataSuspenseQuery>;
+export type CoachUserMealsTestDataQueryResult = ApolloReactCommon.QueryResult<CoachUserMealsTestDataQuery, CoachUserMealsTestDataQueryVariables>;
 export const CoachUserDocument = gql`
     query CoachUser {
   coachUsers {
@@ -1367,6 +1743,32 @@ export type CoachUserQueryHookResult = ReturnType<typeof useCoachUserQuery>;
 export type CoachUserLazyQueryHookResult = ReturnType<typeof useCoachUserLazyQuery>;
 export type CoachUserSuspenseQueryHookResult = ReturnType<typeof useCoachUserSuspenseQuery>;
 export type CoachUserQueryResult = ApolloReactCommon.QueryResult<CoachUserQuery, CoachUserQueryVariables>;
+export const CoachUsersRecentScannersDocument = gql`
+    query CoachUsersRecentScanners($limit: Int) {
+  coachUsersRecentScanners(limit: $limit) {
+    userId
+    email
+    displayName
+    initialWeight
+    currentWeight
+    goalLabel
+    caloricGoal
+    mealsCount
+    scoreRounded
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useCoachUsersRecentScannersQuery__
+ * Charge d’abord les coachés ayant le plus récemment scanné (pour affichage progressif).
+ */
+export function useCoachUsersRecentScannersQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CoachUsersRecentScannersQuery, CoachUsersRecentScannersQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CoachUsersRecentScannersQuery, CoachUsersRecentScannersQueryVariables>(CoachUsersRecentScannersDocument, options);
+      }
+export type CoachUsersRecentScannersQueryHookResult = ReturnType<typeof useCoachUsersRecentScannersQuery>;
 export const CoachUsersPageDocument = gql`
     query CoachUsersPage($limit: Int, $offset: Int) {
   coachUsersPage(limit: $limit, offset: $offset) {
@@ -1424,49 +1826,6 @@ export type CoachUsersPageQueryHookResult = ReturnType<typeof useCoachUsersPageQ
 export type CoachUsersPageLazyQueryHookResult = ReturnType<typeof useCoachUsersPageLazyQuery>;
 export type CoachUsersPageSuspenseQueryHookResult = ReturnType<typeof useCoachUsersPageSuspenseQuery>;
 export type CoachUsersPageQueryResult = ApolloReactCommon.QueryResult<CoachUsersPageQuery, CoachUsersPageQueryVariables>;
-export const CoachUserDetailDocument = gql`
-    query CoachUserDetail($userId: String!) {
-  coachUserDetail(userId: $userId) {
-    displayName
-    email
-    height
-    currentWeight
-    goal
-    pathologies
-    imc
-    evolutionData {
-      week
-      weight
-      calories
-      score
-    }
-    todayMeals {
-      id
-      name
-      consumedAt
-      calories
-      protein
-      carbs
-      fat
-      aiScore
-      photo
-      aiInsights
-      coachComment
-      coachName
-    }
-  }
-}
-    `;
-
-/**
- * __useCoachUserDetailQuery__
- */
-export function useCoachUserDetailQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CoachUserDetailQuery, CoachUserDetailQueryVariables> & ({ variables: CoachUserDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<CoachUserDetailQuery, CoachUserDetailQueryVariables>(CoachUserDetailDocument, options);
-      }
-export type CoachUserDetailQueryHookResult = ReturnType<typeof useCoachUserDetailQuery>;
-export type CoachUserDetailQueryResult = ApolloReactCommon.QueryResult<CoachUserDetailQuery, CoachUserDetailQueryVariables>;
 export const ProfileDocument = gql`
     query profile {
   me {
@@ -1622,7 +1981,7 @@ export type UserEvolutionDataLazyQueryHookResult = ReturnType<typeof useUserEvol
 export type UserEvolutionDataSuspenseQueryHookResult = ReturnType<typeof useUserEvolutionDataSuspenseQuery>;
 export type UserEvolutionDataQueryResult = ApolloReactCommon.QueryResult<UserEvolutionDataQuery, UserEvolutionDataQueryVariables>;
 export const UserMealsDataDocument = gql`
-    query UserMealsData {
+    query UserMealsData($includeIngredients: Boolean = true) {
   userMealsData {
     id
     name
@@ -1633,6 +1992,10 @@ export const UserMealsDataDocument = gql`
     fat
     aiScore
     photo
+    ingredients @include(if: $includeIngredients) {
+      name
+      quantity
+    }
     aiInsights
     coachComment
     coachName

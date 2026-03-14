@@ -1,0 +1,14 @@
+query CoachUsersRecentScanners($limit: Int) {
+  coachUsersRecentScanners(limit: $limit) {
+    userId
+    email
+    displayName
+    initialWeight
+    currentWeight
+    goalLabel
+    caloricGoal
+    mealsCount
+    scoreRounded
+    createdAt
+  }
+}

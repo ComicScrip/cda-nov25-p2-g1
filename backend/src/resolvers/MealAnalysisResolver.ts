@@ -6,6 +6,8 @@ import {
   Float,
   InputType,
   Mutation,
+  ObjectType,
+  Query,
   Resolver,
 } from "type-graphql";
 import {
@@ -19,6 +21,8 @@ import { AnalysisStatus, MealType, Status, UserRole } from "../entities/enums";
 import { Ingredient } from "../entities/Ingredient";
 import { Meal } from "../entities/Meal";
 import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
+import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
+import type { User } from "../entities/User";
 import type { GraphQLContext } from "../types";
 
 // Maps French meal type strings from Gemini to MealType enum values
@@ -202,9 +206,161 @@ class UpdateDishNameInput {
   dishName!: string;
 }
 
+// Input: créer un plat en base à partir d'une soumission scanner et enregistrer les calories (coach)
+@InputType()
+class CreateDishFromScannerSubmissionInput {
+  @Field()
+  submissionId!: string;
+
+  @Field(() => Float)
+  calories!: number;
+}
+
+// Result type for coach loading a coachee's dish analysis (same shape as analysis result + ids)
+@ObjectType()
+class CoachDishIngredientType {
+  @Field()
+  name!: string;
+
+  @Field(() => Float, { nullable: true })
+  estimatedQuantityGrams?: number;
+
+  @Field(() => Float, { nullable: true })
+  calories?: number;
+
+  @Field(() => Float, { nullable: true })
+  protein?: number;
+
+  @Field(() => Float, { nullable: true })
+  carbs?: number;
+
+  @Field(() => Float, { nullable: true })
+  fat?: number;
+}
+
+@ObjectType()
+class CoachDishTotalsType {
+  @Field(() => Float, { nullable: true })
+  calories?: number;
+
+  @Field(() => Float, { nullable: true })
+  protein?: number;
+
+  @Field(() => Float, { nullable: true })
+  carbs?: number;
+
+  @Field(() => Float, { nullable: true })
+  fat?: number;
+
+  @Field(() => Float, { nullable: true })
+  fiber?: number;
+
+  @Field(() => Float, { nullable: true })
+  sugar?: number;
+
+  @Field(() => Float, { nullable: true })
+  salt?: number;
+}
+
+@ObjectType()
+class CoachDishAnalysisResult {
+  @Field()
+  dishId!: string;
+
+  @Field()
+  analysisId!: string;
+
+  @Field()
+  dishName!: string;
+
+  @Field(() => [CoachDishIngredientType])
+  ingredients!: CoachDishIngredientType[];
+
+  @Field(() => CoachDishTotalsType)
+  totalNutrition!: CoachDishTotalsType;
+
+  @Field()
+  analysisSummary!: string;
+
+  @Field(() => Float)
+  healthScore!: number;
+
+  @Field(() => [String])
+  warnings!: string[];
+
+  @Field({ nullable: true })
+  mealType?: string;
+
+  @Field({ nullable: true })
+  photoUrl?: string;
+}
+
 // Resolver for meal analysis workflow (save, update quantities, update calories)
 @Resolver()
 export default class MealAnalysisResolver {
+  // Coach loads a coachee's saved dish analysis to view and optionally update final calories.
+  @Query(() => CoachDishAnalysisResult, { nullable: true })
+  @Authorized("coach", "admin")
+  async coachGetDishAnalysis(
+    @Ctx() context: GraphQLContext,
+    @Arg("dishId") dishId: string,
+  ): Promise<CoachDishAnalysisResult | null> {
+    await getCurrentUser(context);
+
+    const dish = await Dish.findOne({
+      where: { id: dishId },
+      relations: [
+        "meal",
+        "meal.user",
+        "analysis",
+        "dish_ingredients",
+        "dish_ingredients.ingredient",
+      ],
+    });
+
+    if (!dish?.analysis || !dish.meal?.user) return null;
+    if (dish.meal.user.role !== UserRole.Coachee) return null;
+
+    const a = dish.analysis;
+    const meal = dish.meal;
+    const dishName = meal.name?.trim() || "Plat";
+
+    const ingredients = (dish.dish_ingredients ?? []).map((di) => ({
+      name: di.ingredient?.name ?? "Ingrédient",
+      estimatedQuantityGrams: di.quantity ?? undefined,
+      calories: undefined,
+      protein: undefined,
+      carbs: undefined,
+      fat: undefined,
+    }));
+
+    const warnings = (a.warnings ?? "")
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    return {
+      dishId: dish.id,
+      analysisId: a.id,
+      dishName,
+      ingredients,
+      totalNutrition: {
+        calories: a.calories ?? undefined,
+        protein: a.proteins ?? undefined,
+        carbs: a.carbohydrates ?? undefined,
+        fat: a.lipids ?? undefined,
+        fiber: a.fiber ?? undefined,
+        sugar: a.sugar ?? undefined,
+        salt: a.sodium ?? undefined,
+      },
+      analysisSummary: a.suggestions ?? "",
+      healthScore: Number(a.mealHealthScore ?? 0),
+      warnings,
+      mealType: meal.mealType ?? undefined,
+      photoUrl: dish.photoUrl ?? undefined,
+    };
+  }
+
   // Saves meal analysis with validation against the configured AI providers.
   @Mutation(() => String)
   @Authorized()
@@ -387,17 +543,21 @@ export default class MealAnalysisResolver {
       throw new Error("Analysis not found");
     }
 
-    dish.analysis.calories = recalculatedAnalysis.totalNutrition.calories;
-    dish.analysis.proteins = recalculatedAnalysis.totalNutrition.protein;
-    dish.analysis.carbohydrates = recalculatedAnalysis.totalNutrition.carbs;
-    dish.analysis.lipids = recalculatedAnalysis.totalNutrition.fat;
-    dish.analysis.fiber = recalculatedAnalysis.totalNutrition.fiber;
-    dish.analysis.sugar = recalculatedAnalysis.totalNutrition.sugar;
-    dish.analysis.sodium = recalculatedAnalysis.totalNutrition.salt;
-    dish.analysis.mealHealthScore = recalculatedAnalysis.healthScore;
-    dish.analysis.suggestions = recalculatedAnalysis.analysisSummary;
-    dish.analysis.warnings = recalculatedAnalysis.warnings.join("; ");
-    dish.analysis.isModified = true;
+    const { totalNutrition, healthScore, analysisSummary, warnings } =
+      recalculatedAnalysis;
+    Object.assign(dish.analysis, {
+      calories: totalNutrition.calories,
+      proteins: totalNutrition.protein,
+      carbohydrates: totalNutrition.carbs,
+      lipids: totalNutrition.fat,
+      fiber: totalNutrition.fiber,
+      sugar: totalNutrition.sugar,
+      sodium: totalNutrition.salt,
+      mealHealthScore: healthScore,
+      suggestions: analysisSummary,
+      warnings: warnings.join("; "),
+      isModified: true,
+    });
     await dish.analysis.save();
 
     const updatedAnalysis = await Nutritional_Analysis.findOne({
@@ -411,16 +571,25 @@ export default class MealAnalysisResolver {
     return updatedAnalysis;
   }
 
-  // Updates final calories in analysis (coach validation)
+  // Updates final calories in analysis (coach validation).
+  // analysisId can be either the Nutritional_Analysis id or the Dish id (for frontend compatibility).
   @Mutation(() => Nutritional_Analysis)
   @Authorized("coach", "admin")
   async updateAnalysisCalories(
     @Arg("input") input: UpdateAnalysisCaloriesInput,
   ): Promise<Nutritional_Analysis> {
-    const analysis = await Nutritional_Analysis.findOne({
+    let analysis = await Nutritional_Analysis.findOne({
       where: { id: input.analysisId },
       relations: ["dish", "dish.meal", "dish.meal.user"],
     });
+
+    if (!analysis) {
+      const dish = await Dish.findOne({
+        where: { id: input.analysisId },
+        relations: ["analysis", "meal", "meal.user"],
+      });
+      if (dish?.analysis) analysis = dish.analysis;
+    }
 
     if (!analysis) {
       throw new Error("Analysis not found");
@@ -433,6 +602,96 @@ export default class MealAnalysisResolver {
     await analysis.save();
 
     return analysis;
+  }
+
+  // Crée un plat (Meal + Dish + Nutritional_Analysis) à partir d'une soumission scanner et enregistre les calories (coach).
+  // Retourne l'id du plat (dishId) pour que le front puisse ensuite utiliser updateAnalysisCalories si besoin.
+  @Mutation(() => String)
+  @Authorized("coach", "admin")
+  async createDishFromScannerSubmission(
+    @Arg("input") input: CreateDishFromScannerSubmissionInput,
+    @Ctx() context: GraphQLContext,
+  ): Promise<string> {
+    const currentUser = await getCurrentUser(context);
+
+    const submission = await Scanner_Coach_Submission.findOne({
+      where: { id: input.submissionId },
+      relations: ["user", "user.coach"],
+    });
+
+    if (!submission?.user) {
+      throw new Error("Soumission introuvable.");
+    }
+
+    const coachee = submission.user as User & { coach?: User | null };
+    if (
+      currentUser.role === UserRole.Coach &&
+      coachee.coach?.id !== currentUser.id
+    ) {
+      throw new Error("Vous ne pouvez pas créer un repas pour ce coaché.");
+    }
+
+    const payload = submission.payload as Record<string, unknown> | undefined;
+    const draft = payload?.draft as { imageUrl?: string } | undefined;
+    const details = payload?.details as
+      | { dishName?: string; mealMoment?: string }
+      | undefined;
+    const analysisPayload = payload?.analysis as
+      | {
+          nutrition_estimee?: {
+            calories_kcal?: { min: number; max: number };
+            proteines_g?: { min: number; max: number };
+            glucides_g?: { min: number; max: number };
+            lipides_g?: { min: number; max: number };
+            fibres_g?: { min: number; max: number };
+          };
+        }
+      | undefined;
+
+    const mid = (r: { min: number; max: number } | undefined): number =>
+      r ? (r.min + r.max) / 2 : 0;
+    const nut = analysisPayload?.nutrition_estimee;
+
+    const meal = Meal.create({
+      user: submission.user,
+      name: (details?.dishName as string)?.trim() || "Plat scanné",
+      mealType: mapMealTypeToEnum(details?.mealMoment),
+      consumedAt: new Date(),
+    });
+    await meal.save();
+
+    const photoUrl =
+      (typeof draft?.imageUrl === "string" && draft.imageUrl) || undefined;
+
+    const dish = Dish.create({
+      meal,
+      dishType: undefined,
+      analysisStatus: AnalysisStatus.Complete,
+      uploadedAt: new Date(),
+      photoUrl: photoUrl ?? undefined,
+    });
+    await dish.save();
+
+    const nutritionalAnalysis = Nutritional_Analysis.create({
+      calories: input.calories,
+      proteins: nut ? mid(nut.proteines_g) : undefined,
+      carbohydrates: nut ? mid(nut.glucides_g) : undefined,
+      lipids: nut ? mid(nut.lipides_g) : undefined,
+      fiber: nut ? mid(nut.fibres_g) : undefined,
+      mealHealthScore: undefined,
+      warnings: undefined,
+      suggestions: "Créé à partir d'une soumission scanner (analyse IA).",
+      status: Status.Publie,
+      isModified: true,
+      validatedAt: new Date(),
+      analyzedAt: new Date(),
+    });
+    await nutritionalAnalysis.save();
+
+    dish.analysis = nutritionalAnalysis;
+    await dish.save();
+
+    return dish.id;
   }
 
   // Updates the dish name (meal name) for coachees

@@ -1,0 +1,9 @@
+query CoachScannerSubmissionsTestData($userId: String, $limit: Int) {
+  coachScannerSubmissionsTestData(userId: $userId, limit: $limit) {
+    id
+    userId
+    userEmail
+    createdAt
+    payloadJson
+  }
+}

@@ -98,6 +98,15 @@ class DashboardData {
 }
 
 @ObjectType()
+class UserMealIngredientData {
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => Float, { nullable: true })
+  quantity!: number | null;
+}
+
+@ObjectType()
 class UserMealData {
   @Field(() => String)
   id!: string;
@@ -125,6 +134,9 @@ class UserMealData {
 
   @Field(() => String)
   photo!: string;
+
+  @Field(() => [UserMealIngredientData])
+  ingredients!: UserMealIngredientData[];
 
   @Field(() => [String])
   aiInsights!: string[];
@@ -405,6 +417,11 @@ async function resolveVisibleUserIds(
   return [currentUser.id];
 }
 
+type DishEntryIngredient = {
+  name: string;
+  quantity: number | null;
+};
+
 type DishEntry = {
   id: string;
   consumedAt: Date;
@@ -419,6 +436,7 @@ type DishEntry = {
   aiInsights: string[];
   coachName?: string;
   coachComment?: string;
+  ingredients: DishEntryIngredient[];
 };
 
 @Resolver()
@@ -426,7 +444,12 @@ export default class UserDataResolver {
   private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
     const meals = await Meal.find({
       where: { user: { id: userId } },
-      relations: ["dishes", "dishes.analysis"],
+      relations: [
+        "dishes",
+        "dishes.analysis",
+        "dishes.dish_ingredients",
+        "dishes.dish_ingredients.ingredient",
+      ],
       order: { consumedAt: "DESC" },
     });
 
@@ -443,6 +466,12 @@ export default class UserDataResolver {
             .map((line) => line.trim())
             .filter(Boolean);
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
+          const ingredients: DishEntryIngredient[] = (
+            dish.dish_ingredients ?? []
+          ).map((di) => ({
+            name: di.ingredient?.name ?? "Inconnu",
+            quantity: di.quantity != null ? Number(di.quantity) : null,
+          }));
 
           return {
             id: dish.id,
@@ -458,6 +487,7 @@ export default class UserDataResolver {
             aiInsights,
             coachName: coachSuggestion.coachName,
             coachComment: coachSuggestion.coachComment,
+            ingredients,
           };
         }),
       )
@@ -891,6 +921,10 @@ export default class UserDataResolver {
         fat: Math.round(dish.fats),
         aiScore: Math.round(dish.score),
         photo: dish.photoUrl?.trim() || fallbackPhoto,
+        ingredients: dish.ingredients.map((ing) => ({
+          name: ing.name,
+          quantity: ing.quantity,
+        })),
         aiInsights,
         coachComment:
           dish.coachComment?.trim() ||
@@ -1065,6 +1099,10 @@ export default class UserDataResolver {
           fat: Math.round(dish.fats),
           aiScore: Math.round(dish.score),
           photo: dish.photoUrl?.trim() || fallbackPhoto,
+          ingredients: dish.ingredients.map((ing) => ({
+            name: ing.name,
+            quantity: ing.quantity,
+          })),
           aiInsights,
           coachComment:
             dish.coachComment?.trim() ||

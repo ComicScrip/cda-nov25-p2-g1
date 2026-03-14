@@ -331,28 +331,40 @@ async function seedUsersProfilesWeights(
   const usedEmails = new Set<string>([FIXED_COACH_EMAIL]);
   const hashedSeedPassword = await hash(FIXED_SEEDED_PASSWORD);
 
-  const coachUser = await manager.save(
-    User.create({
-      email: FIXED_COACH_EMAIL,
-      hashedPassword: hashedSeedPassword,
-      role: UserRole.Coach,
-      last_login_at: faker.date.recent({ days: 10 }),
-    }),
-  );
+  // clearDB() + initializeDatabase() crée déjà le coach ; on le réutilise pour éviter duplicate key
+  let coachUser = await manager.findOne(User, {
+    where: { email: FIXED_COACH_EMAIL },
+  });
+  if (!coachUser) {
+    coachUser = await manager.save(
+      User.create({
+        email: FIXED_COACH_EMAIL,
+        hashedPassword: hashedSeedPassword,
+        role: UserRole.Coach,
+        last_login_at: faker.date.recent({ days: 10 }),
+      }),
+    );
+  }
   users.push(coachUser);
 
-  const coachProfile = await manager.save(
-    User_profile.create({
-      first_name: "Coach",
-      last_name: "Demo",
-      date_of_birth: new Date("1988-06-12") as any,
-      gender: "femme" as any,
-      height: 1.72 as any,
-      goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
-      user: coachUser,
-      pathologies: [],
-    } as any),
-  );
+  const existingCoachProfile = await manager.findOne(User_profile, {
+    where: { user: { id: coachUser.id } },
+    relations: ["user"],
+  });
+  const coachProfile = existingCoachProfile
+    ? existingCoachProfile
+    : await manager.save(
+        User_profile.create({
+          first_name: "Coach",
+          last_name: "Demo",
+          date_of_birth: new Date("1988-06-12") as any,
+          gender: "femme" as any,
+          height: 1.72 as any,
+          goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
+          user: coachUser,
+          pathologies: [],
+        } as any),
+      );
   profiles.push(coachProfile);
   await seedWeightMeasures(manager, coachProfile, days);
 

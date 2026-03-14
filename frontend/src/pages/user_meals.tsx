@@ -47,10 +47,19 @@ const formatMealTime = (consumedAt: string): string => {
 export default function RepasUtilisateurPage() {
   const router = useRouter();
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+  // Si le backend ne supporte pas encore "ingredients", on réessaie sans pour afficher les repas
+  const [omitIngredients, setOmitIngredients] = useState(false);
 
   const { data, loading, error } = useUserMealsDataQuery({
     fetchPolicy: "cache-and-network",
+    variables: { includeIngredients: !omitIngredients },
   });
+
+  useEffect(() => {
+    if (error && !omitIngredients) {
+      setOmitIngredients(true);
+    }
+  }, [error, omitIngredients]);
 
   const mealHistory = data?.userMealsData ?? [];
 
@@ -264,6 +273,27 @@ export default function RepasUtilisateurPage() {
                     <span className="font-semibold">Lipides:</span> {selectedMeal.fat} g
                   </div>
                 </div>
+
+                {(selectedMeal.ingredients?.length ?? 0) > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-[#3f5a3e]">
+                      Ingrédients et quantités
+                    </h3>
+                    <ul className="mt-2 space-y-1.5 text-[11px] text-[#445443]">
+                      {(selectedMeal.ingredients ?? []).map((ing, idx) => (
+                        <li
+                          key={`${ing.name}-${idx}`}
+                          className="flex justify-between gap-2 rounded-md bg-[#eef4e8] px-2 py-1.5"
+                        >
+                          <span className="font-medium text-[#2e3a2d]">{ing.name}</span>
+                          <span className="shrink-0 text-[#5a6758]">
+                            {ing.quantity != null ? `${ing.quantity}` : "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-[#3f5a3e]">
