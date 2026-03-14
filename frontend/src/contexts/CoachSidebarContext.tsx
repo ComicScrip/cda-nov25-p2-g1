@@ -1,14 +1,7 @@
+import { X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  type ReactNode,
-  useState,
-} from "react";
-import { X } from "lucide-react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
 
@@ -62,21 +55,21 @@ export function CoachSidebarPanel() {
     return () => m.removeEventListener("change", f);
   }, []);
 
-  if (!ctx) return null;
-
-  const { isOpen, close } = ctx;
-  const sidebarVisible = isDesktop || isOpen;
-
   const handleLogout = useCallback(async () => {
     try {
-      close();
+      ctx?.close();
       await logout();
       await refetch();
       router.push("/");
     } catch (err) {
       console.error("Logout error:", err);
     }
-  }, [close, logout, refetch, router]);
+  }, [ctx, logout, refetch, router]);
+
+  if (!ctx) return null;
+
+  const { isOpen, close } = ctx;
+  const sidebarVisible = isDesktop || isOpen;
   const isActive = (href: string) => router.pathname === href;
 
   return (

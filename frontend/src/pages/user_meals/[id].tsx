@@ -21,9 +21,7 @@ const formatMealDate = (consumedAt: string): string => {
 const formatMealTime = (consumedAt: string): string => {
   const date = new Date(consumedAt);
   if (Number.isNaN(date.getTime())) return "--h--";
-  return date
-    .toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-    .replace(":", "h");
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h");
 };
 
 export default function UserMealDetailPage() {
@@ -66,10 +64,7 @@ export default function UserMealDetailPage() {
 
   return (
     <HomeLayout pageTitle={meal.name} footerVariant="userSlim">
-      <UserPageLayout
-        activeNav="meals"
-        contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8"
-      >
+      <UserPageLayout activeNav="meals" contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8">
         <Button
           asChild
           variant="outline"
@@ -82,9 +77,7 @@ export default function UserMealDetailPage() {
 
         <article className="max-w-lg rounded-md border border-[#d3d8cf] bg-white p-4 shadow-[0_2px_5px_rgba(0,0,0,0.1)] md:p-5">
           <div className="mb-3 rounded-md bg-[#eef4e8] px-3 py-2 text-[#3d4e3c]">
-            <p className="text-[10px] uppercase tracking-wide text-[#5a6758]">
-              Prise du repas
-            </p>
+            <p className="text-[10px] uppercase tracking-wide text-[#5a6758]">Prise du repas</p>
             <p className="mt-1 text-xs font-semibold">
               {formatMealDate(meal.consumedAt)} à {formatMealTime(meal.consumedAt)}
             </p>
@@ -98,9 +91,7 @@ export default function UserMealDetailPage() {
               height={650}
               sizes="100vw"
               className="h-44 w-full object-cover"
-              unoptimized={
-                meal.photo.startsWith("data:") || meal.photo.startsWith("blob:")
-              }
+              unoptimized={meal.photo.startsWith("data:") || meal.photo.startsWith("blob:")}
             />
           </div>
 
@@ -158,9 +149,7 @@ export default function UserMealDetailPage() {
           </div>
 
           <div className="mt-4 rounded-md bg-[#dcefd9] p-3 text-[11px] text-[#274427]">
-            <h2 className="text-xs font-semibold uppercase tracking-wide">
-              Commentaire coach
-            </h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wide">Commentaire coach</h2>
             <p className="mt-2">{meal.coachComment}</p>
             <p className="mt-2 text-[10px] text-[#416741]">{meal.coachName}</p>
           </div>

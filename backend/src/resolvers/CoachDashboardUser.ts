@@ -64,7 +64,9 @@ export class CoachUser {
 }
 
 /** Récupère le nombre de repas par user_id (une seule requête, évite de charger tous les repas en mémoire). */
-async function getMealsCountByUserId(userIds: string[]): Promise<Map<string, number>> {
+async function getMealsCountByUserId(
+  userIds: string[],
+): Promise<Map<string, number>> {
   if (userIds.length === 0) return new Map();
   const rows = await Meal.createQueryBuilder("m")
     .select("m.user_id", "userId")
@@ -138,7 +140,9 @@ export class CoachDashoardUser {
         ...(currentUser.role === UserRole.Coach ? { coach: true } : {}),
       },
     });
-    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
+    const mealsCountByUserId = await getMealsCountByUserId(
+      users.map((u) => u.id),
+    );
     return mapUsersToCoachUsers(users, mealsCountByUserId);
   }
 
@@ -178,7 +182,9 @@ export class CoachDashoardUser {
       },
     });
     users.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
+    const mealsCountByUserId = await getMealsCountByUserId(
+      users.map((u) => u.id),
+    );
     return mapUsersToCoachUsers(users, mealsCountByUserId);
   }
 
@@ -212,7 +218,12 @@ export class CoachDashoardUser {
       take: limit,
       skip: offset,
     });
-    const mealsCountByUserId = await getMealsCountByUserId(users.map((u) => u.id));
-    return { users: mapUsersToCoachUsers(users, mealsCountByUserId), totalCount };
+    const mealsCountByUserId = await getMealsCountByUserId(
+      users.map((u) => u.id),
+    );
+    return {
+      users: mapUsersToCoachUsers(users, mealsCountByUserId),
+      totalCount,
+    };
   }
 }

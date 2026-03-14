@@ -20,8 +20,7 @@ export default function HomeLayout({
   footerVariant = "default",
 }: HomeLayoutProps) {
   const { data } = useProfileQuery({ fetchPolicy: "cache-first" });
-  const isCoachOrAdmin =
-    data?.me?.role === UserRole.Coach || data?.me?.role === UserRole.Admin;
+  const isCoachOrAdmin = data?.me?.role === UserRole.Coach || data?.me?.role === UserRole.Admin;
 
   return (
     <CoachSidebarProvider>

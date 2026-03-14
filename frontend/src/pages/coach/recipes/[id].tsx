@@ -6,11 +6,7 @@ import { useEffect } from "react";
 import CoachLayout from "@/components/coach/CoachLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  UserRole,
-  useCoachRecipeQuery,
-  useProfileQuery,
-} from "@/graphql/generated/schema";
+import { UserRole, useCoachRecipeQuery, useProfileQuery } from "@/graphql/generated/schema";
 
 function getSourceLabel(source: string): string {
   return source === "coach" ? "Conseillée par le coach" : "Favori";
@@ -105,9 +101,7 @@ export default function CoachRecipeDetailPage() {
                   height={650}
                   sizes="100vw"
                   className="h-44 w-full object-cover"
-                  unoptimized={
-                    recipe.photo.startsWith("data:") || recipe.photo.startsWith("blob:")
-                  }
+                  unoptimized={recipe.photo.startsWith("data:") || recipe.photo.startsWith("blob:")}
                 />
               </div>
 
@@ -136,10 +130,7 @@ export default function CoachRecipeDetailPage() {
                   </h2>
                   <ol className="mt-2 space-y-2 text-sm text-[#445443]">
                     {recipe.prepSteps.map((step, index) => (
-                      <li
-                        key={`${index}-${step}`}
-                        className="rounded-md bg-[#eef4e8] px-3 py-2"
-                      >
+                      <li key={`${index}-${step}`} className="rounded-md bg-[#eef4e8] px-3 py-2">
                         <span className="font-semibold">{index + 1}. </span>
                         {step}
                       </li>
@@ -153,11 +144,21 @@ export default function CoachRecipeDetailPage() {
                   Apports nutritionnels
                 </h2>
                 <div className="space-y-1">
-                  <div><span className="font-semibold">Calories:</span> {recipe.calories} kcal</div>
-                  <div><span className="font-semibold">Protéines:</span> {recipe.protein} g</div>
-                  <div><span className="font-semibold">Glucides:</span> {recipe.carbs} g</div>
-                  <div><span className="font-semibold">Lipides:</span> {recipe.fat} g</div>
-                  <div><span className="font-semibold">Fibres:</span> {recipe.fiber} g</div>
+                  <div>
+                    <span className="font-semibold">Calories:</span> {recipe.calories} kcal
+                  </div>
+                  <div>
+                    <span className="font-semibold">Protéines:</span> {recipe.protein} g
+                  </div>
+                  <div>
+                    <span className="font-semibold">Glucides:</span> {recipe.carbs} g
+                  </div>
+                  <div>
+                    <span className="font-semibold">Lipides:</span> {recipe.fat} g
+                  </div>
+                  <div>
+                    <span className="font-semibold">Fibres:</span> {recipe.fiber} g
+                  </div>
                 </div>
               </div>
 
@@ -168,10 +169,7 @@ export default function CoachRecipeDetailPage() {
                   </h2>
                   <ul className="mt-2 space-y-2 text-sm text-[#445443]">
                     {recipe.benefits.map((benefit, index) => (
-                      <li
-                        key={`${index}-${benefit}`}
-                        className="rounded-md bg-[#eef4e8] px-3 py-2"
-                      >
+                      <li key={`${index}-${benefit}`} className="rounded-md bg-[#eef4e8] px-3 py-2">
                         {benefit}
                       </li>
                     ))}

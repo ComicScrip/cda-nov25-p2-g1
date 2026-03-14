@@ -22,8 +22,8 @@ import {
   Resolver,
 } from "type-graphql";
 import { Between, In } from "typeorm";
-import db from "../db";
 import { getCurrentUser } from "../auth";
+import db from "../db";
 import { Meal } from "../entities/Meal";
 import { Pathology } from "../entities/Pathology";
 import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
@@ -421,7 +421,9 @@ async function resolveVisibleUserIds(
 /** Début et fin du jour courant (UTC) pour filtrer les repas "dans la journée". */
 function getTodayBounds(): { start: Date; end: Date } {
   const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   return { start, end };
 }
@@ -430,7 +432,9 @@ function getTodayBounds(): { start: Date; end: Date } {
  * Retourne les IDs des repas correspondant aux 4 derniers repas du jour par utilisateur.
  * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
  */
-async function getLast4MealIdsTodayByUserIds(userIds: string[]): Promise<string[]> {
+async function _getLast4MealIdsTodayByUserIds(
+  userIds: string[],
+): Promise<string[]> {
   if (userIds.length === 0) return [];
   const result = await db.query(
     `WITH ranked AS (
@@ -440,7 +444,9 @@ async function getLast4MealIdsTodayByUserIds(userIds: string[]): Promise<string[
     ) SELECT id FROM ranked WHERE rn <= 4`,
     [userIds],
   );
-  const rows = Array.isArray(result) ? result : (result as { rows?: { id: string }[] }).rows ?? [];
+  const rows = Array.isArray(result)
+    ? result
+    : ((result as { rows?: { id: string }[] }).rows ?? []);
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -448,7 +454,9 @@ async function getLast4MealIdsTodayByUserIds(userIds: string[]): Promise<string[
  * Retourne les IDs des 4 derniers repas par utilisateur sur les 3 derniers jours (pour l’analyse nutritionnelle coach).
  * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
  */
-async function getLast4MealIdsLast3DaysByUserIds(userIds: string[]): Promise<string[]> {
+async function getLast4MealIdsLast3DaysByUserIds(
+  userIds: string[],
+): Promise<string[]> {
   if (userIds.length === 0) return [];
   const result = await db.query(
     `WITH ranked AS (
@@ -458,7 +466,9 @@ async function getLast4MealIdsLast3DaysByUserIds(userIds: string[]): Promise<str
     ) SELECT id FROM ranked WHERE rn <= 4`,
     [userIds],
   );
-  const rows = Array.isArray(result) ? result : (result as { rows?: { id: string }[] }).rows ?? [];
+  const rows = Array.isArray(result)
+    ? result
+    : ((result as { rows?: { id: string }[] }).rows ?? []);
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -805,7 +815,7 @@ export default class UserDataResolver {
       return [];
     }
 
-    const userIdsToLoad = userId ? [userId] : visibleUserIds ?? [];
+    const userIdsToLoad = userId ? [userId] : (visibleUserIds ?? []);
     const mealIds = await getLast4MealIdsLast3DaysByUserIds(userIdsToLoad);
     if (mealIds.length === 0) return [];
 
@@ -1015,9 +1025,7 @@ export default class UserDataResolver {
 
     const fallbackPhoto = "/MyDietChef_image.webp";
     const name =
-      dish.mealName?.trim() ||
-      formatMealTypeLabel(dish.mealType) ||
-      "Repas";
+      dish.mealName?.trim() || formatMealTypeLabel(dish.mealType) || "Repas";
     const aiInsights =
       dish.aiInsights.length > 0
         ? dish.aiInsights
@@ -1184,39 +1192,42 @@ export default class UserDataResolver {
 
     const evolutionData = await this.buildEvolutionDataForUser(userId);
 
-    const dishes = await this.loadUserDishEntriesForToday(userId, MAX_LAST_MEALS_TODAY);
+    const dishes = await this.loadUserDishEntriesForToday(
+      userId,
+      MAX_LAST_MEALS_TODAY,
+    );
     const fallbackPhoto = "/MyDietChef_image.webp";
     const todayMeals = dishes.map((dish, index) => {
-        const fallbackName = `Repas ${index + 1}`;
-        const name =
-          dish.mealName?.trim() ||
-          formatMealTypeLabel(dish.mealType) ||
-          fallbackName;
-        const aiInsights =
-          dish.aiInsights.length > 0
-            ? dish.aiInsights
-            : ["Aucune indication IA disponible pour ce repas."];
-        return {
-          id: dish.id,
-          name,
-          consumedAt: dish.consumedAt.toISOString(),
-          calories: Math.round(dish.calories),
-          protein: Math.round(dish.proteins),
-          carbs: Math.round(dish.carbs),
-          fat: Math.round(dish.fats),
-          aiScore: Math.round(dish.score),
-          photo: dish.photoUrl?.trim() || fallbackPhoto,
-          ingredients: dish.ingredients.map((ing) => ({
-            name: ing.name,
-            quantity: ing.quantity,
-          })),
-          aiInsights,
-          coachComment:
-            dish.coachComment?.trim() ||
-            "Continue sur cette dynamique pour garder des repas équilibrés.",
-          coachName: dish.coachName?.trim() || "Coach",
-        };
-      });
+      const fallbackName = `Repas ${index + 1}`;
+      const name =
+        dish.mealName?.trim() ||
+        formatMealTypeLabel(dish.mealType) ||
+        fallbackName;
+      const aiInsights =
+        dish.aiInsights.length > 0
+          ? dish.aiInsights
+          : ["Aucune indication IA disponible pour ce repas."];
+      return {
+        id: dish.id,
+        name,
+        consumedAt: dish.consumedAt.toISOString(),
+        calories: Math.round(dish.calories),
+        protein: Math.round(dish.proteins),
+        carbs: Math.round(dish.carbs),
+        fat: Math.round(dish.fats),
+        aiScore: Math.round(dish.score),
+        photo: dish.photoUrl?.trim() || fallbackPhoto,
+        ingredients: dish.ingredients.map((ing) => ({
+          name: ing.name,
+          quantity: ing.quantity,
+        })),
+        aiInsights,
+        coachComment:
+          dish.coachComment?.trim() ||
+          "Continue sur cette dynamique pour garder des repas équilibrés.",
+        coachName: dish.coachName?.trim() || "Coach",
+      };
+    });
 
     const displayName =
       [profile.first_name ?? "", profile.last_name ?? ""]

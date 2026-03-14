@@ -61,10 +61,7 @@ export default function UserRecipeDetailPage() {
 
   return (
     <HomeLayout pageTitle={recipe.title} footerVariant="userSlim">
-      <UserPageLayout
-        activeNav="recipes"
-        contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8"
-      >
+      <UserPageLayout activeNav="recipes" contentClassName="bg-[#f5fbf1] px-5 py-6 md:px-8">
         <Button
           asChild
           variant="outline"
@@ -84,9 +81,7 @@ export default function UserRecipeDetailPage() {
               height={650}
               sizes="100vw"
               className="h-44 w-full object-cover"
-              unoptimized={
-                recipe.photo.startsWith("data:") || recipe.photo.startsWith("blob:")
-              }
+              unoptimized={recipe.photo.startsWith("data:") || recipe.photo.startsWith("blob:")}
             />
           </div>
 
@@ -131,11 +126,21 @@ export default function UserRecipeDetailPage() {
               Apports nutritionnels
             </h2>
             <div className="space-y-1">
-              <div><span className="font-semibold">Calories:</span> {recipe.calories} kcal</div>
-              <div><span className="font-semibold">Protéines:</span> {recipe.protein} g</div>
-              <div><span className="font-semibold">Glucides:</span> {recipe.carbs} g</div>
-              <div><span className="font-semibold">Lipides:</span> {recipe.fat} g</div>
-              <div><span className="font-semibold">Fibres:</span> {recipe.fiber} g</div>
+              <div>
+                <span className="font-semibold">Calories:</span> {recipe.calories} kcal
+              </div>
+              <div>
+                <span className="font-semibold">Protéines:</span> {recipe.protein} g
+              </div>
+              <div>
+                <span className="font-semibold">Glucides:</span> {recipe.carbs} g
+              </div>
+              <div>
+                <span className="font-semibold">Lipides:</span> {recipe.fat} g
+              </div>
+              <div>
+                <span className="font-semibold">Fibres:</span> {recipe.fiber} g
+              </div>
             </div>
           </div>
 
