@@ -11,7 +11,6 @@ import { seedUsers } from "./seed-user";
 import { seedWeights } from "./seed-weight";
 
 export async function runSeeds() {
-  await db.initialize();
   await clearDB();
 
   console.log("Seeding users...");

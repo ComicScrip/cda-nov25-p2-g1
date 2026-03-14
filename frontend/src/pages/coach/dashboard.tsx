@@ -31,7 +31,7 @@ export default function CoachDashboardPage() {
   if (loading) {
     return (
       <CoachLayout pageTitle="Dashboard Coach">
-        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <div className="flex-1 flex items-center justify-center min-h-100">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
       </CoachLayout>

@@ -132,7 +132,7 @@ test("login + create profile in a real browser flow", async ({ page }: { page: P
     data: { email: "alice@example.com", password: "Password1!" },
   });
 
-  await page.getByRole("link", { name: "Mon Profile" }).click();
+  await page.getByRole("link", { name: /Mon Profil|Mon Profile/i }).click();
   await page.waitForURL("**/user_profile");
 
   await page.getByLabel("Prenom").fill("Alice");

@@ -25,11 +25,11 @@ export class Dish extends BaseEntity {
   @Column({ name: "photo_url", type: "text", nullable: true })
   photoUrl?: string;
 
-  @Field({ nullable: true })
+  @Field(() => DishType, { nullable: true })
   @Column({ name: "dish_type", type: "enum", enum: DishType, nullable: true })
   dishType?: DishType;
 
-  @Field({ nullable: true })
+  @Field(() => AnalysisStatus, { nullable: true })
   @Column({
     name: "analysis_status",
     type: "enum",

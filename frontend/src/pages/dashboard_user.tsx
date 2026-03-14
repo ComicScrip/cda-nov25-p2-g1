@@ -1,30 +1,23 @@
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 import { type UserDashboardDataQuery, useUserDashboardDataQuery } from "@/graphql/generated/schema";
 
-const PAGE_SIZE = 10;
+const RECENT_ACTIVITY_LIMIT = 5;
 
 export default function DashboardPage() {
-  const [offset, setOffset] = useState(0);
   const { data, loading, error } = useUserDashboardDataQuery({
     fetchPolicy: "cache-and-network",
-    variables: { limit: PAGE_SIZE, offset },
+    variables: { limit: RECENT_ACTIVITY_LIMIT, offset: 0 },
   });
 
   const dashboard = data?.userDashboardData;
-  const hasMoreMeals = Boolean(dashboard?.hasMoreMeals);
   const stats = [
     {
       value: String(dashboard?.daysOfUse ?? 0),
       label: "jours d'utilisation",
       bg: "bg-[#bfe8ea]",
-    },
-    {
-      value: `${dashboard?.healthScore ?? 0}%`,
-      label: "Score sante",
-      bg: "bg-[#cfa0c8]",
     },
     {
       value: String(dashboard?.scannedMeals ?? 0),
@@ -36,15 +29,20 @@ export default function DashboardPage() {
       label: "Calories moyennes",
       bg: "bg-[#e9b26b]",
     },
+    {
+      value: `${dashboard?.healthScore ?? 0}%`,
+      label: "Score sante",
+      bg: "bg-[#cfa0c8]",
+    },
   ];
 
   type DashboardMeal = NonNullable<
     UserDashboardDataQuery["userDashboardData"]
   >["recentMeals"][number];
-  const meals: DashboardMeal[] = dashboard?.recentMeals ?? [];
+  const meals: DashboardMeal[] = (dashboard?.recentMeals ?? []).slice(0, RECENT_ACTIVITY_LIMIT);
 
   return (
-    <HomeLayout pageTitle="Dashboard">
+    <HomeLayout pageTitle="Dashboard" footerVariant="userSlim">
       <UserPageLayout activeNav="dashboard">
         {loading && (
           <div className="rounded-md bg-[#eef4e8] px-3 py-2 text-xs text-[#3c3c3c]">
@@ -58,23 +56,43 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="grid w-full max-w-md grid-cols-2 gap-3">
-          {stats.map((stat) => (
-            <div
-              key={`${stat.value}-${stat.label}`}
-              className={`${stat.bg} rounded-md px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]`}
-            >
-              <div className="text-sm font-semibold">{stat.value}</div>
-              <div className="text-[11px]">{stat.label}</div>
+        <div className="w-full">
+          <div className="grid items-start gap-4 md:gap-6 xl:gap-8 md:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+              {stats.map((stat) => (
+                <div
+                  key={`${stat.value}-${stat.label}`}
+                  className={`${stat.bg} rounded-md px-3 py-2 text-center text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]`}
+                >
+                  <div className="text-sm font-semibold">{stat.value}</div>
+                  <div className="text-[11px]">{stat.label}</div>
+                </div>
+              ))}
             </div>
-          ))}
+
+            <div className="w-full rounded-md bg-[#d8d8d8] px-4 py-3 text-center shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+              <Image
+                src="/cadrecrop.png"
+                alt="Cadre de scan d'un repas"
+                width={280}
+                height={150}
+                className="mx-auto h-auto w-full max-w-47.5 rounded-md"
+              />
+              <Link
+                href="/meals_scanning"
+                className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
+              >
+                Scanner un repas
+              </Link>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-6 max-w-2xl text-[#2c2c2c]">
-          <h1 className="text-lg font-semibold">
+        <div className="mt-6 max-w-2xl  mx-auto text-[#2c2c2c]">
+          <h1 className="text-2xl font-bold md:text-3xl">
             Bienvenue dans ta tour de controle {dashboard?.firstName ?? "Utilisateur"}
           </h1>
-          <p className="mt-1 text-xs text-[#555]">
+          <p className="mt-1 text-xs  text-[#555]">
             Ici, vous avez un resume en chiffres de votre activite nutritionnelle
           </p>
         </div>
@@ -118,7 +136,7 @@ export default function DashboardPage() {
               const isSecondRow = index >= 2;
               const isRightColumn = index % 2 === 1;
               const mealKey = [
-                offset,
+                RECENT_ACTIVITY_LIMIT,
                 meal.name,
                 meal.calories,
                 meal.protein,
@@ -142,7 +160,7 @@ export default function DashboardPage() {
                 <Link
                   key={mealKey}
                   href={{
-                    pathname: "/repas_utilisateur",
+                    pathname: "/user_meals",
                     query: {
                       mealName: meal.name,
                       calories: String(meal.calories),
@@ -162,33 +180,6 @@ export default function DashboardPage() {
               );
             })}
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setOffset((currentOffset) => Math.max(0, currentOffset - PAGE_SIZE))}
-              disabled={offset === 0}
-              className="rounded-md bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1f3d1f] shadow-[0_2px_4px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Repas précédents
-            </button>
-            <button
-              type="button"
-              onClick={() => setOffset((currentOffset) => currentOffset + PAGE_SIZE)}
-              disabled={!hasMoreMeals}
-              className="rounded-md bg-[#2596be] px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Repas suivants
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            className="rounded-md bg-black px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
-          >
-            Scanner un repas
-          </button>
         </div>
       </UserPageLayout>
     </HomeLayout>

@@ -8,7 +8,10 @@ import {
   Mutation,
   Resolver,
 } from "type-graphql";
-import { geminiService } from "../ai/services/geminiService";
+import {
+  analyzeMealImageWithFallback,
+  recalculateNutritionWithFallback,
+} from "../ai/services/mealVisionService";
 import { getCurrentUser } from "../auth";
 import { Dish } from "../entities/Dish";
 import { Dish_Ingredient } from "../entities/Dish_Ingredient";
@@ -202,7 +205,7 @@ class UpdateDishNameInput {
 // Resolver for meal analysis workflow (save, update quantities, update calories)
 @Resolver()
 export default class MealAnalysisResolver {
-  // Saves meal analysis with validation against Gemini to ensure data integrity
+  // Saves meal analysis with validation against the configured AI providers.
   @Mutation(() => String)
   @Authorized()
   async saveMealAnalysis(
@@ -211,36 +214,27 @@ export default class MealAnalysisResolver {
   ): Promise<string> {
     const currentUser = await getCurrentUser(context);
 
-    // Call Gemini to get the authoritative analysis (source of truth)
-    // Note: We use Gemini's results directly to ensure data integrity
-    // The frontend data is only used for validation that the image matches
-    let geminiResult: any;
+    let aiResult: any;
     try {
-      geminiResult = await geminiService.analyzeMealImage(
+      aiResult = await analyzeMealImageWithFallback(
         input.imageBase64,
         input.mimeType,
       );
     } catch (error) {
       throw new Error(
-        `Failed to analyze image with Gemini: ${(error as Error).message}`,
+        `Failed to analyze image with configured AI providers: ${(error as Error).message}`,
       );
     }
 
-    // Basic validation: ensure we got valid results from Gemini
-    if (
-      !geminiResult ||
-      !geminiResult.dishName ||
-      geminiResult.ingredients.length === 0
-    ) {
+    if (!aiResult || !aiResult.dishName || aiResult.ingredients.length === 0) {
       throw new Error(
-        "Gemini analysis returned invalid results. Please try again.",
+        "Meal analysis returned invalid results. Please try again.",
       );
     }
 
-    // Use Gemini's results as source of truth for nutritional values
     const meal = Meal.create({
       user: currentUser,
-      mealType: mapMealTypeToEnum(geminiResult.mealType),
+      mealType: mapMealTypeToEnum(aiResult.mealType),
       consumedAt: new Date(),
     });
     await meal.save();
@@ -255,16 +249,16 @@ export default class MealAnalysisResolver {
     await dish.save();
 
     const analysis = Nutritional_Analysis.create({
-      calories: geminiResult.totalNutrition.calories,
-      proteins: geminiResult.totalNutrition.protein,
-      carbohydrates: geminiResult.totalNutrition.carbs,
-      lipids: geminiResult.totalNutrition.fat,
-      fiber: geminiResult.totalNutrition.fiber,
-      sugar: geminiResult.totalNutrition.sugar,
-      sodium: geminiResult.totalNutrition.salt,
-      mealHealthScore: geminiResult.healthScore,
-      warnings: geminiResult.warnings.join("; "),
-      suggestions: geminiResult.analysisSummary,
+      calories: aiResult.totalNutrition.calories,
+      proteins: aiResult.totalNutrition.protein,
+      carbohydrates: aiResult.totalNutrition.carbs,
+      lipids: aiResult.totalNutrition.fat,
+      fiber: aiResult.totalNutrition.fiber,
+      sugar: aiResult.totalNutrition.sugar,
+      sodium: aiResult.totalNutrition.salt,
+      mealHealthScore: aiResult.healthScore,
+      warnings: aiResult.warnings.join("; "),
+      suggestions: aiResult.analysisSummary,
       status: Status.Brouillon,
       isModified: false,
       analyzedAt: new Date(),
@@ -274,8 +268,7 @@ export default class MealAnalysisResolver {
     dish.analysis = analysis;
     await dish.save();
 
-    // Use Gemini's ingredient quantities as source of truth
-    for (const ing of geminiResult.ingredients) {
+    for (const ing of aiResult.ingredients) {
       let ingredient = await Ingredient.findOne({
         where: { name: ing.name },
       });
@@ -299,7 +292,7 @@ export default class MealAnalysisResolver {
     return dish.id;
   }
 
-  // Updates ingredient quantities and recalculates nutritional values using Gemini
+  // Updates ingredient quantities and recalculates nutritional values using the configured AI providers.
   @Mutation(() => Nutritional_Analysis)
   @Authorized()
   async updateIngredientQuantities(
@@ -384,12 +377,11 @@ export default class MealAnalysisResolver {
       imageBase64 = dish.photoUrl;
     }
 
-    const recalculatedAnalysis =
-      await geminiService.recalculateNutritionWithQuantities(
-        imageBase64,
-        ingredientQuantities,
-        mimeType,
-      );
+    const recalculatedAnalysis = await recalculateNutritionWithFallback(
+      imageBase64,
+      ingredientQuantities,
+      mimeType,
+    );
 
     if (!dish.analysis) {
       throw new Error("Analysis not found");

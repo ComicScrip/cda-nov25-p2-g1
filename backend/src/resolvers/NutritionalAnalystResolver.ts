@@ -8,12 +8,12 @@ import {
   ObjectType,
   Resolver,
 } from "type-graphql";
-import {
-  geminiService,
-  type IngredientEstimate,
-  type NutritionalAnalysisResult,
-  type NutritionalTotals,
+import type {
+  IngredientEstimate,
+  NutritionalAnalysisResult,
+  NutritionalTotals,
 } from "../ai/services/geminiService";
+import { analyzeMealImageWithFallback } from "../ai/services/mealVisionService";
 
 // GraphQL type for a single ingredient estimate
 @ObjectType()
@@ -100,7 +100,7 @@ class AnalyzeMealImageInput {
   mimeType?: string;
 }
 
-// Resolver for exposing Gemini image analysis to GraphQL API
+// Resolver for exposing meal image analysis through the configured AI providers.
 @Resolver()
 export default class NutritionalAnalystResolver {
   // Analyzes a meal photo and returns structured nutritional information
@@ -109,7 +109,7 @@ export default class NutritionalAnalystResolver {
   async analyzeMealImage(
     @Arg("input") input: AnalyzeMealImageInput,
   ): Promise<NutritionalAnalysisType> {
-    const result = await geminiService.analyzeMealImage(
+    const result = await analyzeMealImageWithFallback(
       input.imageBase64,
       input.mimeType,
     );

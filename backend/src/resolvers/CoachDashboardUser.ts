@@ -1,4 +1,5 @@
 import {
+  Arg,
   Authorized,
   Ctx,
   Field,
@@ -12,6 +13,17 @@ import { getCurrentUser } from "../auth";
 import { UserRole } from "../entities/enums";
 import { User } from "../entities/User";
 import type { GraphQLContext } from "../types";
+
+const DEFAULT_PAGE_SIZE = 15;
+
+@ObjectType()
+export class CoachUsersPage {
+  @Field(() => [CoachUser])
+  users!: CoachUser[];
+
+  @Field(() => Int)
+  totalCount!: number;
+}
 
 @ObjectType()
 export class CoachUser {
@@ -49,71 +61,93 @@ export class CoachUser {
   createdAt!: string;
 }
 
+function mapUsersToCoachUsers(users: User[]): CoachUser[] {
+  return users.map((user) => {
+    const profile = user.profile;
+
+    let initialWeight: number | null = null;
+    let currentWeight: number | null = null;
+
+    if (profile?.weight_measures?.length) {
+      const sorted = [...profile.weight_measures].sort(
+        (a, b) =>
+          new Date(a.measured_at ?? 0).getTime() -
+          new Date(b.measured_at ?? 0).getTime(),
+      );
+
+      initialWeight = sorted[0]?.weight ?? null;
+      currentWeight = sorted[sorted.length - 1]?.weight ?? null;
+    }
+
+    const meals = user.meals ?? [];
+    const mealsCount = user.meals?.length ?? 0;
+    const FIXED_MEAL_SCORE = 80;
+    const score =
+      mealsCount > 0
+        ? meals.reduce((sum: number) => {
+            return sum + FIXED_MEAL_SCORE;
+          }, 0) / mealsCount
+        : 0;
+    const FIXED_CALORIC_GOAL = 2000;
+    return {
+      userId: user.id,
+      email: user.email,
+      displayName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`,
+      role: user.role,
+      initialWeight,
+      currentWeight,
+      goalLabel: profile?.goal ?? null,
+      caloricGoal: FIXED_CALORIC_GOAL,
+      mealsCount,
+      scoreRounded: Math.round(score),
+      createdAt: user.createdAt.toISOString(),
+    };
+  });
+}
+
 @Resolver()
 export class CoachDashoardUser {
-  @Authorized(UserRole.Coach)
+  @Authorized(UserRole.Coach, UserRole.Admin)
   @Query(() => [CoachUser])
   async coachUsers(@Ctx() ctx: GraphQLContext): Promise<CoachUser[]> {
     const currentUser = await getCurrentUser(ctx);
-
-    if (!currentUser) {
-      throw new Error("Unauthorized");
-    }
+    if (!currentUser) throw new Error("Unauthorized");
 
     const users = await User.find({
-      where: {
-        role: UserRole.Coachee,
-      },
+      where: { role: UserRole.Coachee },
       relations: {
-        profile: {
-          weight_measures: true,
-        },
+        profile: { weight_measures: true },
         meals: true,
       },
     });
+    return mapUsersToCoachUsers(users);
+  }
 
-    const result: CoachUser[] = users.map((user) => {
-      const profile = user.profile;
+  @Authorized(UserRole.Coach, UserRole.Admin)
+  @Query(() => CoachUsersPage)
+  async coachUsersPage(
+    @Ctx() ctx: GraphQLContext,
+    @Arg("limit", () => Int, {
+      nullable: true,
+      defaultValue: DEFAULT_PAGE_SIZE,
+    })
+    limit: number = DEFAULT_PAGE_SIZE,
+    @Arg("offset", () => Int, { nullable: true, defaultValue: 0 })
+    offset: number = 0,
+  ): Promise<CoachUsersPage> {
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
 
-      let initialWeight: number | null = null;
-      let currentWeight: number | null = null;
-
-      if (profile?.weight_measures?.length) {
-        const sorted = [...profile.weight_measures].sort(
-          (a, b) =>
-            new Date(a.measured_at ?? 0).getTime() -
-            new Date(b.measured_at ?? 0).getTime(),
-        );
-
-        initialWeight = sorted[0]?.weight ?? null;
-        currentWeight = sorted[sorted.length - 1]?.weight ?? null;
-      }
-
-      const meals = user.meals ?? [];
-      const mealsCount = user.meals?.length ?? 0;
-      const FIXED_MEAL_SCORE = 80;
-      const score =
-        mealsCount > 0
-          ? meals.reduce((sum: number) => {
-              return sum + FIXED_MEAL_SCORE;
-            }, 0) / mealsCount
-          : 0;
-      const FIXED_CALORIC_GOAL = 2000;
-      return {
-        userId: user.id,
-        email: user.email,
-        displayName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`,
-        role: user.role,
-        initialWeight,
-        currentWeight,
-        goalLabel: profile?.goal ?? null,
-        caloricGoal: FIXED_CALORIC_GOAL,
-        mealsCount,
-        scoreRounded: Math.round(score),
-        createdAt: user.createdAt.toISOString(),
-      };
+    const [users, totalCount] = await User.findAndCount({
+      where: { role: UserRole.Coachee },
+      relations: {
+        profile: { weight_measures: true },
+        meals: true,
+      },
+      order: { createdAt: "DESC" },
+      take: limit,
+      skip: offset,
     });
-
-    return result;
+    return { users: mapUsersToCoachUsers(users), totalCount };
   }
 }

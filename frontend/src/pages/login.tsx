@@ -13,9 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input"; //shadcn npx shadcn@latest add input
-import { Label } from "@/components/ui/label"; //shadcn npx shadcn@latest add label
-import { type LoginInput, useLoginMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { LoginInput } from "@/graphql/generated/schema";
+import { useLoginMutation, useProfileQuery } from "@/graphql/generated/schema";
 
 export default function Login() {
   const router = useRouter();
@@ -67,14 +68,14 @@ export default function Login() {
         const returnUrl = router.query.returnUrl as string | undefined;
 
         if (returnUrl) {
-          router.push(returnUrl);
+          router.replace(returnUrl);
         } else {
           const { data: updatedProfile } = await refetchProfile();
 
           if (updatedProfile?.me?.role === "Coach") {
-            router.push("/coach/dashboard");
+            router.replace("/coach/dashboard");
           } else {
-            router.push("/dashboard_user");
+            router.replace("/dashboard_user");
           }
         }
       } else {
