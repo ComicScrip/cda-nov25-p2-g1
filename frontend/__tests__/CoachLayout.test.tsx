@@ -208,18 +208,19 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      // Open mobile menu
-      const menuButton = screen.getByLabelText("Toggle menu");
+      // Open mobile menu (coach burger opens sidebar)
+      const menuButton = screen.getByLabelText("Ouvrir le menu coach");
       await user.click(menuButton);
 
-      // Verify mobile coach links are visible when menu is open
-      expect(screen.getByText("Dashboard coach")).toBeInTheDocument();
+      // Verify coach sidebar links are visible when menu is open (sidebar = 2nd Dashboard link)
+      const dashboardLinks = screen.getAllByRole("link", { name: "Dashboard" });
+      expect(dashboardLinks.length).toBeGreaterThanOrEqual(2);
 
-      // Click on a menu item - the onClick handler should set isMenuOpen to false
-      const dashboardLink = screen.getByText("Dashboard coach");
-      await user.click(dashboardLink);
+      // Click on the sidebar Dashboard link to close the sidebar
+      await user.click(dashboardLinks[1]);
 
-      expect(screen.queryByText("Dashboard coach")).not.toBeInTheDocument();
+      // Sidebar is closed (aria-hidden when not visible)
+      expect(screen.getByTestId("coach-sidebar")).toHaveAttribute("aria-hidden", "true");
     });
   });
 
@@ -241,7 +242,7 @@ describe("CoachLayout", () => {
       );
 
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
-      expect(screen.getByText("Déconnexion")).toBeInTheDocument();
+      expect(screen.getAllByText("Déconnexion").length).toBeGreaterThan(0);
     });
 
     it("should display admin navigation when user is logged in as Admin", () => {
@@ -260,8 +261,11 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
-      expect(screen.getByText("Déconnexion")).toBeInTheDocument();
+      // Admin dashboard link can be /admin (header) or /coach/dashboard (sidebar)
+      const dashboardLinks = screen.getAllByRole("link", { name: "Dashboard" });
+      const hrefs = dashboardLinks.map((l) => l.getAttribute("href"));
+      expect(hrefs).toContain("/admin");
+      expect(screen.getAllByText("Déconnexion").length).toBeGreaterThan(0);
     });
 
     it("should not display authenticated actions when user is not logged in", () => {
@@ -317,8 +321,8 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      const logoutButton = screen.getByText("Déconnexion");
-      await user.click(logoutButton);
+      const logoutButtons = screen.getAllByRole("button", { name: "Déconnexion" });
+      await user.click(logoutButtons[0]);
 
       expect(mockLogout).toHaveBeenCalledTimes(1);
       expect(mockPush).toHaveBeenCalledWith("/");
@@ -346,8 +350,8 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      const logoutButton = screen.getByText("Déconnexion");
-      await user.click(logoutButton);
+      const logoutButtons = screen.getAllByRole("button", { name: "Déconnexion" });
+      await user.click(logoutButtons[0]);
 
       expect(mockLogout).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith("Logout error:", logoutError);
@@ -375,21 +379,23 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      const menuButton = screen.getByLabelText("Toggle menu");
+      const menuButton = screen.getByLabelText("Ouvrir le menu coach");
       expect(menuButton).toBeInTheDocument();
 
-      // Menu should be closed initially
-      expect(screen.queryByText("Dashboard coach")).not.toBeInTheDocument();
+      // Sidebar hidden when closed (aria-hidden in jsdom)
+      expect(screen.getByTestId("coach-sidebar")).toHaveAttribute("aria-hidden", "true");
 
       // Open menu
       await user.click(menuButton);
 
-      expect(screen.getByText("Dashboard coach")).toBeInTheDocument();
-      expect(screen.getByText("Mes coachés")).toBeInTheDocument();
-      await user.click(menuButton);
+      expect(screen.getByTestId("coach-sidebar")).toHaveAttribute("aria-hidden", "false");
+      expect(screen.getByText("utilisateurs")).toBeInTheDocument();
+      // Close sidebar via close button (burger only opens, does not toggle)
+      const closeButtons = screen.getAllByRole("button", { name: "Fermer le menu" });
+      await user.click(closeButtons[0]);
 
-      // Menu should be closed again
-      expect(screen.queryByText("Dashboard coach")).not.toBeInTheDocument();
+      // Sidebar closed again
+      expect(screen.getByTestId("coach-sidebar")).toHaveAttribute("aria-hidden", "true");
     });
   });
 

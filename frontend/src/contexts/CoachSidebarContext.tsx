@@ -85,6 +85,7 @@ export function CoachSidebarPanel() {
       )}
       {/* Sidebar : fixe à gauche sur desktop, overlay sur mobile */}
       <aside
+        data-testid="coach-sidebar"
         className={`fixed left-0 top-0 z-40 h-full w-64 transform bg-gray-800 shadow-xl transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}

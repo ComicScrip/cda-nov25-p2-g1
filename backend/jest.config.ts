@@ -11,7 +11,7 @@ module.exports = {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-  testPathIgnorePatterns: ["/node_modules/", "/__tests__/setup.ts"],
+  testPathIgnorePatterns: ["/node_modules/"],
 };
 
 //@type {import('ts-jest').JestConfigWithTsJest}
