@@ -161,7 +161,7 @@ export default function NutritionalAnalysisPage() {
                     id="coach-data-source"
                     value={dataSource}
                     onChange={(e) => setDataSource(e.target.value as "meals" | "scanner")}
-                  className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[200px] cursor-pointer"
+                    className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[200px] cursor-pointer"
                   >
                     <option value="meals">Repas enregistrés (par défaut)</option>
                     <option value="scanner">Soumissions scanner</option>
@@ -705,10 +705,7 @@ export default function NutritionalAnalysisPage() {
                             Ajouter un ingrédient manquant
                           </div>
                           {nutritionalAnalysis.extraIngredients.map((extra) => (
-                            <div
-                              key={extra.id}
-                              className="flex items-center gap-2 text-[11px]"
-                            >
+                            <div key={extra.id} className="flex items-center gap-2 text-[11px]">
                               <input
                                 type="text"
                                 value={extra.name}

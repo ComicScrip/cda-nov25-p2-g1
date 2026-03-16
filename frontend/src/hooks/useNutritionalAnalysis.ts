@@ -3,11 +3,11 @@ import {
   type AnalyzeMealImageMutation,
   useAnalyzeMealImageMutation,
   useCoachGetDishAnalysisLazyQuery,
+  useCreateDishFromScannerSubmissionMutation,
   useSaveMealAnalysisMutation,
   useUpdateAnalysisCaloriesMutation,
   useUpdateDishNameMutation,
   useUpdateIngredientQuantitiesMutation,
-  useCreateDishFromScannerSubmissionMutation,
 } from "@/graphql/generated/schema";
 import type { ScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 import { compressImage, validateImageFile } from "@/utils/imageCompression";

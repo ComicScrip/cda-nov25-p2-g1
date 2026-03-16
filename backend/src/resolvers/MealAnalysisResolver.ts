@@ -515,7 +515,10 @@ export default class MealAnalysisResolver {
         await newDishIngredient.save();
 
         // Keep in memory for the recalculation below.
-        dish.dish_ingredients = [...(dish.dish_ingredients ?? []), newDishIngredient];
+        dish.dish_ingredients = [
+          ...(dish.dish_ingredients ?? []),
+          newDishIngredient,
+        ];
       } else {
         // quantityGrams <= 0 for an unknown ingredient: ignore.
         // This allows us to effectively "remove" a previous ingredient

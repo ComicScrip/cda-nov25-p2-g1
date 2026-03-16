@@ -95,7 +95,8 @@ export function RecipeForm({ onSubmit, loading }: RecipeFormProps) {
             Informations générales
           </CardTitle>
           <CardDescription className="text-xs text-[#5a6758]">
-            Donne un nom clair et une courte description. La photo est optionnelle mais&nbsp;recommandée.
+            Donne un nom clair et une courte description. La photo est optionnelle
+            mais&nbsp;recommandée.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">

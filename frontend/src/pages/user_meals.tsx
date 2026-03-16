@@ -217,8 +217,7 @@ export default function RepasUtilisateurPage() {
               <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-[#0f172a] shadow-[0_1px_3px_rgba(15,23,42,0.12)]">
                 <span>Progression</span>
                 <span className="rounded-full bg-[#0f172a] px-2 py-0.5 text-[10px] font-bold text-white">
-                  {displayedProgress}
-                  %
+                  {displayedProgress}%
                 </span>
               </div>
             </div>

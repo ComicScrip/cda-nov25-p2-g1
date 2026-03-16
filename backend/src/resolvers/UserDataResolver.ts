@@ -25,6 +25,7 @@ import { Between, In } from "typeorm";
 import { getCurrentUser } from "../auth";
 import db from "../db";
 import { Dish } from "../entities/Dish";
+import { AnalysisStatus, MealType, Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
 import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Pathology } from "../entities/Pathology";
@@ -32,7 +33,6 @@ import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
-import { AnalysisStatus, MealType, Status } from "../entities/enums";
 import type { GraphQLContext } from "../types";
 
 // Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
@@ -1050,7 +1050,6 @@ export default class UserDataResolver {
     let latestDayProtein = 0;
     let latestDayCarbs = 0;
     let latestDayFat = 0;
-    let latestDayCalories = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
@@ -1059,7 +1058,6 @@ export default class UserDataResolver {
         latestDayProtein += dish.proteins;
         latestDayCarbs += dish.carbs;
         latestDayFat += dish.fats;
-        latestDayCalories += dish.calories;
       }
     }
 
