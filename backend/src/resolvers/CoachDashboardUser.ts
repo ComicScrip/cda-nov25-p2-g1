@@ -146,7 +146,7 @@ export class CoachDashoardUser {
     return mapUsersToCoachUsers(users, mealsCountByUserId);
   }
 
-  /** Coachees ayant le plus récemment scanné un repas (pour affichage progressif). */
+  /** Coachees who have most recently scanned a meal (for progressive display). */
   @Authorized(UserRole.Coach, UserRole.Admin)
   @Query(() => [CoachUser])
   async coachUsersRecentScanners(

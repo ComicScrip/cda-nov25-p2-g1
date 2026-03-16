@@ -1,5 +1,3 @@
-import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
 import { useCallback, useState } from "react";
 import {
   type AnalyzeMealImageMutation,
@@ -9,19 +7,14 @@ import {
   useUpdateAnalysisCaloriesMutation,
   useUpdateDishNameMutation,
   useUpdateIngredientQuantitiesMutation,
+  useCreateDishFromScannerSubmissionMutation,
 } from "@/graphql/generated/schema";
 import type { ScannerAnalysisResponse } from "@/lib/scannerAnalysis";
 import { compressImage, validateImageFile } from "@/utils/imageCompression";
 
-const CREATE_DISH_FROM_SCANNER_SUBMISSION = gql`
-  mutation CreateDishFromScannerSubmission($input: CreateDishFromScannerSubmissionInput!) {
-    createDishFromScannerSubmission(input: $input)
-  }
-`;
-
 type AnalysisResult = AnalyzeMealImageMutation["analyzeMealImage"];
 
-/** Payload enregistré par "Enregistrer et envoyer au coach" (scanner) */
+/** Payload saved by "Save and send to coach" (scanner) */
 export type ScannerCoachPayload = {
   draft?: { imageUrl?: string; source?: string; savedAt?: string };
   details?: { dishName?: string; mealMoment?: string; [key: string]: unknown };
@@ -33,7 +26,7 @@ function mid(range: { min: number; max: number }): number {
   return (range.min + range.max) / 2;
 }
 
-/** Convertit le payload scanner en format attendu par l’UI d’analyse (Analyse IA). */
+/** Converts the scanner payload into the format expected by the analysis UI (Analyse IA). */
 export function mapScannerPayloadToAnalysisResult(payload: ScannerCoachPayload): AnalysisResult {
   const analysis = payload.analysis;
   const details = payload.details ?? {};
@@ -83,8 +76,12 @@ export function useNutritionalAnalysis() {
   const [savedDishId, setSavedDishId] = useState<string | null>(null);
   const [scannerSubmissionId, setScannerSubmissionId] = useState<string | null>(null);
   const [editingQuantities, setEditingQuantities] = useState(false);
-  const [editingCalories, setEditingCalories] = useState(false);
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
+  const [editedIngredientNames, setEditedIngredientNames] = useState<Record<string, string>>({});
+  const [extraIngredients, setExtraIngredients] = useState<
+    Array<{ id: string; name: string; quantityGrams: number }>
+  >([]);
+  const [editingCalories, setEditingCalories] = useState(false);
   const [editedCalories, setEditedCalories] = useState<number | null>(null);
   const [editingDishName, setEditingDishName] = useState(false);
   const [editedDishName, setEditedDishName] = useState<string>("");
@@ -95,9 +92,8 @@ export function useNutritionalAnalysis() {
   const [updateQuantities, { loading: updatingQuantities }] =
     useUpdateIngredientQuantitiesMutation();
   const [updateCalories, { loading: updatingCalories }] = useUpdateAnalysisCaloriesMutation();
-  const [createDishFromScanner, { loading: creatingDishFromScanner }] = useMutation<{
-    createDishFromScannerSubmission: string;
-  }>(CREATE_DISH_FROM_SCANNER_SUBMISSION);
+  const [createDishFromScanner, { loading: creatingDishFromScanner }] =
+    useCreateDishFromScannerSubmissionMutation();
   const [updateDishName, { loading: updatingDishName }] = useUpdateDishNameMutation();
   const [fetchCoachDishAnalysis, { loading: loadingCoachDish }] =
     useCoachGetDishAnalysisLazyQuery();
@@ -140,6 +136,9 @@ export function useNutritionalAnalysis() {
 
     setAnalysis(null);
     setSavedDishId(null);
+    setEditedQuantities({});
+    setEditedIngredientNames({});
+    setExtraIngredients([]);
     try {
       const { data } = await analyzeMealImage({
         variables: {
@@ -210,28 +209,51 @@ export function useNutritionalAnalysis() {
     if (!savedDishId || !analysis) return;
 
     try {
-      // Convert edited quantities to the format expected by the mutation
-      const ingredients = analysis.ingredients
-        .map((ing, index) => {
-          const key = `${ing.name}-${index}`;
-          const quantity = editedQuantities[key];
-          if (quantity !== undefined && quantity !== null && quantity > 0) {
-            return {
+      // Build the full list of ingredients (existing + newly added)
+      const ingredients: Array<{ ingredientName: string; quantityGrams: number }> = [];
+
+      analysis.ingredients.forEach((ing, index) => {
+        const key = `${ing.name}-${index}`;
+        const baseQuantity = editedQuantities[key] ?? ing.estimatedQuantityGrams ?? 0;
+        const editedName = editedIngredientNames[key]?.trim();
+
+        if (!editedName || editedName === ing.name) {
+          if (baseQuantity > 0) {
+            ingredients.push({
               ingredientName: ing.name,
-              quantityGrams: quantity,
-            };
+              quantityGrams: baseQuantity,
+            });
           }
-          return null;
-        })
-        .filter((ing) => ing !== null) as Array<{
-        ingredientName: string;
-        quantityGrams: number;
-      }>;
+        } else {
+          // Renaming: set the old ingredient to 0 and add the new one with the chosen quantity
+          ingredients.push({
+            ingredientName: ing.name,
+            quantityGrams: 0,
+          });
+          if (baseQuantity > 0) {
+            ingredients.push({
+              ingredientName: editedName,
+              quantityGrams: baseQuantity,
+            });
+          }
+        }
+      });
+
+      for (const extra of extraIngredients) {
+        const name = extra.name.trim();
+        if (name && extra.quantityGrams > 0) {
+          ingredients.push({
+            ingredientName: name,
+            quantityGrams: extra.quantityGrams,
+          });
+        }
+      }
 
       if (ingredients.length === 0) {
         return {
           success: false,
-          message: "Veuillez modifier au moins une quantité avant de sauvegarder.",
+          message:
+            "Veuillez modifier au moins un ingrédient (nom ou quantité) avant de sauvegarder.",
         };
       }
 
@@ -245,20 +267,35 @@ export function useNutritionalAnalysis() {
       });
 
       if (data?.updateIngredientQuantities) {
-        // Update local analysis with new values from the server
+        // Update local analysis with the new names / quantities and the recalculated nutrition
         const updatedAnalysis = {
           ...analysis,
-          ingredients: analysis.ingredients.map((ing, index) => {
-            const key = `${ing.name}-${index}`;
-            const newQuantity = editedQuantities[key];
-            return {
-              ...ing,
-              estimatedQuantityGrams:
-                newQuantity !== undefined && newQuantity !== null
-                  ? newQuantity
-                  : ing.estimatedQuantityGrams,
-            };
-          }),
+          ingredients: [
+            ...analysis.ingredients.map((ing, index) => {
+              const key = `${ing.name}-${index}`;
+              const newQuantity = editedQuantities[key];
+              const newName = editedIngredientNames[key]?.trim();
+              const finalName = newName && newName.length > 0 ? newName : ing.name;
+              return {
+                ...ing,
+                name: finalName,
+                estimatedQuantityGrams:
+                  newQuantity !== undefined && newQuantity !== null
+                    ? newQuantity
+                    : ing.estimatedQuantityGrams,
+              };
+            }),
+            ...extraIngredients
+              .filter((extra) => extra.name.trim() && extra.quantityGrams > 0)
+              .map((extra) => ({
+                name: extra.name.trim(),
+                estimatedQuantityGrams: extra.quantityGrams,
+                calories: undefined,
+                protein: undefined,
+                carbs: undefined,
+                fat: undefined,
+              })),
+          ],
           totalNutrition: {
             calories: data.updateIngredientQuantities.calories ?? analysis.totalNutrition.calories,
             protein: data.updateIngredientQuantities.proteins ?? analysis.totalNutrition.protein,
@@ -271,6 +308,8 @@ export function useNutritionalAnalysis() {
         };
         setAnalysis(updatedAnalysis);
         setEditedQuantities({});
+        setEditedIngredientNames({});
+        setExtraIngredients([]);
         setEditingQuantities(false);
         return {
           success: true,
@@ -284,7 +323,14 @@ export function useNutritionalAnalysis() {
         message: "Erreur lors de la mise à jour des quantités.",
       };
     }
-  }, [savedDishId, analysis, editedQuantities, updateQuantities]);
+  }, [
+    savedDishId,
+    analysis,
+    editedQuantities,
+    editedIngredientNames,
+    extraIngredients,
+    updateQuantities,
+  ]);
 
   const handleUpdateCalories = useCallback(async () => {
     if (editedCalories === null) return;
@@ -498,9 +544,11 @@ export function useNutritionalAnalysis() {
     savedDishId,
     scannerSubmissionId,
     editingQuantities,
+    editedQuantities,
+    editedIngredientNames,
+    extraIngredients,
     editingCalories,
     editingDishName,
-    editedQuantities,
     editedCalories,
     editedDishName,
     // Loading states
@@ -526,6 +574,8 @@ export function useNutritionalAnalysis() {
     setEditingCalories,
     setEditingDishName,
     setEditedQuantities,
+    setEditedIngredientNames,
+    setExtraIngredients,
     setEditedCalories,
     setEditedDishName,
     // Helpers

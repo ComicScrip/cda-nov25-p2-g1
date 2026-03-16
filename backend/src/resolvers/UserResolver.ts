@@ -49,7 +49,7 @@ export default class UserResolver {
     const hashedPassword = await hash(data.password);
     const newUser = User.create({ email, hashedPassword });
     await newUser.save();
-    // Assigner le nouveau coaché à un coach par défaut pour que le coach voie ses soumissions
+    // Assign the new coachee to a default coach so the coach can see their submissions
     if (newUser.role === UserRole.Coachee) {
       const defaultCoach = await User.findOne({
         where: { role: UserRole.Coach },

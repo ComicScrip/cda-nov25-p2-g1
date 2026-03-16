@@ -146,7 +146,7 @@ export default function RecettesUserPage() {
                         setSelectedRecipeId(recipe.id);
                       }
                     }}
-                    className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
+                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
                         : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"

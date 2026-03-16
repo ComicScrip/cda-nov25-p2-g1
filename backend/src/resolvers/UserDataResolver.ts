@@ -24,13 +24,80 @@ import {
 import { Between, In } from "typeorm";
 import { getCurrentUser } from "../auth";
 import db from "../db";
+import { Dish } from "../entities/Dish";
 import { Meal } from "../entities/Meal";
+import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Pathology } from "../entities/Pathology";
 import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
+import { AnalysisStatus, MealType, Status } from "../entities/enums";
 import type { GraphQLContext } from "../types";
+
+// Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
+// vers les valeurs de l'enum MealType, en reprenant la logique du MealAnalysisResolver.
+function mapMealTypeToEnum(mealType?: string): MealType | undefined {
+  if (!mealType) return undefined;
+
+  const normalized = mealType.toLowerCase().trim();
+  const cleaned = normalized
+    .replace(/^(type de repas|repas|meal type):\s*/i, "")
+    .replace(/\s*$/, "");
+
+  if (
+    (cleaned.includes("petit") && cleaned.includes("déjeuner")) ||
+    (cleaned.includes("petit") && cleaned.includes("dejeuner")) ||
+    cleaned.includes("breakfast") ||
+    cleaned === "petit_dejeuner" ||
+    cleaned === "petit déjeuner" ||
+    cleaned === "petit-dejeuner"
+  ) {
+    return MealType.PetitDejeuner;
+  }
+
+  if (
+    (cleaned.includes("déjeuner") ||
+      cleaned.includes("dejeuner") ||
+      cleaned.includes("lunch")) &&
+    !cleaned.includes("petit")
+  ) {
+    return MealType.Dejeuner;
+  }
+
+  if (
+    cleaned.includes("collation") ||
+    cleaned.includes("snack") ||
+    cleaned === "collation" ||
+    cleaned === "goûter" ||
+    cleaned === "gouter"
+  ) {
+    return MealType.Collation;
+  }
+
+  if (
+    cleaned.includes("dîner") ||
+    cleaned.includes("diner") ||
+    cleaned.includes("dinner") ||
+    cleaned.includes("souper") ||
+    cleaned === "diner" ||
+    cleaned === "dîner" ||
+    cleaned === "souper"
+  ) {
+    return MealType.Diner;
+  }
+
+  if (
+    cleaned.includes("plat") ||
+    cleaned.includes("entrée") ||
+    cleaned.includes("entree") ||
+    cleaned.includes("dessert")
+  ) {
+    return undefined;
+  }
+
+  return undefined;
+}
 
 @ObjectType()
 class DashboardMealData {
@@ -418,7 +485,7 @@ async function resolveVisibleUserIds(
   return [currentUser.id];
 }
 
-/** Début et fin du jour courant (UTC) pour filtrer les repas "dans la journée". */
+/** Start and end of the current day (UTC) to filter meals "within the day". */
 function getTodayBounds(): { start: Date; end: Date } {
   const now = new Date();
   const start = new Date(
@@ -429,8 +496,8 @@ function getTodayBounds(): { start: Date; end: Date } {
 }
 
 /**
- * Retourne les IDs des repas correspondant aux 4 derniers repas du jour par utilisateur.
- * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
+ * Returns the IDs corresponding to the last 4 meals of the day per user.
+ * Uses a single SQL query (ROW_NUMBER) to limit memory usage.
  */
 async function _getLast4MealIdsTodayByUserIds(
   userIds: string[],
@@ -451,8 +518,8 @@ async function _getLast4MealIdsTodayByUserIds(
 }
 
 /**
- * Retourne les IDs des 4 derniers repas par utilisateur sur les 3 derniers jours (pour l’analyse nutritionnelle coach).
- * Une seule requête SQL (ROW_NUMBER) pour limiter la charge en mémoire.
+ * Returns the IDs of the last 4 meals per user over the last 3 days (for coach nutritional analysis).
+ * Uses a single SQL query (ROW_NUMBER) to limit memory usage.
  */
 async function getLast4MealIdsLast3DaysByUserIds(
   userIds: string[],
@@ -498,7 +565,7 @@ const MAX_LAST_MEALS_TODAY = 4;
 
 @Resolver()
 export default class UserDataResolver {
-  /** Charge uniquement les 4 derniers repas du jour pour un utilisateur (pour limiter la mémoire). */
+  /** Loads only the last 4 meals of the current day for a user (to limit memory usage). */
   private async loadUserDishEntriesForToday(
     userId: string,
     limit: number = MAX_LAST_MEALS_TODAY,
@@ -751,6 +818,83 @@ export default class UserDataResolver {
     };
 
     await submission.save();
+
+    // Create a meal (Meal + Dish + Nutritional_Analysis) for the coachee from this submission,
+    // so that it appears in the /user_meals history and in the user statistics.
+    try {
+      const payload = parsedPayload as {
+        draft?: { imageUrl?: string; savedAt?: string; source?: string };
+        details?: { dishName?: string; mealMoment?: string };
+        analysis?: {
+          nutrition_estimee?: {
+            calories_kcal?: { min: number; max: number };
+            proteines_g?: { min: number; max: number };
+            glucides_g?: { min: number; max: number };
+            lipides_g?: { min: number; max: number };
+            fibres_g?: { min: number; max: number };
+          };
+          score_sante_100?: number;
+        };
+      };
+
+      const draft = payload.draft ?? {};
+      const details = payload.details ?? {};
+      const analysis = payload.analysis;
+      const nut = analysis?.nutrition_estimee;
+
+      const mid = (r: { min: number; max: number } | undefined): number =>
+        r ? (r.min + r.max) / 2 : 0;
+
+      const calories = nut ? mid(nut.calories_kcal) : 0;
+      const proteins = nut ? mid(nut.proteines_g) : 0;
+      const carbs = nut ? mid(nut.glucides_g) : 0;
+      const lipids = nut ? mid(nut.lipides_g) : 0;
+      const fibers = nut ? mid(nut.fibres_g) : 0;
+
+      const meal = Meal.create({
+        user: currentUser,
+        name: (details.dishName ?? "").toString().trim() || "Plat scanné",
+        mealType: mapMealTypeToEnum(details.mealMoment as string | undefined),
+        consumedAt: draft.savedAt ? new Date(draft.savedAt) : new Date(),
+      });
+      await meal.save();
+
+      const photoUrl =
+        typeof draft.imageUrl === "string" && draft.imageUrl.trim().length > 0
+          ? draft.imageUrl
+          : undefined;
+
+      const dish = Dish.create({
+        meal,
+        dishType: undefined,
+        analysisStatus: AnalysisStatus.Complete,
+        uploadedAt: new Date(),
+        photoUrl,
+      });
+      await dish.save();
+
+      const nutritionalAnalysis = Nutritional_Analysis.create({
+        calories,
+        proteins,
+        carbohydrates: carbs,
+        lipids,
+        fiber: fibers,
+        mealHealthScore: analysis?.score_sante_100 ?? undefined,
+        suggestions:
+          "Analyse IA assistée sauvegardée depuis la page de scan des repas.",
+        status: Status.Brouillon,
+        isModified: false,
+        analyzedAt: new Date(),
+      });
+      await nutritionalAnalysis.save();
+
+      dish.analysis = nutritionalAnalysis;
+      await dish.save();
+    } catch (_e) {
+      // Do not fail the mutation if meal creation fails:
+      // the coach submission remains available and can still be processed by the coach.
+    }
+
     return true;
   }
 
@@ -928,13 +1072,7 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.max(
-            0,
-            Math.min(
-              100,
-              Math.round((latestDayCalories / targetCalories) * 100),
-            ),
-          )
+        ? Math.round((totalCalories / targetCalories) * 100)
         : 0;
 
     return {

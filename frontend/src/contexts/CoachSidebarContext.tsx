@@ -74,7 +74,7 @@ export function CoachSidebarPanel() {
 
   return (
     <>
-      {/* Fond sombre : uniquement sur mobile quand le menu est ouvert */}
+      {/* Dark backdrop: only on mobile when the menu is open */}
       {isOpen && (
         <button
           type="button"
@@ -83,7 +83,7 @@ export function CoachSidebarPanel() {
           aria-label="Fermer le menu"
         />
       )}
-      {/* Sidebar : fixe à gauche sur desktop, overlay sur mobile */}
+      {/* Sidebar: fixed on the left on desktop, overlay on mobile */}
       <aside
         data-testid="coach-sidebar"
         className={`fixed left-0 top-0 z-40 h-full w-64 transform bg-gray-800 shadow-xl transition-transform duration-200 ease-out ${

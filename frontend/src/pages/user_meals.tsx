@@ -44,6 +44,14 @@ const formatMealTime = (consumedAt: string): string => {
     .replace(":", "h");
 };
 
+const isSameLocalDay = (a: Date, b: Date): boolean => {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
 export default function RepasUtilisateurPage() {
   const router = useRouter();
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
@@ -137,6 +145,26 @@ export default function RepasUtilisateurPage() {
       : 0,
   );
 
+  const targetCalories = 2000;
+  const today = new Date();
+  const totalScannedCalories = mealHistory.reduce((sum, meal) => {
+    const d = new Date(meal.consumedAt);
+    if (Number.isNaN(d.getTime())) return sum;
+    return isSameLocalDay(d, today) ? sum + meal.calories : sum;
+  }, 0);
+  const displayedProgress =
+    targetCalories > 0 ? Math.round((totalScannedCalories / targetCalories) * 100) : 0;
+  const clampedProgress = Math.max(0, Math.min(displayedProgress, 100));
+
+  const getProgressBarColor = (value: number) => {
+    if (value > 100) return "from-[#b91c1c] to-[#7f1d1d]"; // rouge foncé
+    if (value >= 70) return "from-[#22c55e] to-[#15803d]"; // vert
+    if (value >= 45) return "from-[#fb923c] to-[#c05621]"; // orange
+    return "from-[#3b82f6] to-[#1d4ed8]"; // bleu
+  };
+
+  const progressBarGradient = getProgressBarColor(displayedProgress);
+
   return (
     <HomeLayout pageTitle="Mes repas" footerVariant="userSlim">
       <UserPageLayout
@@ -163,7 +191,7 @@ export default function RepasUtilisateurPage() {
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="rounded-md bg-[#bfe8ea] px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
             <div className="text-sm font-semibold">{mealHistory.length}</div>
             <div className="text-[11px]">repas scannés</div>
@@ -175,6 +203,33 @@ export default function RepasUtilisateurPage() {
           <div className="rounded-md bg-[#e9b26b] px-3 py-2 text-xs text-[#2c2c2c] shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
             <div className="text-sm font-semibold">{averageScore}%</div>
             <div className="text-[11px]">score IA moyen</div>
+          </div>
+          <div className="rounded-xl bg-gradient-to-br from-[#e0f2fe] to-[#eff6ff] px-4 py-3 text-xs text-[#1f2937] shadow-[0_4px_10px_rgba(15,23,42,0.18)] border border-[#bfdbfe]/70">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-semibold tracking-wide text-[#0f172a] uppercase">
+                  Objectif global
+                </span>
+                <span className="text-[10px] text-[#4b5563]">
+                  {totalScannedCalories} kcal / {targetCalories} kcal aujourd&apos;hui
+                </span>
+              </div>
+              <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-[#0f172a] shadow-[0_1px_3px_rgba(15,23,42,0.12)]">
+                <span>Progression</span>
+                <span className="rounded-full bg-[#0f172a] px-2 py-0.5 text-[10px] font-bold text-white">
+                  {displayedProgress}
+                  %
+                </span>
+              </div>
+            </div>
+            <div className="mt-1.5 h-3 w-full overflow-hidden rounded-full bg-[#e5edf7] border border-[#cbd5e1]">
+              <div
+                className={`h-full bg-gradient-to-r ${progressBarGradient} transition-all duration-500 ease-out`}
+                style={{
+                  width: `${Math.min(clampedProgress, 100)}%`,
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -195,7 +250,7 @@ export default function RepasUtilisateurPage() {
                         setSelectedMealId(meal.id);
                       }
                     }}
-                    className={`w-full overflow-hidden rounded-md border p-3 text-left transition ${
+                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
                         : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"

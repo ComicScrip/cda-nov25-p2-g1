@@ -206,7 +206,7 @@ class UpdateDishNameInput {
   dishName!: string;
 }
 
-// Input: créer un plat en base à partir d'une soumission scanner et enregistrer les calories (coach)
+// Input: create a dish in the database from a scanner submission and save the calories (coach)
 @InputType()
 class CreateDishFromScannerSubmissionInput {
   @Field()
@@ -491,12 +491,35 @@ export default class MealAnalysisResolver {
       });
 
       if (dishIngredient) {
+        // Update quantity for an existing ingredient.
         dishIngredient.quantity = update.quantityGrams;
         await dishIngredient.save();
+      } else if (update.quantityGrams > 0) {
+        // New ingredient: create Ingredient + Dish_Ingredient
+        let ingredient = await Ingredient.findOne({
+          where: { name: update.ingredientName },
+        });
+        if (!ingredient) {
+          ingredient = Ingredient.create({
+            name: update.ingredientName,
+            unit: "g" as any,
+          });
+          await ingredient.save();
+        }
+
+        const newDishIngredient = Dish_Ingredient.create({
+          dish,
+          ingredient,
+          quantity: update.quantityGrams,
+        });
+        await newDishIngredient.save();
+
+        // Keep in memory for the recalculation below.
+        dish.dish_ingredients = [...(dish.dish_ingredients ?? []), newDishIngredient];
       } else {
-        console.warn(
-          `Ingredient "${update.ingredientName}" not found in dish ${input.dishId}`,
-        );
+        // quantityGrams <= 0 for an unknown ingredient: ignore.
+        // This allows us to effectively "remove" a previous ingredient
+        // by setting it to 0 when renaming (handled on the frontend).
       }
     }
 
@@ -604,8 +627,8 @@ export default class MealAnalysisResolver {
     return analysis;
   }
 
-  // Crée un plat (Meal + Dish + Nutritional_Analysis) à partir d'une soumission scanner et enregistre les calories (coach).
-  // Retourne l'id du plat (dishId) pour que le front puisse ensuite utiliser updateAnalysisCalories si besoin.
+  // Creates a dish (Meal + Dish + Nutritional_Analysis) from a scanner submission and stores the calories (coach).
+  // Returns the dish id (dishId) so that the frontend can later use updateAnalysisCalories if needed.
   @Mutation(() => String)
   @Authorized("coach", "admin")
   async createDishFromScannerSubmission(

@@ -29,8 +29,8 @@ type SeedMassiveOptions = {
   maxMealsPerDay: number; // ex: 5
 };
 
-const FIXED_SEEDED_PASSWORD = "SuperP@ssW0rd!";
-const FIXED_COACH_EMAIL = "coach@app.com";
+ const FIXED_SEEDED_PASSWORD = process.env.FIXED_SEEDED_PASSWORD ?? "SuperP@ssW0rd!"; 
+ const FIXED_COACH_EMAIL = "coach@app.com";  
 
 const DEFAULT_OPTS: SeedMassiveOptions = {
   usersCount: 100,

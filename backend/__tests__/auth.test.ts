@@ -43,7 +43,7 @@ describe("Auth functions", () => {
     });
 
     it("should return null for a token with wrong secret", () => {
-      // Créer un token avec un secret différent
+      // Create a token with a different secret
       const wrongSecretToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjF9.wrong-signature";
       const payload = verifyJWT(wrongSecretToken);

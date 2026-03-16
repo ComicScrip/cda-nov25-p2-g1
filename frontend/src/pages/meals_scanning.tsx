@@ -497,7 +497,7 @@ export default function ScannerRepasPage() {
                   type="button"
                   onClick={openFilePicker}
                   onPaste={handlePasteArea}
-                  className="mt-3 w-full rounded-md border border-dashed border-[#7ea07e] bg-white px-3 py-4 text-center text-[#456145] transition-colors hover:bg-[#f6fbf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5d875d]"
+                  className="mt-3 w-full cursor-pointer rounded-md border border-dashed border-[#7ea07e] bg-white px-3 py-4 text-center text-[#456145] transition-colors hover:bg-[#f6fbf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5d875d]"
                 >
                   <span className="block text-xs font-semibold">
                     Téléchargez une image en cliquant ici
@@ -526,7 +526,7 @@ export default function ScannerRepasPage() {
                   />
                   <button
                     type="submit"
-                    className="rounded-md bg-[#2f6fdd] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                    className="cursor-pointer rounded-md bg-[#2f6fdd] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
                   >
                     Charger
                   </button>
@@ -540,7 +540,7 @@ export default function ScannerRepasPage() {
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="mt-3 rounded-md bg-[#1d7a42] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                    className="mt-3 cursor-pointer rounded-md bg-[#1d7a42] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
                   >
                     Activer la caméra
                   </button>
@@ -562,14 +562,14 @@ export default function ScannerRepasPage() {
                         type="button"
                         onClick={capturePhoto}
                         disabled={!cameraReady}
-                        className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         Capturer la photo
                       </button>
                       <button
                         type="button"
                         onClick={stopCamera}
-                        className="rounded-md bg-[#555] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                        className="rounded-md bg-[#555] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer"
                       >
                         Arrêter la caméra
                       </button>
@@ -615,7 +615,7 @@ export default function ScannerRepasPage() {
               <button
                 type="button"
                 onClick={clearImage}
-                className="mt-3 w-full rounded-md bg-[#2c2c2c] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                className="mt-3 w-full cursor-pointer rounded-md bg-[#2c2c2c] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
               >
                 Effacer l'image
               </button>
@@ -623,7 +623,7 @@ export default function ScannerRepasPage() {
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={!previewUrl || isSaving}
-                className="mt-2 w-full rounded-md bg-[#1d7a42] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
+                className="mt-2 w-full cursor-pointer rounded-md bg-[#1d7a42] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {isSaving ? "Enregistrement..." : "Enregistrer"}
               </button>

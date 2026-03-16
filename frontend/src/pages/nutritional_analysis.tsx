@@ -134,7 +134,7 @@ export default function NutritionalAnalysisPage() {
                   id="coach-select-coachee"
                   value={selectedCoacheeId}
                   onChange={(e) => setSelectedCoacheeId(e.target.value)}
-                  className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[180px]"
+                  className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[180px] cursor-pointer"
                   disabled={recentScannersLoading && coachees.length === 0}
                 >
                   <option value="">
@@ -161,7 +161,7 @@ export default function NutritionalAnalysisPage() {
                     id="coach-data-source"
                     value={dataSource}
                     onChange={(e) => setDataSource(e.target.value as "meals" | "scanner")}
-                    className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[200px]"
+                  className="border border-[#c9c9c9] rounded px-3 py-2 text-sm min-w-[200px] cursor-pointer"
                   >
                     <option value="meals">Repas enregistrés (par défaut)</option>
                     <option value="scanner">Soumissions scanner</option>
@@ -379,7 +379,7 @@ export default function NutritionalAnalysisPage() {
                   type="button"
                   onClick={nutritionalAnalysis.handleAnalyze}
                   disabled={!nutritionalAnalysis.fileBase64 || nutritionalAnalysis.analyzing}
-                  className="inline-flex items-center justify-center rounded-md bg-[#2596be] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center justify-center rounded-md bg-[#2596be] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                 >
                   {nutritionalAnalysis.analyzing && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
@@ -623,6 +623,8 @@ export default function NutritionalAnalysisPage() {
                         nutritionalAnalysis.editedQuantities[key] !== undefined
                           ? nutritionalAnalysis.editedQuantities[key]
                           : (ingredient.estimatedQuantityGrams ?? 0);
+                      const editedName =
+                        nutritionalAnalysis.editedIngredientNames[key] ?? ingredient.name;
 
                       return (
                         <div
@@ -630,7 +632,25 @@ export default function NutritionalAnalysisPage() {
                           className="flex items-center justify-between rounded-sm bg-[#f5fbf1] px-3 py-2 text-[11px]"
                         >
                           <div className="flex-1">
-                            <div className="font-semibold">{ingredient.name}</div>
+                            <div className="font-semibold">
+                              {nutritionalAnalysis.editingQuantities &&
+                              isCoachee &&
+                              nutritionalAnalysis.savedDishId ? (
+                                <input
+                                  type="text"
+                                  value={editedName}
+                                  onChange={(e) => {
+                                    nutritionalAnalysis.setEditedIngredientNames({
+                                      ...nutritionalAnalysis.editedIngredientNames,
+                                      [key]: e.target.value,
+                                    });
+                                  }}
+                                  className="w-full max-w-xs px-2 py-1 border border-[#c9c9c9] rounded text-[11px]"
+                                />
+                              ) : (
+                                ingredient.name
+                              )}
+                            </div>
                             <div className="text-[#555] flex items-center gap-2 mt-1">
                               {nutritionalAnalysis.editingQuantities &&
                               isCoachee &&
@@ -679,26 +699,102 @@ export default function NutritionalAnalysisPage() {
                   {nutritionalAnalysis.editingQuantities &&
                     isCoachee &&
                     nutritionalAnalysis.savedDishId && (
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={handleUpdateQuantities}
-                          disabled={nutritionalAnalysis.updatingQuantities}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2596be] text-white rounded text-xs font-semibold hover:bg-[#1e7a9a] disabled:opacity-50"
-                        >
-                          {nutritionalAnalysis.updatingQuantities ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Recalcul en cours...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-4 w-4" />
-                              Recalculer et sauvegarder
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <>
+                        <div className="mt-3 space-y-2">
+                          <div className="text-[11px] font-semibold text-[#3f5a3e]">
+                            Ajouter un ingrédient manquant
+                          </div>
+                          {nutritionalAnalysis.extraIngredients.map((extra) => (
+                            <div
+                              key={extra.id}
+                              className="flex items-center gap-2 text-[11px]"
+                            >
+                              <input
+                                type="text"
+                                value={extra.name}
+                                onChange={(e) => {
+                                  nutritionalAnalysis.setExtraIngredients(
+                                    nutritionalAnalysis.extraIngredients.map((item) =>
+                                      item.id === extra.id
+                                        ? { ...item, name: e.target.value }
+                                        : item,
+                                    ),
+                                  );
+                                }}
+                                placeholder="Nom de l'ingrédient"
+                                className="flex-1 max-w-xs px-2 py-1 border border-[#c9c9c9] rounded"
+                              />
+                              <input
+                                type="number"
+                                value={extra.quantityGrams}
+                                onChange={(e) => {
+                                  const newValue = parseFloat(e.target.value) || 0;
+                                  nutritionalAnalysis.setExtraIngredients(
+                                    nutritionalAnalysis.extraIngredients.map((item) =>
+                                      item.id === extra.id
+                                        ? { ...item, quantityGrams: newValue }
+                                        : item,
+                                    ),
+                                  );
+                                }}
+                                className="w-20 px-2 py-1 border border-[#c9c9c9] rounded"
+                                min="0"
+                                step="1"
+                              />
+                              <span>g</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  nutritionalAnalysis.setExtraIngredients(
+                                    nutritionalAnalysis.extraIngredients.filter(
+                                      (item) => item.id !== extra.id,
+                                    ),
+                                  );
+                                }}
+                                className="text-[10px] text-red-600 hover:text-red-800"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              nutritionalAnalysis.setExtraIngredients([
+                                ...nutritionalAnalysis.extraIngredients,
+                                {
+                                  id: crypto.randomUUID(),
+                                  name: "",
+                                  quantityGrams: 0,
+                                },
+                              ]);
+                            }}
+                            className="text-[11px] text-[#2596be] hover:text-[#1e7a9a]"
+                          >
+                            + Ajouter un ingrédient
+                          </button>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleUpdateQuantities}
+                            disabled={nutritionalAnalysis.updatingQuantities}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2596be] text-white rounded text-xs font-semibold hover:bg-[#1e7a9a] disabled:opacity-50"
+                          >
+                            {nutritionalAnalysis.updatingQuantities ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Recalcul en cours...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4" />
+                                Recalculer et sauvegarder
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </>
                     )}
 
                   {nutritionalAnalysis.analysis.warnings.length > 0 && (
