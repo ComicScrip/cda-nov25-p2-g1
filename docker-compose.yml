@@ -32,6 +32,8 @@ services:
     build: frontend
     env_file:
       - frontend/.env
+      # Clés IA pour /api/meal-analysis (Next.js) ; si absentes de frontend/.env, prises depuis backend/.env
+      - backend/.env
     ports:
       - 3000:3000
     volumes:

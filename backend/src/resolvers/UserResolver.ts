@@ -48,7 +48,18 @@ export default class UserResolver {
     }
     const hashedPassword = await hash(data.password);
     const newUser = User.create({ email, hashedPassword });
-    return await newUser.save();
+    await newUser.save();
+    // Assign the new coachee to a default coach so the coach can see their submissions
+    if (newUser.role === UserRole.Coachee) {
+      const defaultCoach = await User.findOne({
+        where: { role: UserRole.Coach },
+      });
+      if (defaultCoach) {
+        newUser.coach = defaultCoach;
+        await newUser.save();
+      }
+    }
+    return newUser;
   }
 
   @Mutation(() => String)

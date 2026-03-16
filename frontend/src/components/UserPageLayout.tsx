@@ -8,6 +8,7 @@ const USER_NAV_ITEMS = [
   { id: "evolution", label: "Mon Evolution", href: "/evolution_user" },
   { id: "profile", label: "Mon Profil", href: "/user_profile" },
   { id: "aiAssist", label: "IA Assiste", href: "/meals_scanning" },
+  { id: "analyseIa", label: "Analyse IA", href: "/nutritional_analysis" },
 ] as const;
 
 type UserNavId = (typeof USER_NAV_ITEMS)[number]["id"];

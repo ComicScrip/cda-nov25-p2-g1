@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import CoachLayout from "@/components/coach/CoachLayout";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
@@ -141,9 +142,15 @@ export default function CoachUsers() {
     <CoachLayout pageTitle="Utilisateurs">
       <div className="bg-light-bg py-6 md:py-8 px-4 md:px-6 flex-1">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2 flex-wrap">
             <Users className="w-6 h-6" />
             Gestion des utilisateurs
+            <Badge
+              variant="secondary"
+              className="text-base md:text-lg font-semibold px-4 py-1.5 rounded-full shadow-md border border-gray-600 bg-gray-800 text-gray-100"
+            >
+              {totalCount} suivi{totalCount > 1 ? "s" : ""}
+            </Badge>
           </h1>
 
           <Card>

@@ -214,6 +214,28 @@ export default class CoachRecipeResolver {
       .map(mapRecipeToRecipeData);
   }
 
+  @Query(() => RecipeData, { nullable: true })
+  @Authorized()
+  async userRecipe(
+    @Ctx() context: GraphQLContext,
+    @Arg("id", () => String) id: string,
+  ): Promise<RecipeData | null> {
+    let currentUserId = "";
+    try {
+      const currentUser = await getCurrentUser(context);
+      currentUserId = currentUser.id;
+    } catch (_e) {
+      return null;
+    }
+
+    const userRecipeLink = await User_Recipe.findOne({
+      where: { user: { id: currentUserId }, recipe: { id } },
+      relations: ["recipe"],
+    });
+    const recipe = userRecipeLink?.recipe;
+    return recipe ? mapRecipeToRecipeData(recipe) : null;
+  }
+
   @Query(() => CoachRecipesPageData, { nullable: true })
   @Authorized("coach", "admin")
   async coachRecipesPageData(
@@ -254,6 +276,17 @@ export default class CoachRecipeResolver {
       coachCount,
       averageCalories,
     };
+  }
+
+  @Query(() => RecipeData, { nullable: true })
+  @Authorized("coach", "admin")
+  async coachRecipe(
+    @Ctx() context: GraphQLContext,
+    @Arg("id", () => String) id: string,
+  ): Promise<RecipeData | null> {
+    await getCurrentUser(context);
+    const recipe = await Recipe.findOne({ where: { id } });
+    return recipe ? mapRecipeToRecipeData(recipe) : null;
   }
 
   @Mutation(() => Recipe, { nullable: true })

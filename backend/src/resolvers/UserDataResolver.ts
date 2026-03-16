@@ -21,15 +21,83 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-import { In } from "typeorm";
+import { Between, In } from "typeorm";
 import { getCurrentUser } from "../auth";
+import db from "../db";
+import { Dish } from "../entities/Dish";
+import { AnalysisStatus, MealType, Status } from "../entities/enums";
 import { Meal } from "../entities/Meal";
+import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Pathology } from "../entities/Pathology";
 import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
+
+// Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
+// vers les valeurs de l'enum MealType, en reprenant la logique du MealAnalysisResolver.
+function mapMealTypeToEnum(mealType?: string): MealType | undefined {
+  if (!mealType) return undefined;
+
+  const normalized = mealType.toLowerCase().trim();
+  const cleaned = normalized
+    .replace(/^(type de repas|repas|meal type):\s*/i, "")
+    .replace(/\s*$/, "");
+
+  if (
+    (cleaned.includes("petit") && cleaned.includes("déjeuner")) ||
+    (cleaned.includes("petit") && cleaned.includes("dejeuner")) ||
+    cleaned.includes("breakfast") ||
+    cleaned === "petit_dejeuner" ||
+    cleaned === "petit déjeuner" ||
+    cleaned === "petit-dejeuner"
+  ) {
+    return MealType.PetitDejeuner;
+  }
+
+  if (
+    (cleaned.includes("déjeuner") ||
+      cleaned.includes("dejeuner") ||
+      cleaned.includes("lunch")) &&
+    !cleaned.includes("petit")
+  ) {
+    return MealType.Dejeuner;
+  }
+
+  if (
+    cleaned.includes("collation") ||
+    cleaned.includes("snack") ||
+    cleaned === "collation" ||
+    cleaned === "goûter" ||
+    cleaned === "gouter"
+  ) {
+    return MealType.Collation;
+  }
+
+  if (
+    cleaned.includes("dîner") ||
+    cleaned.includes("diner") ||
+    cleaned.includes("dinner") ||
+    cleaned.includes("souper") ||
+    cleaned === "diner" ||
+    cleaned === "dîner" ||
+    cleaned === "souper"
+  ) {
+    return MealType.Diner;
+  }
+
+  if (
+    cleaned.includes("plat") ||
+    cleaned.includes("entrée") ||
+    cleaned.includes("entree") ||
+    cleaned.includes("dessert")
+  ) {
+    return undefined;
+  }
+
+  return undefined;
+}
 
 @ObjectType()
 class DashboardMealData {
@@ -98,6 +166,15 @@ class DashboardData {
 }
 
 @ObjectType()
+class UserMealIngredientData {
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => Float, { nullable: true })
+  quantity!: number | null;
+}
+
+@ObjectType()
 class UserMealData {
   @Field(() => String)
   id!: string;
@@ -125,6 +202,9 @@ class UserMealData {
 
   @Field(() => String)
   photo!: string;
+
+  @Field(() => [UserMealIngredientData])
+  ingredients!: UserMealIngredientData[];
 
   @Field(() => [String])
   aiInsights!: string[];
@@ -405,6 +485,65 @@ async function resolveVisibleUserIds(
   return [currentUser.id];
 }
 
+/** Start and end of the current day (UTC) to filter meals "within the day". */
+function getTodayBounds(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+/**
+ * Returns the IDs corresponding to the last 4 meals of the day per user.
+ * Uses a single SQL query (ROW_NUMBER) to limit memory usage.
+ */
+async function _getLast4MealIdsTodayByUserIds(
+  userIds: string[],
+): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const result = await db.query(
+    `WITH ranked AS (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY consumed_at DESC NULLS LAST) AS rn
+      FROM meal
+      WHERE consumed_at::date = CURRENT_DATE AND user_id = ANY($1::uuid[])
+    ) SELECT id FROM ranked WHERE rn <= 4`,
+    [userIds],
+  );
+  const rows = Array.isArray(result)
+    ? result
+    : ((result as { rows?: { id: string }[] }).rows ?? []);
+  return rows.map((r: { id: string }) => r.id);
+}
+
+/**
+ * Returns the IDs of the last 4 meals per user over the last 3 days (for coach nutritional analysis).
+ * Uses a single SQL query (ROW_NUMBER) to limit memory usage.
+ */
+async function getLast4MealIdsLast3DaysByUserIds(
+  userIds: string[],
+): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const result = await db.query(
+    `WITH ranked AS (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY consumed_at DESC NULLS LAST) AS rn
+      FROM meal
+      WHERE consumed_at >= (CURRENT_DATE - INTERVAL '3 days') AND user_id = ANY($1::uuid[])
+    ) SELECT id FROM ranked WHERE rn <= 4`,
+    [userIds],
+  );
+  const rows = Array.isArray(result)
+    ? result
+    : ((result as { rows?: { id: string }[] }).rows ?? []);
+  return rows.map((r: { id: string }) => r.id);
+}
+
+type DishEntryIngredient = {
+  name: string;
+  quantity: number | null;
+};
+
 type DishEntry = {
   id: string;
   consumedAt: Date;
@@ -419,17 +558,37 @@ type DishEntry = {
   aiInsights: string[];
   coachName?: string;
   coachComment?: string;
+  ingredients: DishEntryIngredient[];
 };
+
+const MAX_LAST_MEALS_TODAY = 4;
 
 @Resolver()
 export default class UserDataResolver {
-  private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
+  /** Loads only the last 4 meals of the current day for a user (to limit memory usage). */
+  private async loadUserDishEntriesForToday(
+    userId: string,
+    limit: number = MAX_LAST_MEALS_TODAY,
+  ): Promise<DishEntry[]> {
+    const { start, end } = getTodayBounds();
     const meals = await Meal.find({
-      where: { user: { id: userId } },
-      relations: ["dishes", "dishes.analysis"],
+      where: {
+        user: { id: userId },
+        consumedAt: Between(start, end),
+      },
+      relations: [
+        "dishes",
+        "dishes.analysis",
+        "dishes.dish_ingredients",
+        "dishes.dish_ingredients.ingredient",
+      ],
       order: { consumedAt: "DESC" },
+      take: limit,
     });
+    return this.mealsToDishEntries(meals);
+  }
 
+  private mealsToDishEntries(meals: Meal[]): DishEntry[] {
     const dishEntries = meals
       .flatMap((meal) =>
         (meal.dishes ?? []).map((dish) => {
@@ -443,6 +602,12 @@ export default class UserDataResolver {
             .map((line) => line.trim())
             .filter(Boolean);
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
+          const ingredients: DishEntryIngredient[] = (
+            dish.dish_ingredients ?? []
+          ).map((di) => ({
+            name: di.ingredient?.name ?? "Inconnu",
+            quantity: di.quantity != null ? Number(di.quantity) : null,
+          }));
 
           return {
             id: dish.id,
@@ -458,6 +623,7 @@ export default class UserDataResolver {
             aiInsights,
             coachName: coachSuggestion.coachName,
             coachComment: coachSuggestion.coachComment,
+            ingredients,
           };
         }),
       )
@@ -466,6 +632,20 @@ export default class UserDataResolver {
     return dishEntries.sort(
       (a, b) => b.consumedAt.getTime() - a.consumedAt.getTime(),
     );
+  }
+
+  private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
+    const meals = await Meal.find({
+      where: { user: { id: userId } },
+      relations: [
+        "dishes",
+        "dishes.analysis",
+        "dishes.dish_ingredients",
+        "dishes.dish_ingredients.ingredient",
+      ],
+      order: { consumedAt: "DESC" },
+    });
+    return this.mealsToDishEntries(meals);
   }
 
   private async buildUserProfilePayload(
@@ -638,6 +818,83 @@ export default class UserDataResolver {
     };
 
     await submission.save();
+
+    // Create a meal (Meal + Dish + Nutritional_Analysis) for the coachee from this submission,
+    // so that it appears in the /user_meals history and in the user statistics.
+    try {
+      const payload = parsedPayload as {
+        draft?: { imageUrl?: string; savedAt?: string; source?: string };
+        details?: { dishName?: string; mealMoment?: string };
+        analysis?: {
+          nutrition_estimee?: {
+            calories_kcal?: { min: number; max: number };
+            proteines_g?: { min: number; max: number };
+            glucides_g?: { min: number; max: number };
+            lipides_g?: { min: number; max: number };
+            fibres_g?: { min: number; max: number };
+          };
+          score_sante_100?: number;
+        };
+      };
+
+      const draft = payload.draft ?? {};
+      const details = payload.details ?? {};
+      const analysis = payload.analysis;
+      const nut = analysis?.nutrition_estimee;
+
+      const mid = (r: { min: number; max: number } | undefined): number =>
+        r ? (r.min + r.max) / 2 : 0;
+
+      const calories = nut ? mid(nut.calories_kcal) : 0;
+      const proteins = nut ? mid(nut.proteines_g) : 0;
+      const carbs = nut ? mid(nut.glucides_g) : 0;
+      const lipids = nut ? mid(nut.lipides_g) : 0;
+      const fibers = nut ? mid(nut.fibres_g) : 0;
+
+      const meal = Meal.create({
+        user: currentUser,
+        name: (details.dishName ?? "").toString().trim() || "Plat scanné",
+        mealType: mapMealTypeToEnum(details.mealMoment as string | undefined),
+        consumedAt: draft.savedAt ? new Date(draft.savedAt) : new Date(),
+      });
+      await meal.save();
+
+      const photoUrl =
+        typeof draft.imageUrl === "string" && draft.imageUrl.trim().length > 0
+          ? draft.imageUrl
+          : undefined;
+
+      const dish = Dish.create({
+        meal,
+        dishType: undefined,
+        analysisStatus: AnalysisStatus.Complete,
+        uploadedAt: new Date(),
+        photoUrl,
+      });
+      await dish.save();
+
+      const nutritionalAnalysis = Nutritional_Analysis.create({
+        calories,
+        proteins,
+        carbohydrates: carbs,
+        lipids,
+        fiber: fibers,
+        mealHealthScore: analysis?.score_sante_100 ?? undefined,
+        suggestions:
+          "Analyse IA assistée sauvegardée depuis la page de scan des repas.",
+        status: Status.Brouillon,
+        isModified: false,
+        analyzedAt: new Date(),
+      });
+      await nutritionalAnalysis.save();
+
+      dish.analysis = nutritionalAnalysis;
+      await dish.save();
+    } catch (_e) {
+      // Do not fail the mutation if meal creation fails:
+      // the coach submission remains available and can still be processed by the coach.
+    }
+
     return true;
   }
 
@@ -689,14 +946,10 @@ export default class UserDataResolver {
   async coachUserMealsTestData(
     @Ctx() context: GraphQLContext,
     @Arg("userId", () => String, { nullable: true }) userId?: string,
-    @Arg("limit", () => Int, { nullable: true }) limit?: number,
+    @Arg("limit", () => Int, { nullable: true }) _limit?: number,
   ): Promise<CoachUserMealTestData[]> {
     const currentUser = await getCurrentUser(context);
     const visibleUserIds = await resolveVisibleUserIds(currentUser);
-    const clampedLimit =
-      typeof limit === "number" && Number.isFinite(limit)
-        ? Math.min(Math.max(limit, 1), 200)
-        : 120;
 
     if (visibleUserIds && visibleUserIds.length === 0) {
       return [];
@@ -706,15 +959,14 @@ export default class UserDataResolver {
       return [];
     }
 
+    const userIdsToLoad = userId ? [userId] : (visibleUserIds ?? []);
+    const mealIds = await getLast4MealIdsLast3DaysByUserIds(userIdsToLoad);
+    if (mealIds.length === 0) return [];
+
     const meals = await Meal.find({
-      where: userId
-        ? { user: { id: userId } }
-        : visibleUserIds
-          ? { user: { id: In(visibleUserIds) } }
-          : undefined,
+      where: { id: In(mealIds) },
       relations: ["user", "dishes", "dishes.analysis"],
       order: { consumedAt: "DESC" },
-      take: clampedLimit,
     });
 
     const fallbackPhoto = "/MyDietChef_image.webp";
@@ -798,7 +1050,6 @@ export default class UserDataResolver {
     let latestDayProtein = 0;
     let latestDayCarbs = 0;
     let latestDayFat = 0;
-    let latestDayCalories = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
@@ -807,7 +1058,6 @@ export default class UserDataResolver {
         latestDayProtein += dish.proteins;
         latestDayCarbs += dish.carbs;
         latestDayFat += dish.fats;
-        latestDayCalories += dish.calories;
       }
     }
 
@@ -820,13 +1070,7 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.max(
-            0,
-            Math.min(
-              100,
-              Math.round((latestDayCalories / targetCalories) * 100),
-            ),
-          )
+        ? Math.round((totalCalories / targetCalories) * 100)
         : 0;
 
     return {
@@ -891,6 +1135,10 @@ export default class UserDataResolver {
         fat: Math.round(dish.fats),
         aiScore: Math.round(dish.score),
         photo: dish.photoUrl?.trim() || fallbackPhoto,
+        ingredients: dish.ingredients.map((ing) => ({
+          name: ing.name,
+          quantity: ing.quantity,
+        })),
         aiInsights,
         coachComment:
           dish.coachComment?.trim() ||
@@ -898,6 +1146,47 @@ export default class UserDataResolver {
         coachName: dish.coachName?.trim() || "Coach",
       };
     });
+  }
+
+  @Query(() => UserMealData, { nullable: true })
+  @Authorized()
+  async userMeal(
+    @Ctx() context: GraphQLContext,
+    @Arg("id", () => String) id: string,
+  ): Promise<UserMealData | null> {
+    const currentUser = await getCurrentUser(context);
+    const dishes = await this.loadUserDishEntries(currentUser.id);
+    const dish = dishes.find((d) => d.id === id);
+    if (!dish) return null;
+
+    const fallbackPhoto = "/MyDietChef_image.webp";
+    const name =
+      dish.mealName?.trim() || formatMealTypeLabel(dish.mealType) || "Repas";
+    const aiInsights =
+      dish.aiInsights.length > 0
+        ? dish.aiInsights
+        : ["Aucune indication IA disponible pour ce repas."];
+
+    return {
+      id: dish.id,
+      name,
+      consumedAt: dish.consumedAt.toISOString(),
+      calories: Math.round(dish.calories),
+      protein: Math.round(dish.proteins),
+      carbs: Math.round(dish.carbs),
+      fat: Math.round(dish.fats),
+      aiScore: Math.round(dish.score),
+      photo: dish.photoUrl?.trim() || fallbackPhoto,
+      ingredients: dish.ingredients.map((ing) => ({
+        name: ing.name,
+        quantity: ing.quantity,
+      })),
+      aiInsights,
+      coachComment:
+        dish.coachComment?.trim() ||
+        "Continue sur cette dynamique pour garder des repas equilibres.",
+      coachName: dish.coachName?.trim() || "Coach",
+    };
   }
 
   private async buildEvolutionDataForUser(
@@ -1039,39 +1328,42 @@ export default class UserDataResolver {
 
     const evolutionData = await this.buildEvolutionDataForUser(userId);
 
-    const dishes = await this.loadUserDishEntries(userId);
-    const todayKey = toDateKey(new Date());
+    const dishes = await this.loadUserDishEntriesForToday(
+      userId,
+      MAX_LAST_MEALS_TODAY,
+    );
     const fallbackPhoto = "/MyDietChef_image.webp";
-    const todayMeals = dishes
-      .filter((d) => toDateKey(d.consumedAt) === todayKey)
-      .slice(0, 20)
-      .map((dish, index) => {
-        const fallbackName = `Repas ${index + 1}`;
-        const name =
-          dish.mealName?.trim() ||
-          formatMealTypeLabel(dish.mealType) ||
-          fallbackName;
-        const aiInsights =
-          dish.aiInsights.length > 0
-            ? dish.aiInsights
-            : ["Aucune indication IA disponible pour ce repas."];
-        return {
-          id: dish.id,
-          name,
-          consumedAt: dish.consumedAt.toISOString(),
-          calories: Math.round(dish.calories),
-          protein: Math.round(dish.proteins),
-          carbs: Math.round(dish.carbs),
-          fat: Math.round(dish.fats),
-          aiScore: Math.round(dish.score),
-          photo: dish.photoUrl?.trim() || fallbackPhoto,
-          aiInsights,
-          coachComment:
-            dish.coachComment?.trim() ||
-            "Continue sur cette dynamique pour garder des repas équilibrés.",
-          coachName: dish.coachName?.trim() || "Coach",
-        };
-      });
+    const todayMeals = dishes.map((dish, index) => {
+      const fallbackName = `Repas ${index + 1}`;
+      const name =
+        dish.mealName?.trim() ||
+        formatMealTypeLabel(dish.mealType) ||
+        fallbackName;
+      const aiInsights =
+        dish.aiInsights.length > 0
+          ? dish.aiInsights
+          : ["Aucune indication IA disponible pour ce repas."];
+      return {
+        id: dish.id,
+        name,
+        consumedAt: dish.consumedAt.toISOString(),
+        calories: Math.round(dish.calories),
+        protein: Math.round(dish.proteins),
+        carbs: Math.round(dish.carbs),
+        fat: Math.round(dish.fats),
+        aiScore: Math.round(dish.score),
+        photo: dish.photoUrl?.trim() || fallbackPhoto,
+        ingredients: dish.ingredients.map((ing) => ({
+          name: ing.name,
+          quantity: ing.quantity,
+        })),
+        aiInsights,
+        coachComment:
+          dish.coachComment?.trim() ||
+          "Continue sur cette dynamique pour garder des repas équilibrés.",
+        coachName: dish.coachName?.trim() || "Coach",
+      };
+    });
 
     const displayName =
       [profile.first_name ?? "", profile.last_name ?? ""]
