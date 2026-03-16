@@ -23,6 +23,9 @@ async function logSeededUsersByRole() {
 async function run() {
   await clearDB();
 
+  // Ensure the schema is in sync before seeding the massive dataset
+  await db.synchronize();
+
   await db.transaction(async (manager) => {
     await seedMassiveDataset(manager, {
       usersCount: 100,
