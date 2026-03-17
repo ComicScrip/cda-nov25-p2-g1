@@ -1,0 +1,24 @@
+{
+  "editor.formatOnSave": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  }
+}

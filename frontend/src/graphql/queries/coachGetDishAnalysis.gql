@@ -1,0 +1,29 @@
+query CoachGetDishAnalysis($dishId: String!) {
+  coachGetDishAnalysis(dishId: $dishId) {
+    dishId
+    analysisId
+    dishName
+    ingredients {
+      name
+      estimatedQuantityGrams
+      calories
+      protein
+      carbs
+      fat
+    }
+    totalNutrition {
+      calories
+      protein
+      carbs
+      fat
+      fiber
+      sugar
+      salt
+    }
+    analysisSummary
+    healthScore
+    warnings
+    mealType
+    photoUrl
+  }
+}

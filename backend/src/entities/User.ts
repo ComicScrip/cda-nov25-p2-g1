@@ -5,6 +5,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -48,7 +50,7 @@ export class User extends BaseEntity {
 
   @Field(() => Date)
   @CreateDateColumn({ name: "created_at" })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Field(() => Date, { nullable: true })
   @Column({ name: "last_login_at", type: "timestamp", nullable: true })
@@ -80,6 +82,20 @@ export class User extends BaseEntity {
     (user_recipe) => user_recipe.user,
   )
   recipes?: User_Recipe[];
+
+  @ManyToOne(
+    () => User,
+    (coach) => coach.coachees,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({ name: "coach_id" })
+  coach?: User | null;
+
+  @OneToMany(
+    () => User,
+    (coachee) => coachee.coach,
+  )
+  coachees?: User[];
 }
 
 @InputType()

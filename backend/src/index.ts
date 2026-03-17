@@ -1,12 +1,12 @@
 import "reflect-metadata";
 import { fastifyApolloHandler } from "@as-integrations/fastify";
 import { initApollo } from "./apollo";
-import db from "./db";
+import { initializeDatabase } from "./db/initialize";
 import env from "./env";
 import { initFastify } from "./fastify";
 
 async function start() {
-  await db.initialize();
+  await initializeDatabase();
   const fastify = await initFastify();
   const apollo = await initApollo(fastify);
   await apollo.start();

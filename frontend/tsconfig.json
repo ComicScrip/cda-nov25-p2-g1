@@ -9,13 +9,15 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node", "jest"]
   },
   "include": [
     "next-env.d.ts",
@@ -25,6 +27,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"],
-  "typeRoots": ["../../node_modules/@heroicons/**/*.d.ts"]
+  "exclude": ["node_modules"]
 }

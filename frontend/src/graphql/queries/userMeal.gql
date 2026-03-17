@@ -1,0 +1,20 @@
+query UserMeal($id: String!) {
+  userMeal(id: $id) {
+    id
+    name
+    consumedAt
+    calories
+    protein
+    carbs
+    fat
+    aiScore
+    photo
+    ingredients {
+      name
+      quantity
+    }
+    aiInsights
+    coachComment
+    coachName
+  }
+}

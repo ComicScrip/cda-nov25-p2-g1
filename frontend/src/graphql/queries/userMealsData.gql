@@ -1,0 +1,21 @@
+# includeIngredients: si false, la requête ne demande pas les ingrédients (compatibilité backend ancien)
+query UserMealsData($includeIngredients: Boolean = true) {
+  userMealsData {
+    id
+    name
+    consumedAt
+    calories
+    protein
+    carbs
+    fat
+    aiScore
+    photo
+    ingredients @include(if: $includeIngredients) {
+      name
+      quantity
+    }
+    aiInsights
+    coachComment
+    coachName
+  }
+}

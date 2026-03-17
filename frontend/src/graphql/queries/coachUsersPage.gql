@@ -1,0 +1,18 @@
+query CoachUsersPage($limit: Int, $offset: Int) {
+  coachUsersPage(limit: $limit, offset: $offset) {
+    users {
+      userId
+      email
+      displayName
+      role
+      initialWeight
+      currentWeight
+      goalLabel
+      caloricGoal
+      mealsCount
+      scoreRounded
+      createdAt
+    }
+    totalCount
+  }
+}

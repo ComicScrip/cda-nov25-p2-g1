@@ -1,0 +1,18 @@
+query CoachUserMealsTestData($userId: String, $limit: Int) {
+  coachUserMealsTestData(userId: $userId, limit: $limit) {
+    id
+    userId
+    userEmail
+    name
+    consumedAt
+    calories
+    protein
+    carbs
+    fat
+    aiScore
+    photo
+    aiInsights
+    coachComment
+    coachName
+  }
+}

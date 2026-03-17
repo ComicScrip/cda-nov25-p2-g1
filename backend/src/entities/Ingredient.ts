@@ -21,7 +21,7 @@ export class Ingredient extends BaseEntity {
   @Column({ type: "text" })
   name!: string;
 
-  @Field({ nullable: true })
+  @Field(() => Unit, { nullable: true })
   @Column({ type: "enum", enum: Unit, nullable: true })
   unit?: Unit;
 

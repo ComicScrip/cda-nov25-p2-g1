@@ -1,0 +1,12 @@
+mutation UpdateUserProfileData($data: UserProfileUpdateInput!) {
+  updateUserProfileData(data: $data) {
+    firstName
+    lastName
+    dateOfBirth
+    gender
+    height
+    currentWeight
+    goal
+    medicalTags
+  }
+}

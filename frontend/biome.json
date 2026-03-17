@@ -1,5 +1,4 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,7 +6,16 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.next", "!dist", "!build", "!src/graphql/generated/*"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!.next",
+      "!dist",
+      "!build",
+      "!playwright-report",
+      "!test-results",
+      "!src/graphql/generated/*"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,6 +26,9 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "performance": {
+        "noImgElement": "off"
+      },
       "recommended": true,
       "suspicious": {
         "noUnknownAtRules": "off",

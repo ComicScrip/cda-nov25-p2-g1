@@ -7,18 +7,20 @@ import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Pathology } from "../entities/Pathology";
 import { Recipe } from "../entities/Recipe";
 import { Recipe_Ingredient } from "../entities/Recipe_Ingredient";
+import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import { User } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { User_Recipe } from "../entities/User_Recipe";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import env from "../env";
 
-export default new DataSource({
+const db = new DataSource({
   type: "postgres",
   host: env.DB_HOST,
   username: env.DB_USER,
   password: env.DB_PASS,
-  port: env.DB_PORT,
+  port:
+    env.NODE_ENV === "test" ? (env.TEST_DB_PORT ?? env.DB_PORT) : env.DB_PORT,
   database: env.DB_NAME,
   entities: [
     User,
@@ -33,7 +35,20 @@ export default new DataSource({
     Recipe,
     Recipe_Ingredient,
     User_Recipe,
+    Scanner_Coach_Submission,
   ],
   synchronize: env.NODE_ENV !== "production",
   //logging: true
 });
+
+export async function test_clearDB() {
+  const runner = db.createQueryRunner();
+  const tableDroppings = db.entityMetadatas.map((entity) =>
+    runner.query(`DROP TABLE IF EXISTS "${entity.tableName}" CASCADE`),
+  );
+  await Promise.all(tableDroppings);
+  await runner.release();
+  await db.synchronize();
+}
+
+export default db;

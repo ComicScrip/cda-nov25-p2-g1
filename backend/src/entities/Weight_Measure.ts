@@ -32,5 +32,5 @@ export class Weight_Measure extends BaseEntity {
       onDelete: "CASCADE",
     },
   )
-  user_profiles!: User_profile[];
+  user_profile!: User_profile; // This relation is a ManyToOne, so the output should be for one user profile
 }

@@ -1,0 +1,3 @@
+mutation SaveMealAnalysis($input: SaveMealAnalysisInput!) {
+  saveMealAnalysis(input: $input)
+}

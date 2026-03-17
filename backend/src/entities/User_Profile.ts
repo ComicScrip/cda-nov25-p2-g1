@@ -65,13 +65,13 @@ export class User_profile extends BaseEntity {
     },
   )
   @JoinTable({
-    name: "User_pathologies",
+    name: "user_pathologies",
     joinColumn: {
-      name: "id",
+      name: "user_profile_id",
       referencedColumnName: "id",
     },
     inverseJoinColumn: {
-      name: "id",
+      name: "pathology_id",
       referencedColumnName: "id",
     },
   })
@@ -82,7 +82,7 @@ export class User_profile extends BaseEntity {
   @Field(() => [Weight_Measure])
   @OneToMany(
     () => Weight_Measure,
-    (weight_measure) => weight_measure.user_profiles,
+    (weight_measure) => weight_measure.user_profile,
   )
   weight_measures!: Weight_Measure[];
 }

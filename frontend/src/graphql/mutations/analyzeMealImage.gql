@@ -1,0 +1,27 @@
+mutation AnalyzeMealImage($input: AnalyzeMealImageInput!) {
+  analyzeMealImage(input: $input) {
+    dishName
+    analysisSummary
+    healthScore
+    mealType
+    warnings
+    totalNutrition {
+      calories
+      protein
+      carbs
+      fat
+      fiber
+      sugar
+      salt
+    }
+    ingredients {
+      name
+      estimatedQuantityGrams
+      confidence
+      calories
+      protein
+      carbs
+      fat
+    }
+  }
+}

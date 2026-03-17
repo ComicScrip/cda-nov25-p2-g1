@@ -10,6 +10,14 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  setupFilesAfterEnv: ["<rootDir>/__tests__/setup.ts"],
-  testPathIgnorePatterns: ["/node_modules/", "/__tests__/setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  testPathIgnorePatterns: ["/node_modules/"],
 };
+
+//@type {import('ts-jest').JestConfigWithTsJest}
+//module.exports = {
+//  preset: "ts-jest",
+//  testEnvironment: "node",
+//  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+//  testMatch: ["**/__tests__/**/*.test.ts"]
+//};

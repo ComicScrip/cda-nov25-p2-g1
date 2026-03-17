@@ -2,11 +2,30 @@ import { hash, verify } from "argon2";
 import { GraphQLError } from "graphql";
 import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { endSession, getCurrentUser, startSession } from "../auth";
-import { LoginInput, SignupInput, User } from "../entities/User";
+import { LoginInput, SignupInput, User, UserRole } from "../entities/User";
 import type { GraphQLContext } from "../types";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+async function authenticateUser(data: LoginInput) {
+  const email = normalizeEmail(data.email);
+  const user = await User.findOne({ where: { email } });
+  if (!user) {
+    throw new GraphQLError("Invalid email or password", {
+      extensions: { code: "INVALID_CREDENTIALS", http: { status: 401 } },
+    });
+  }
+
+  const isPasswordValid = await verify(user.hashedPassword, data.password);
+  if (!isPasswordValid) {
+    throw new GraphQLError("Invalid email or password", {
+      extensions: { code: "INVALID_CREDENTIALS", http: { status: 401 } },
+    });
+  }
+
+  return user;
 }
 
 @Resolver()
@@ -29,7 +48,18 @@ export default class UserResolver {
     }
     const hashedPassword = await hash(data.password);
     const newUser = User.create({ email, hashedPassword });
-    return await newUser.save();
+    await newUser.save();
+    // Assign the new coachee to a default coach so the coach can see their submissions
+    if (newUser.role === UserRole.Coachee) {
+      const defaultCoach = await User.findOne({
+        where: { role: UserRole.Coach },
+      });
+      if (defaultCoach) {
+        newUser.coach = defaultCoach;
+        await newUser.save();
+      }
+    }
+    return newUser;
   }
 
   @Mutation(() => String)
@@ -37,18 +67,21 @@ export default class UserResolver {
     @Arg("data", () => LoginInput, { validate: true }) data: LoginInput,
     @Ctx() context: GraphQLContext,
   ) {
-    const email = normalizeEmail(data.email);
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      throw new GraphQLError("Invalid email or password", {
-        extensions: { code: "INVALID_CREDENTIALS", http: { status: 401 } },
-      });
-    }
+    const user = await authenticateUser(data);
 
-    const isPasswordValid = await verify(user.hashedPassword, data.password);
-    if (!isPasswordValid) {
-      throw new GraphQLError("Invalid email or password", {
-        extensions: { code: "INVALID_CREDENTIALS", http: { status: 401 } },
+    return startSession(context, user);
+  }
+
+  @Mutation(() => String)
+  async loginCoach(
+    @Arg("data", () => LoginInput, { validate: true }) data: LoginInput,
+    @Ctx() context: GraphQLContext,
+  ) {
+    const user = await authenticateUser(data);
+
+    if (user.role !== UserRole.Coach) {
+      throw new GraphQLError("Seuls les coachs peuvent se connecter ici.", {
+        extensions: { code: "FORBIDDEN", http: { status: 403 } },
       });
     }
 

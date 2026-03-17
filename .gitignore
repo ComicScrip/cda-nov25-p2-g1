@@ -1,1 +1,6 @@
 .env.production
+docs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+frontend/test-results/

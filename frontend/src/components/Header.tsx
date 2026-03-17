@@ -1,18 +1,45 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { useCoachSidebar } from "@/contexts/CoachSidebarContext";
+import { UserRole, useLogoutMutation, useProfileQuery } from "@/graphql/generated/schema";
+import { getDefaultDashboardHref } from "@/lib/auth";
+
+const USER_MOBILE_NAV_LINKS = [
+  { href: "/dashboard_user", label: "Dashboard" },
+  { href: "/user_meals", label: "Mes Repas" },
+  { href: "/user_recipe", label: "Mes Recettes" },
+  { href: "/evolution_user", label: "Mon Evolution" },
+  { href: "/user_profile", label: "Mon Profile" },
+  { href: "/meals_scanning", label: "IA Assiste" },
+  { href: "/nutritional_analysis", label: "Analyse IA" },
+] as const;
+
+const COACH_MOBILE_NAV_LINKS = [
+  { href: "/coach/dashboard", label: "Dashboard" },
+  { href: "/coach/users", label: "Mes coachés" },
+  { href: "/coach/recipes", label: "Recettes" },
+  { href: "/coach/recipes/new", label: "Créer une recette" },
+  { href: "/nutritional_analysis", label: "Analyse IA" },
+] as const;
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const coachSidebar = useCoachSidebar();
   const { data, loading, refetch } = useProfileQuery({
     fetchPolicy: "cache-and-network",
   });
   const user = data?.me || null;
+  const isCoachOrAdmin = user?.role === UserRole.Coach || user?.role === UserRole.Admin;
 
   const [logout] = useLogoutMutation();
   const router = useRouter();
+
+  const getDashboardHref = () => {
+    return getDefaultDashboardHref(user?.role);
+  };
 
   const handleLogout = async () => {
     try {
@@ -33,8 +60,15 @@ export default function Header() {
       <nav className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="logo-circle logo-circle-hover w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm">
-            <span className="text-gray-800 text-2xl font-semi-bold logo-letter">M</span>
+          <div className="logo-circle logo-circle-hover overflow-hidden">
+            <Image
+              src="/Logo_MDC.png"
+              alt="MyDietChef"
+              width={48}
+              height={48}
+              className="header-logo-image"
+              priority
+            />
           </div>
         </Link>
 
@@ -44,10 +78,20 @@ export default function Header() {
             (user ? (
               <>
                 <div className="flex items-center gap-2 mr-2">
-                  <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
-                    {getUserInitial(user.email)}
-                  </div>
+                  <Link href={getDashboardHref()} className="flex items-center">
+                    <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
+                      {getUserInitial(user.email)}
+                    </div>
+                  </Link>
                 </div>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-gray-300 hover:bg-gray-700"
+                >
+                  <Link href={getDashboardHref()}>Dashboard</Link>
+                </Button>
                 <Button
                   type="button"
                   onClick={handleLogout}
@@ -57,7 +101,7 @@ export default function Header() {
                 >
                   Déconnexion
                 </Button>
-                {user.role === "admin" && (
+                {user.role === UserRole.Admin && (
                   <Button
                     asChild
                     variant="ghost"
@@ -79,19 +123,23 @@ export default function Header() {
                 <Link href="/signup" className="text-white hover:text-gray-300 transition-colors">
                   Essayer gratuitement
                 </Link>
-                <Link href="/#coach" className="text-white hover:text-gray-300 transition-colors">
-                  Espace coach
-                </Link>
               </>
             ))}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Burger : visible uniquement sur mobile ; pour coach/admin ouvre la sidebar, sinon menu déroulant */}
         <button
           type="button"
-          className="md:hidden text-white"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
+          className="md:hidden flex text-white"
+          onClick={() => {
+            if (isCoachOrAdmin && coachSidebar) {
+              coachSidebar.open();
+              setIsMenuOpen(false);
+            } else {
+              setIsMenuOpen(!isMenuOpen);
+            }
+          }}
+          aria-label={isCoachOrAdmin ? "Ouvrir le menu coach" : "Toggle menu"}
         >
           <svg
             className="w-6 h-6"
@@ -102,25 +150,81 @@ export default function Header() {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <title>Toggle menu</title>
-            {isMenuOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
+            <title>{isCoachOrAdmin ? "Ouvrir le menu coach" : "Toggle menu"}</title>
+            {!isCoachOrAdmin && isMenuOpen ? (
+              <path d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
       </nav>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-dark-header border-t border-gray-700">
+      {/* Fond cliquable : ferme le menu burger au clic à l'extérieur (mobile uniquement) */}
+      {isMenuOpen && !isCoachOrAdmin && (
+        <button
+          type="button"
+          aria-label="Fermer le menu"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      {/* Menu mobile (dropdown) : masqué pour coach/admin, ils utilisent la sidebar */}
+      {isMenuOpen && !isCoachOrAdmin && (
+        <div className="relative z-50 md:hidden bg-dark-header border-t border-gray-700">
           <div className="flex flex-col px-4 py-4 gap-4">
             {!loading &&
               (user ? (
                 <>
                   <div className="flex items-center gap-2 pb-2 border-b border-gray-700">
-                    <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
-                      {getUserInitial(user.email)}
-                    </div>
+                    <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
+                      <div className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
+                        {getUserInitial(user.email)}
+                      </div>
+                    </Link>
                     <span className="text-white text-sm">{user.email}</span>
                   </div>
+                  {user.role === UserRole.Admin ? (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                    >
+                      <Link href={getDashboardHref()} onClick={() => setIsMenuOpen(false)}>
+                        Dashboard
+                      </Link>
+                    </Button>
+                  ) : user.role === UserRole.Coach ? (
+                    COACH_MOBILE_NAV_LINKS.map((item) => (
+                      <Button
+                        key={item.href}
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                      >
+                        <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))
+                  ) : (
+                    USER_MOBILE_NAV_LINKS.map((item) => (
+                      <Button
+                        key={item.href}
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                      >
+                        <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))
+                  )}
                   <Button
                     type="button"
                     onClick={handleLogout}
@@ -130,7 +234,7 @@ export default function Header() {
                   >
                     Déconnexion
                   </Button>
-                  {user.role === "admin" && (
+                  {user.role === UserRole.Admin && (
                     <Button
                       asChild
                       variant="ghost"
@@ -167,7 +271,7 @@ export default function Header() {
                     Essayer gratuitement
                   </Link>
                   <Link
-                    href="/#coach"
+                    href="/coach/login"
                     className="text-white hover:text-gray-300 transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >

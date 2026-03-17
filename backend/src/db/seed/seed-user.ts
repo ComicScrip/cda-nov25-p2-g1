@@ -1,0 +1,43 @@
+import { hash } from "argon2";
+import { User, UserRole } from "../../entities/User";
+
+export async function seedUsers() {
+  const users = [];
+
+  const coach = await User.create({
+    email: "coach@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Coach,
+  }).save();
+
+  const dave = await User.create({
+    email: "dave.lopper@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Coachee,
+    coach,
+  }).save();
+
+  const jane = await User.create({
+    email: "jane.doe@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Coachee,
+    coach,
+  }).save();
+
+  const janette = await User.create({
+    email: "janette.doe@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Coachee,
+    coach,
+  }).save();
+
+  const admin = await User.create({
+    email: "admin@app.com",
+    hashedPassword: await hash("SuperP@ssW0rd!"),
+    role: UserRole.Admin,
+  }).save();
+
+  users.push(dave, jane, admin, janette, coach);
+
+  return users;
+}

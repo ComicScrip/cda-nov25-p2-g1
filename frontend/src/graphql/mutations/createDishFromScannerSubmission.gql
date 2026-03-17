@@ -1,0 +1,3 @@
+mutation CreateDishFromScannerSubmission($input: CreateDishFromScannerSubmissionInput!) {
+  createDishFromScannerSubmission(input: $input)
+}

@@ -1,0 +1,14 @@
+query CoachUser {
+  coachUsers {
+    userId
+    email
+    displayName
+    initialWeight
+    currentWeight
+    goalLabel
+    caloricGoal
+    mealsCount
+    scoreRounded
+    createdAt
+  }
+}
