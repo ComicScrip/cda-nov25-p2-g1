@@ -379,6 +379,7 @@ async function seedUsersProfilesWeights(
         email,
         hashedPassword: hashedSeedPassword,
         role: UserRole.Coachee,
+        coach: coachUser,
         last_login_at: faker.date.recent({ days: 10 }),
       }),
     );
