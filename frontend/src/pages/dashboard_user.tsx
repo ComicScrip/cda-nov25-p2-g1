@@ -80,7 +80,7 @@ export default function DashboardPage() {
               />
               <Link
                 href="/meals_scanning"
-                className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
+                className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#5f8a56] hover:shadow-lg"
               >
                 Scanner un repas
               </Link>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
               Objectif calorique{" "}
               <span className="ml-2 font-normal">{dashboard?.targetCalories ?? 0} cal / j</span>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2bbf5c] text-xs font-bold text-white">
+            <div className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full bg-[#2bbf5c] px-2.5 text-xs font-bold whitespace-nowrap text-white">
               {dashboard?.targetProgress ?? 0}%
             </div>
           </div>

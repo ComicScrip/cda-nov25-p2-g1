@@ -146,10 +146,10 @@ export default function RecettesUserPage() {
                         setSelectedRecipeId(recipe.id);
                       }
                     }}
-                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition ${
+                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition-all duration-200 hover:scale-[1.01] ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
-                        : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+                        : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:border-[#73916f] hover:bg-[#ffffff] hover:shadow-[0_4px_10px_rgba(0,0,0,0.14)]"
                     }`}
                   >
                     <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] text-[#5a6758]">

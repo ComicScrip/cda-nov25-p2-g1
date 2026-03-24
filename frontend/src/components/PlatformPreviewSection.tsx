@@ -93,7 +93,7 @@ export default function PlatformPreviewSection() {
           <Button
             type="button"
             onClick={() => router.push("/signup")}
-            className="bg-[#73916f] text-white hover:bg-[#5a7356] font-medium px-6 py-3 rounded-md border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)] hover:shadow-[0_3px_6px_rgba(0,0,0,0.12)] hover:scale-[1.02] transition-all duration-200 inline-flex items-center gap-2"
+            className="cursor-pointer bg-[#73916f] text-white hover:bg-[#5a7356] font-medium px-6 py-3 rounded-md border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)] hover:shadow-[0_3px_6px_rgba(0,0,0,0.12)] hover:scale-[1.02] transition-all duration-200 inline-flex items-center gap-2"
           >
             Créer mon compte gratuit
             <ChevronRight className="w-4 h-4" aria-hidden />

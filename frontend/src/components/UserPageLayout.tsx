@@ -54,7 +54,7 @@ export default function UserPageLayout({
                       ) : (
                         <Link
                           href={item.href}
-                          className="relative z-10 block w-full rounded-sm bg-[#f1f1f1] py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                          className="relative z-10 block w-full rounded-sm bg-[#f1f1f1] py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#a680a8] hover:text-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
                         >
                           {item.label}
                         </Link>
