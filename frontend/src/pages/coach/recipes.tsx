@@ -26,6 +26,23 @@ function getServingsLabel(servings: number): string {
   return `${servings} portion${servings > 1 ? "s" : ""}`;
 }
 
+function isAbortLikeError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+
+  const name =
+    typeof error === "object" && error !== null && "name" in error ? String(error.name) : "";
+  const message =
+    typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+
+  return (
+    name === "AbortError" ||
+    message === "The operation was aborted." ||
+    message.toLowerCase().includes("aborted")
+  );
+}
+
 export default function CoachRecipes() {
   const router = useRouter();
   const { data: profileData, loading: profileLoading } = useProfileQuery({
@@ -77,6 +94,7 @@ export default function CoachRecipes() {
     const sentinel = loadMoreSentinelRef.current;
     const scrollRoot = listScrollContainerRef.current ?? null;
     if (!sentinel || totalCount === 0 || allRecipes.length >= totalCount) return;
+    let isEffectActive = true;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -97,6 +115,7 @@ export default function CoachRecipes() {
           },
         })
           .then((result) => {
+            if (!isEffectActive) return;
             const nextRecipes = result.data?.coachRecipesPageData?.recipes ?? [];
             if (nextRecipes.length === 0) return;
             setAllRecipes((prev) => {
@@ -107,14 +126,25 @@ export default function CoachRecipes() {
               return merged.slice(0, totalCount);
             });
           })
+          .catch((error) => {
+            if (!isAbortLikeError(error)) {
+              console.error("Load more recipes error:", error);
+            }
+          })
           .finally(() => {
-            isLoadingMoreRef.current = false;
+            if (isEffectActive) {
+              isLoadingMoreRef.current = false;
+            }
           });
       },
       { root: scrollRoot, rootMargin: "200px", threshold: 0.1 },
     );
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      isEffectActive = false;
+      observer.disconnect();
+      isLoadingMoreRef.current = false;
+    };
   }, [allRecipes.length, totalCount, loadMoreLoading, loadMore]);
 
   const recipes = allRecipes;

@@ -53,6 +53,9 @@ class CoachDashboardStats {
 @ObjectType()
 class RecentUserData {
   @Field(() => String)
+  userId!: string;
+
+  @Field(() => String)
   name!: string;
 
   @Field(() => String)
@@ -178,10 +181,11 @@ export default class CoachDashboardResolver {
         user.createdAt >= sixtyDaysAgo && user.createdAt < thirtyDaysAgo,
     );
 
-    // Get all published recipes
-    const allPublishedRecipes = await Recipe.find({
-      where: { status: Status.Publie },
-    });
+    // Get all recipes, then keep published ones for publication stats
+    const allRecipes = await Recipe.find();
+    const allPublishedRecipes = allRecipes.filter(
+      (recipe) => recipe.status === Status.Publie,
+    );
 
     // Get recipes published in last 30 days and previous 30 days
     const recentRecipes = allPublishedRecipes.filter(
@@ -269,9 +273,13 @@ export default class CoachDashboardResolver {
       },
     };
 
-    // Get recent users (last 3) with their average scores
-    const recentUsersList = allCoachees
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    // Get recent active users (last 3 by most recent login, fallback to creation date)
+    const recentUsersList = [...allCoachees]
+      .sort((a, b) => {
+        const aTime = (a.last_login_at ?? a.createdAt).getTime();
+        const bTime = (b.last_login_at ?? b.createdAt).getTime();
+        return bTime - aTime;
+      })
       .slice(0, 3);
 
     const recentUsersData: RecentUserData[] = await Promise.all(
@@ -313,6 +321,7 @@ export default class CoachDashboardResolver {
             : undefined;
 
         return {
+          userId: user.id,
           name: getUserDisplayName(user, profile),
           email: user.email,
           score: userAverageScore,
@@ -323,8 +332,8 @@ export default class CoachDashboardResolver {
       }),
     );
 
-    // Get recent recipes (last 3 published recipes)
-    const recentRecipesList = allPublishedRecipes
+    // Get recent recipes (last 3 created recipes)
+    const recentRecipesList = allRecipes
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 3);
 

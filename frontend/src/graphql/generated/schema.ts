@@ -496,6 +496,7 @@ export type RecentUserData = {
   name: Scalars['String']['output'];
   score: Scalars['Float']['output'];
   targetDailyCalories?: Maybe<Scalars['Int']['output']>;
+  userId: Scalars['String']['output'];
 };
 
 export type Recipe = {
@@ -769,7 +770,7 @@ export type UpdateUserProfileDataMutation = { __typename?: 'Mutation', updateUse
 export type CoachDashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', name: string, email: string, score: number, currentWeight?: number | null, goal?: string | null, targetDailyCalories?: number | null }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, photo: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
+export type CoachDashboardDataQuery = { __typename?: 'Query', coachDashboardData?: { __typename?: 'CoachDashboardData', stats: { __typename?: 'CoachDashboardStats', users: { __typename?: 'StatData', count: number, evolution: string }, publishedRecipes: { __typename?: 'StatData', count: number, evolution: string }, scannedMeals: { __typename?: 'StatData', count: number, evolution: string }, averageScore: { __typename?: 'StatData', count: number, evolution: string } }, recentUsers: Array<{ __typename?: 'RecentUserData', userId: string, name: string, email: string, score: number, currentWeight?: number | null, goal?: string | null, targetDailyCalories?: number | null }>, recentRecipes: Array<{ __typename?: 'RecentRecipeData', id: string, name: string, photo: string, calories: number, proteins: number, carbs: number, lipids: number }> } | null };
 
 export type CoachGetDishAnalysisQueryVariables = Exact<{
   dishId: Scalars['String']['input'];
@@ -1374,6 +1375,7 @@ export const CoachDashboardDataDocument = gql`
       }
     }
     recentUsers {
+      userId
       name
       email
       score
