@@ -34,6 +34,10 @@ import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
+import {
+  calculateBodyMassIndex,
+  normalizeHeightToCentimeters,
+} from "../utils/bodyMetrics";
 
 // Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
 // vers les valeurs de l'enum MealType, en reprenant la logique du MealAnalysisResolver.
@@ -276,6 +280,9 @@ class UserProfileData {
   gender?: string;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
   height?: number;
 
   @Field(() => Float, { nullable: true })
@@ -682,7 +689,7 @@ export default class UserDataResolver {
       lastName: profile.last_name ?? "",
       dateOfBirth: toIsoDate(profile.date_of_birth),
       gender: profile.gender ?? undefined,
-      height: profile.height ?? undefined,
+      height: normalizeHeightToCentimeters(profile.height) ?? undefined,
       currentWeight: weights[0]?.weight ?? undefined,
       goal: profile.goal ?? undefined,
       medicalTags: (profile.pathologies ?? []).map((item) => item.name),
@@ -736,9 +743,8 @@ export default class UserDataResolver {
     profile.last_name = lastName || profile.last_name || "";
     profile.date_of_birth = parsedDate ?? profile.date_of_birth;
     profile.gender = data.gender?.trim() || profile.gender || "";
-    profile.height = Number.isFinite(data.height)
-      ? Number(data.height)
-      : profile.height;
+    profile.height =
+      normalizeHeightToCentimeters(data.height) ?? profile.height;
     profile.goal = data.goal?.trim() || profile.goal || "";
 
     const incomingTags = [
@@ -1044,20 +1050,22 @@ export default class UserDataResolver {
     const paginatedDishes = dishes.slice(offset, offset + limit);
     const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const todayKey = toDateKey(new Date());
-    let todayCalories = 0;
-    let todayProtein = 0;
-    let todayCarbs = 0;
-    let todayFat = 0;
+    const referenceDayKey = dishes[0]
+      ? toDateKey(dishes[0].consumedAt)
+      : toDateKey(new Date());
+    let referenceDayCalories = 0;
+    let referenceDayProtein = 0;
+    let referenceDayCarbs = 0;
+    let referenceDayFat = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
-      if (dayKey === todayKey) {
-        todayCalories += dish.calories;
-        todayProtein += dish.proteins;
-        todayCarbs += dish.carbs;
-        todayFat += dish.fats;
+      if (dayKey === referenceDayKey) {
+        referenceDayCalories += dish.calories;
+        referenceDayProtein += dish.proteins;
+        referenceDayCarbs += dish.carbs;
+        referenceDayFat += dish.fats;
       }
     }
 
@@ -1070,7 +1078,10 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.min(100, Math.round((todayCalories / targetCalories) * 100))
+        ? Math.min(
+            100,
+            Math.round((referenceDayCalories / targetCalories) * 100),
+          )
         : 0;
 
     return {
@@ -1084,9 +1095,9 @@ export default class UserDataResolver {
       targetProtein: 150,
       targetCarbs: 120,
       targetLipids: 40,
-      todayProtein: Math.round(todayProtein),
-      todayCarbs: Math.round(todayCarbs),
-      todayFat: Math.round(todayFat),
+      todayProtein: Math.round(referenceDayProtein),
+      todayCarbs: Math.round(referenceDayCarbs),
+      todayFat: Math.round(referenceDayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
         const name =
@@ -1320,11 +1331,8 @@ export default class UserDataResolver {
 
     const currentWeight =
       weights.length > 0 ? weights[weights.length - 1].weight : null;
-    const height = profile.height ?? null;
-    const imc =
-      currentWeight !== null && height !== null && height > 0
-        ? Number((currentWeight / (height / 100) ** 2).toFixed(1))
-        : null;
+    const height = normalizeHeightToCentimeters(profile.height);
+    const imc = calculateBodyMassIndex(currentWeight, profile.height);
 
     const evolutionData = await this.buildEvolutionDataForUser(userId);
 
