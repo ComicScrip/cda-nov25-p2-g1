@@ -64,7 +64,11 @@ export default function CoachRecipeNew() {
         <div className="mx-auto max-w-2xl px-4">
           <div className="mb-6 flex items-center justify-between gap-4">
             <h1 className="text-xl font-semibold text-[#2e3a2d]">Créer une recette</h1>
-            <Button variant="outline" asChild>
+            <Button
+              variant="outline"
+              asChild
+              className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+            >
               <Link href="/coach/recipes">Retour aux recettes</Link>
             </Button>
           </div>

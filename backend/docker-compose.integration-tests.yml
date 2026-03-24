@@ -10,7 +10,7 @@ services:
       timeout: 2s
       retries: 10
     stop_grace_period: 1s
-    restart: always
+    restart: on-failure
     tmpfs: /var/lib/postgresql
     ports:
       - 5433:5432

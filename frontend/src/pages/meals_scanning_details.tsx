@@ -694,7 +694,7 @@ export default function ScannerRepasDetailsPage() {
 
               <Link
                 href="/meals_scanning"
-                className="mt-3 block w-full rounded-md bg-[#2c2c2c] px-3 py-2 text-center text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                className="mt-3 block w-full cursor-pointer rounded-md bg-[#2c2c2c] px-3 py-2 text-center text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#4a4a4a] hover:shadow-lg"
               >
                 Changer l'image
               </Link>
@@ -788,7 +788,7 @@ export default function ScannerRepasDetailsPage() {
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Link
                   href="/meals_scanning"
-                  className="rounded-md bg-[#555] px-4 py-2 text-center text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                  className="rounded-md bg-[#555] px-4 py-2 text-center text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#6b6b6b] hover:shadow-lg"
                 >
                   Retour au scan
                 </Link>
@@ -796,7 +796,7 @@ export default function ScannerRepasDetailsPage() {
                   type="button"
                   onClick={handleRequestAnalysis}
                   disabled={isSubmitting}
-                  className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:bg-[#e11d97] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {isSubmitting ? (
                     <span className="inline-flex items-center gap-2">
@@ -865,7 +865,7 @@ export default function ScannerRepasDetailsPage() {
                       <button
                         type="button"
                         onClick={togglePortionEditing}
-                        className="rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635]"
+                        className="cursor-pointer rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635] transition-all duration-200 hover:scale-[1.02] hover:bg-[#eef4e8] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                       >
                         {isEditingPortion ? "Terminer" : "Editer"}
                       </button>
@@ -899,7 +899,7 @@ export default function ScannerRepasDetailsPage() {
                               <button
                                 type="button"
                                 onClick={() => toggleMetricEditing(metric.key)}
-                                className="rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635]"
+                                className="cursor-pointer rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635] transition-all duration-200 hover:scale-[1.02] hover:bg-[#eef4e8] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                               >
                                 {isEditing ? "Terminer" : "Editer"}
                               </button>
@@ -955,7 +955,7 @@ export default function ScannerRepasDetailsPage() {
                         <button
                           type="button"
                           onClick={() => toggleListEditing("plats_probables")}
-                          className="rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635]"
+                          className="cursor-pointer rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635] transition-all duration-200 hover:scale-[1.02] hover:bg-[#eef4e8] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                         >
                           {editingLists.plats_probables ? "Terminer" : "Editer"}
                         </button>
@@ -988,7 +988,7 @@ export default function ScannerRepasDetailsPage() {
                         <button
                           type="button"
                           onClick={() => toggleListEditing("ingredients_visibles")}
-                          className="rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635]"
+                          className="cursor-pointer rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635] transition-all duration-200 hover:scale-[1.02] hover:bg-[#eef4e8] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                         >
                           {editingLists.ingredients_visibles ? "Terminer" : "Editer"}
                         </button>
@@ -1038,7 +1038,7 @@ export default function ScannerRepasDetailsPage() {
                         <button
                           type="button"
                           onClick={() => setShowIncertitudesReply((current) => !current)}
-                          className="rounded border border-[#d2bf95] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#7a5c27]"
+                          className="cursor-pointer rounded border border-[#d2bf95] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#7a5c27] transition-all duration-200 hover:scale-[1.02] hover:bg-[#f8ecd4] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                         >
                           Répondre
                         </button>
@@ -1077,7 +1077,7 @@ export default function ScannerRepasDetailsPage() {
                         <button
                           type="button"
                           onClick={() => setShowQuestionsReply((current) => !current)}
-                          className="rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635]"
+                          className="cursor-pointer rounded border border-[#9fb79b] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#365635] transition-all duration-200 hover:scale-[1.02] hover:bg-[#eef4e8] hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
                         >
                           Répondre
                         </button>
@@ -1146,7 +1146,7 @@ export default function ScannerRepasDetailsPage() {
                       type="button"
                       onClick={handleSaveAndSendToCoach}
                       disabled={!analysisData || isSavingCoachSubmission}
-                      className="rounded-md bg-[#2b3d2a] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                      className="cursor-pointer rounded-md bg-[#2b3d2a] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#435b41] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       {isSavingCoachSubmission
                         ? "Enregistrement..."

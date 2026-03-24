@@ -376,7 +376,7 @@ export function RecipeForm({ onSubmit, loading }: RecipeFormProps) {
         <Button
           type="submit"
           disabled={loading || !title.trim()}
-          className="bg-[#73916f] text-white hover:bg-[#5a7356] shadow-[0_3px_8px_rgba(34,197,94,0.35)]"
+          className="cursor-pointer bg-[#73916f] text-white shadow-[0_3px_8px_rgba(34,197,94,0.35)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#5a7356] hover:shadow-lg disabled:cursor-not-allowed"
         >
           {loading ? (
             <>
@@ -387,7 +387,12 @@ export function RecipeForm({ onSubmit, loading }: RecipeFormProps) {
             "Créer la recette"
           )}
         </Button>
-        <Button type="button" variant="outline" asChild>
+        <Button
+          type="button"
+          variant="outline"
+          asChild
+          className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+        >
           <Link href="/coach/recipes">Annuler</Link>
         </Button>
       </div>

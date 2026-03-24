@@ -193,7 +193,7 @@ export default function CoachRecipes() {
                 </Card>
               ) : (
                 <div className="mt-6 grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[1.35fr_1fr]">
-                  <Card className="order-2 border-[#d3d8cf] bg-[#eef4e8] shadow-none lg:order-1 lg:flex lg:min-h-0 lg:flex-col">
+                  <Card className="order-2 border-[#d3d8cf] bg-[#eef4e8] shadow-none lg:order-1 lg:flex lg:min-h-0 lg:h-full lg:flex-col">
                     <CardHeader className="p-4 md:p-5 pb-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <CardTitle className="text-sm font-semibold text-[#2e3a2d] flex items-center gap-2">
@@ -209,7 +209,7 @@ export default function CoachRecipes() {
                           <Button
                             size="sm"
                             asChild
-                            className="bg-[#2d5a27]! hover:bg-[#234a20]! text-white"
+                            className="cursor-pointer bg-[#2d5a27]! text-white transition-all duration-200 hover:scale-[1.02] hover:bg-[#234a20]! hover:shadow-lg"
                           >
                             <Link href="/coach/recipes/new">
                               <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
@@ -225,7 +225,7 @@ export default function CoachRecipes() {
                     <CardContent className="p-4 md:p-5 pt-0 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
                       <div
                         ref={listScrollContainerRef}
-                        className="mt-3 space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable] min-h-[280px] max-h-[65vh] lg:min-h-0 lg:flex-1"
+                        className="mt-3 min-h-[280px] space-y-3 overflow-x-hidden overflow-y-auto pr-1 [scrollbar-gutter:stable] lg:min-h-0 lg:h-full lg:flex-1"
                       >
                         {recipes.map((recipe) => {
                           const isSelected = recipe.id === selectedRecipe?.id;
@@ -240,10 +240,10 @@ export default function CoachRecipes() {
                                   setSelectedRecipeId(recipe.id);
                                 }
                               }}
-                              className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition ${
+                              className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition-all duration-200 hover:scale-[1.01] ${
                                 isSelected
                                   ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
-                                  : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+                                  : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:border-[#73916f] hover:bg-[#ffffff] hover:shadow-[0_4px_10px_rgba(0,0,0,0.14)]"
                               }`}
                             >
                               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#5a6758]">
@@ -458,7 +458,11 @@ export default function CoachRecipes() {
                                 type="button"
                                 size="sm"
                                 disabled={selectedUserIds.length === 0 || assigning}
-                                className="bg-[#2d5a27] text-white hover:bg-[#234a20]"
+                                className={`text-white transition-all duration-200 disabled:opacity-50 ${
+                                  selectedUserIds.length > 0 && !assigning
+                                    ? "cursor-pointer bg-[#2d5a27] hover:scale-[1.02] hover:bg-[#234a20] hover:shadow-lg"
+                                    : "bg-[#87a984]"
+                                }`}
                                 onClick={async () => {
                                   if (selectedUserIds.length === 0 || !selectedRecipe?.id) return;
                                   try {

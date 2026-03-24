@@ -1,3 +1,4 @@
+import { UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -177,6 +178,8 @@ export default function ScannerRepasPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const hasUrlInput = urlInput.trim().length > 0;
+  const hasPreview = Boolean(previewUrl);
 
   const objectUrlRef = useRef<string | null>(null);
   const imageFileRef = useRef<File | null>(null);
@@ -473,7 +476,8 @@ export default function ScannerRepasPage() {
       <UserPageLayout activeNav="aiAssist">
         <div className="mx-auto w-full max-w-6xl">
           <div className="max-w-3xl text-[#2c2c2c]">
-            <h1 className="text-lg font-semibold">Scanner un repas</h1>
+            <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">Analyse nutritionnelle</h1>
+            <h2 className="mt-3 text-lg font-semibold">Scanner un repas</h2>
             <p className="mt-1 text-xs text-[#555]">
               Cette page accepte une image collée, une URL de photo, un fichier local et la caméra
               si le dispositif le permet.
@@ -497,13 +501,20 @@ export default function ScannerRepasPage() {
                   type="button"
                   onClick={openFilePicker}
                   onPaste={handlePasteArea}
-                  className="mt-3 w-full cursor-pointer rounded-md border border-dashed border-[#7ea07e] bg-white px-3 py-4 text-center text-[#456145] transition-colors hover:bg-[#f6fbf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5d875d]"
+                  className="mt-3 w-full cursor-pointer rounded-md border border-dashed border-[#c9c9c9] bg-[#f5fbf1] p-4 text-xs text-[#3c3c3c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5d875d]"
                 >
-                  <span className="block text-xs font-semibold">
-                    Téléchargez une image en cliquant ici
-                  </span>
-                  <span className="mt-1 block text-[11px]">
-                    Ou collez directement une image avec Ctrl+V ou Cmd+V.
+                  <span className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+                    <UploadCloud className="h-7 w-7 text-[#4a7c4a]" />
+                    <span className="block text-sm font-medium">
+                      Téléchargez une image en cliquant ici
+                    </span>
+                    <span className="block text-[11px]">
+                      Ou collez directement une image avec Ctrl+V ou Cmd+V.
+                    </span>
+                    <span className="text-[11px] text-[#666]">
+                      Formats supportés : JPG, PNG. Taille max : 50MB (l&apos;image sera
+                      automatiquement compressée).
+                    </span>
                   </span>
                 </button>
               </section>
@@ -526,7 +537,12 @@ export default function ScannerRepasPage() {
                   />
                   <button
                     type="submit"
-                    className="cursor-pointer rounded-md bg-[#2f6fdd] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                    disabled={!hasUrlInput}
+                    className={`rounded-md px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                      hasUrlInput
+                        ? "cursor-pointer bg-[#2f6fdd] hover:scale-[1.02] hover:bg-[#255bb6] hover:shadow-lg"
+                        : "bg-[#7ea6eb]"
+                    }`}
                   >
                     Charger
                   </button>
@@ -540,7 +556,7 @@ export default function ScannerRepasPage() {
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="mt-3 cursor-pointer rounded-md bg-[#1d7a42] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                    className="mt-3 cursor-pointer rounded-md bg-[#1d7a42] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#279653] hover:shadow-lg"
                   >
                     Activer la caméra
                   </button>
@@ -562,14 +578,14 @@ export default function ScannerRepasPage() {
                         type="button"
                         onClick={capturePhoto}
                         disabled={!cameraReady}
-                        className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-md bg-[#ca1685] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:bg-[#e11d97] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         Capturer la photo
                       </button>
                       <button
                         type="button"
                         onClick={stopCamera}
-                        className="rounded-md bg-[#555] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer"
+                        className="rounded-md bg-[#555] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)] cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:bg-[#6b6b6b] hover:shadow-lg"
                       >
                         Arrêter la caméra
                       </button>
@@ -615,15 +631,24 @@ export default function ScannerRepasPage() {
               <button
                 type="button"
                 onClick={clearImage}
-                className="mt-3 w-full cursor-pointer rounded-md bg-[#2c2c2c] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                disabled={!hasPreview || isSaving}
+                className={`mt-3 w-full rounded-md px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  hasPreview && !isSaving
+                    ? "cursor-pointer bg-[#2c2c2c] hover:scale-[1.02] hover:bg-[#4a4a4a] hover:shadow-lg"
+                    : "bg-[#7d7d7d]"
+                }`}
               >
                 Effacer l'image
               </button>
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                disabled={!previewUrl || isSaving}
-                className="mt-2 w-full cursor-pointer rounded-md bg-[#1d7a42] px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
+                disabled={!hasPreview || isSaving}
+                className={`mt-2 w-full rounded-md px-3 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-45 ${
+                  hasPreview && !isSaving
+                    ? "cursor-pointer bg-[#1d7a42] hover:scale-[1.02] hover:bg-[#279653] hover:shadow-lg"
+                    : "bg-[#8dbfa2]"
+                }`}
               >
                 {isSaving ? "Enregistrement..." : "Enregistrer"}
               </button>

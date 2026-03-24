@@ -184,7 +184,7 @@ export default function CoachDashboard() {
                       }) => (
                         <Card
                           key={userItem.email}
-                          className="bg-white/90 border-0 backdrop-blur-sm"
+                          className="cursor-pointer border-0 bg-white/90 backdrop-blur-sm transition-all duration-200 hover:scale-[1.01] hover:bg-white hover:shadow-[0_6px_14px_rgba(0,0,0,0.16)]"
                         >
                           <CardContent className="p-4 md:p-5">
                             <div className="flex items-start justify-between gap-2 mb-1">
@@ -241,7 +241,10 @@ export default function CoachDashboard() {
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentRecipes.length > 0 ? (
                     recentRecipes.map((recipe: RecentRecipeData) => (
-                      <Card key={recipe.id} className="bg-white/90 border-0 backdrop-blur-sm">
+                      <Card
+                        key={recipe.id}
+                        className="cursor-pointer border-0 bg-white/90 backdrop-blur-sm transition-all duration-200 hover:scale-[1.01] hover:bg-white hover:shadow-[0_6px_14px_rgba(0,0,0,0.16)]"
+                      >
                         <CardContent className="p-4 md:p-5">
                           <div className="flex items-start gap-3">
                             <div className="relative h-16 w-20 md:h-20 md:w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc]">
