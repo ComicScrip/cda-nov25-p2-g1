@@ -13,6 +13,7 @@ import {
   useCoachRecipesPageDataLazyQuery,
   useCoachRecipesPageDataQuery,
   useCoachUserQuery,
+  useDeleteRecipeMutation,
   useProfileQuery,
 } from "@/graphql/generated/schema";
 
@@ -51,11 +52,14 @@ export default function CoachRecipes() {
 
   const { data: coachUsersData } = useCoachUserQuery();
   const [assignRecipeToUser, { loading: assigning }] = useAssignRecipeToUserMutation();
+  const [deleteRecipe] = useDeleteRecipeMutation();
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [allRecipes, setAllRecipes] = useState<RecipeData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  const [deletingRecipeId, setDeletingRecipeId] = useState<string | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   const listScrollContainerRef = useRef<HTMLDivElement>(null);
   const isLoadingMoreRef = useRef(false);
@@ -162,6 +166,47 @@ export default function CoachRecipes() {
       name: user.displayName || user.email,
     })) ?? [];
 
+  async function handleDeleteRecipe(recipeId: string) {
+    if (deletingRecipeId) {
+      return;
+    }
+
+    const confirmed = window.confirm("Supprimer cette recette ? Cette action est définitive.");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteErrorMessage(null);
+    setDeletingRecipeId(recipeId);
+
+    try {
+      const result = await deleteRecipe({
+        variables: { id: recipeId },
+        update(cache) {
+          cache.evict({ fieldName: "coachRecipe", args: { id: recipeId } });
+          cache.gc();
+        },
+      });
+
+      if (!result.data?.deleteRecipe) {
+        setDeleteErrorMessage("Impossible de supprimer cette recette.");
+        return;
+      }
+
+      setAllRecipes((prev) => prev.filter((recipe) => recipe.id !== recipeId));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+      setSelectedUserIds([]);
+      setSelectedRecipeId((prev) => (prev === recipeId ? null : prev));
+    } catch (error) {
+      setDeleteErrorMessage(
+        error instanceof Error ? error.message : "Impossible de supprimer cette recette.",
+      );
+    } finally {
+      setDeletingRecipeId(null);
+    }
+  }
+
   // Loader plein écran uniquement au premier chargement des recettes
   if (profileLoading || (initialLoading && allRecipes.length === 0)) {
     return (
@@ -215,6 +260,10 @@ export default function CoachRecipes() {
                 </Card>
               </div>
 
+              {deleteErrorMessage && (
+                <p className="mt-4 text-sm text-[#b23b31]">{deleteErrorMessage}</p>
+              )}
+
               {recipes.length === 0 ? (
                 <Card className="mt-6 border-[#d3d8cf] bg-[#eef4e8] shadow-none">
                   <CardContent className="p-4 md:p-5">
@@ -259,64 +308,83 @@ export default function CoachRecipes() {
                       >
                         {recipes.map((recipe) => {
                           const isSelected = recipe.id === selectedRecipe?.id;
+                          const isDeleting = deletingRecipeId === recipe.id;
                           return (
-                            <button
+                            <div
                               key={recipe.id}
-                              type="button"
-                              onClick={() => {
-                                if (typeof window !== "undefined" && window.innerWidth < 1024) {
-                                  router.push(`/coach/recipes/${recipe.id}`);
-                                } else {
-                                  setSelectedRecipeId(recipe.id);
-                                }
-                              }}
                               className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition-all duration-200 hover:scale-[1.01] ${
                                 isSelected
                                   ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
                                   : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:border-[#73916f] hover:bg-[#ffffff] hover:shadow-[0_4px_10px_rgba(0,0,0,0.14)]"
                               }`}
                             >
-                              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#5a6758]">
-                                <span className="rounded-full px-2 py-0.5 font-medium text-xs bg-[#dce8f6] text-[#2e4e74]">
-                                  {getSourceLabel(recipe.source)}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" aria-hidden="true" />
-                                  {recipe.prepTime}
-                                </span>
-                                <span>|</span>
-                                <span>{recipe.difficulty}</span>
-                              </div>
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:items-start">
-                                <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
-                                  <Image
-                                    src={recipe.photo}
-                                    alt=""
-                                    fill
-                                    sizes="(min-width: 640px) 112px, 100vw"
-                                    className="object-cover"
-                                    loading="lazy"
-                                    unoptimized={
-                                      recipe.photo.startsWith("data:") ||
-                                      recipe.photo.startsWith("blob:")
-                                    }
-                                    aria-hidden="true"
-                                  />
+                              <div className="mb-2 flex items-start justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-[#5a6758]">
+                                  <span className="rounded-full px-2 py-0.5 font-medium text-xs bg-[#dce8f6] text-[#2e4e74]">
+                                    {getSourceLabel(recipe.source)}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" aria-hidden="true" />
+                                    {recipe.prepTime}
+                                  </span>
+                                  <span>|</span>
+                                  <span>{recipe.difficulty}</span>
                                 </div>
-                                <div className="min-w-0 overflow-hidden">
-                                  <div className="truncate text-sm font-semibold text-[#2b3a2a]">
-                                    {recipe.title}
-                                  </div>
-                                  <div className="mt-1 text-xs text-[#4a5a49]">
-                                    {recipe.calories} kcal | P {recipe.protein}g | G {recipe.carbs}g
-                                    | L {recipe.fat}g
-                                  </div>
-                                  <p className="mt-2 line-clamp-2 text-xs text-[#556454]">
-                                    {recipe.description}
-                                  </p>
-                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={Boolean(deletingRecipeId)}
+                                  onClick={() => {
+                                    void handleDeleteRecipe(recipe.id);
+                                  }}
+                                  className="shrink-0 border-[#d05a4e] bg-white px-2.5 text-[#8c2f26] hover:bg-[#fff1ef]"
+                                >
+                                  {isDeleting ? "Suppression..." : "Supprimer"}
+                                </Button>
                               </div>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                                    router.push(`/coach/recipes/${recipe.id}`);
+                                  } else {
+                                    setSelectedRecipeId(recipe.id);
+                                  }
+                                }}
+                                className="block w-full text-left"
+                              >
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:items-start">
+                                  <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-md border border-[#cfd5cc] sm:w-28">
+                                    <Image
+                                      src={recipe.photo}
+                                      alt=""
+                                      fill
+                                      sizes="(min-width: 640px) 112px, 100vw"
+                                      className="object-cover"
+                                      loading="lazy"
+                                      unoptimized={
+                                        recipe.photo.startsWith("data:") ||
+                                        recipe.photo.startsWith("blob:")
+                                      }
+                                      aria-hidden="true"
+                                    />
+                                  </div>
+                                  <div className="min-w-0 overflow-hidden">
+                                    <div className="truncate text-sm font-semibold text-[#2b3a2a]">
+                                      {recipe.title}
+                                    </div>
+                                    <div className="mt-1 text-xs text-[#4a5a49]">
+                                      {recipe.calories} kcal | P {recipe.protein}g | G{" "}
+                                      {recipe.carbs}g | L {recipe.fat}g
+                                    </div>
+                                    <p className="mt-2 line-clamp-2 text-xs text-[#556454]">
+                                      {recipe.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
                           );
                         })}
                         {/* Sentinel pour le chargement infini : quand il entre en vue en bas de la liste, on charge les 10 suivantes */}
