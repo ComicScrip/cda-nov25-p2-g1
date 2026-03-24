@@ -1044,20 +1044,20 @@ export default class UserDataResolver {
     const paginatedDishes = dishes.slice(offset, offset + limit);
     const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const latestRecordedDayKey = dishes[0]
-      ? toDateKey(dishes[0].consumedAt)
-      : null;
-    let latestDayProtein = 0;
-    let latestDayCarbs = 0;
-    let latestDayFat = 0;
+    const todayKey = toDateKey(new Date());
+    let todayCalories = 0;
+    let todayProtein = 0;
+    let todayCarbs = 0;
+    let todayFat = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
-      if (latestRecordedDayKey && dayKey === latestRecordedDayKey) {
-        latestDayProtein += dish.proteins;
-        latestDayCarbs += dish.carbs;
-        latestDayFat += dish.fats;
+      if (dayKey === todayKey) {
+        todayCalories += dish.calories;
+        todayProtein += dish.proteins;
+        todayCarbs += dish.carbs;
+        todayFat += dish.fats;
       }
     }
 
@@ -1070,7 +1070,7 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.round((totalCalories / targetCalories) * 100)
+        ? Math.min(100, Math.round((todayCalories / targetCalories) * 100))
         : 0;
 
     return {
@@ -1084,9 +1084,9 @@ export default class UserDataResolver {
       targetProtein: 150,
       targetCarbs: 120,
       targetLipids: 40,
-      todayProtein: Math.round(latestDayProtein),
-      todayCarbs: Math.round(latestDayCarbs),
-      todayFat: Math.round(latestDayFat),
+      todayProtein: Math.round(todayProtein),
+      todayCarbs: Math.round(todayCarbs),
+      todayFat: Math.round(todayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
         const name =
