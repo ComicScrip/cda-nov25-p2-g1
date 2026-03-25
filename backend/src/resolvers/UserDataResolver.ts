@@ -38,6 +38,12 @@ import {
   calculateBodyMassIndex,
   normalizeHeightToCentimeters,
 } from "../utils/bodyMetrics";
+import {
+  buildScannerAnalysisInsights,
+  buildScannerAnalysisWarningsText,
+  type ScannerAnalysisPayload,
+  splitStoredInsights,
+} from "../utils/scannerInsights";
 
 // Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
 // vers les valeurs de l'enum MealType, en reprenant la logique du MealAnalysisResolver.
@@ -471,6 +477,36 @@ function parseCoachSuggestion(suggestion?: string): {
   };
 }
 
+type ScannerSubmissionPayload = {
+  draft?: { savedAt?: string | null } | null;
+  analysis?: ScannerAnalysisPayload | null;
+};
+
+function buildScannerInsightsByConsumedAt(
+  submissions: Scanner_Coach_Submission[],
+): Map<string, string[]> {
+  const scannerInsightsByConsumedAt = new Map<string, string[]>();
+
+  for (const submission of submissions) {
+    const payload = submission.payload as ScannerSubmissionPayload | undefined;
+    const savedAt = payload?.draft?.savedAt;
+    const consumedAt = savedAt ? safeDate(new Date(savedAt)) : null;
+
+    if (!consumedAt) {
+      continue;
+    }
+
+    const insights = buildScannerAnalysisInsights(payload?.analysis);
+    if (insights.length === 0) {
+      continue;
+    }
+
+    scannerInsightsByConsumedAt.set(consumedAt.toISOString(), insights);
+  }
+
+  return scannerInsightsByConsumedAt;
+}
+
 async function resolveVisibleUserIds(
   currentUser: User,
 ): Promise<string[] | null> {
@@ -578,24 +614,40 @@ export default class UserDataResolver {
     limit: number = MAX_LAST_MEALS_TODAY,
   ): Promise<DishEntry[]> {
     const { start, end } = getTodayBounds();
-    const meals = await Meal.find({
-      where: {
-        user: { id: userId },
-        consumedAt: Between(start, end),
-      },
-      relations: [
-        "dishes",
-        "dishes.analysis",
-        "dishes.dish_ingredients",
-        "dishes.dish_ingredients.ingredient",
-      ],
-      order: { consumedAt: "DESC" },
-      take: limit,
-    });
-    return this.mealsToDishEntries(meals);
+    const [meals, submissions] = await Promise.all([
+      Meal.find({
+        where: {
+          user: { id: userId },
+          consumedAt: Between(start, end),
+        },
+        relations: [
+          "dishes",
+          "dishes.analysis",
+          "dishes.dish_ingredients",
+          "dishes.dish_ingredients.ingredient",
+        ],
+        order: { consumedAt: "DESC" },
+        take: limit,
+      }),
+      Scanner_Coach_Submission.find({
+        where: {
+          user: { id: userId },
+          createdAt: Between(start, end),
+        },
+        order: { createdAt: "DESC" },
+      }),
+    ]);
+
+    return this.mealsToDishEntries(
+      meals,
+      buildScannerInsightsByConsumedAt(submissions),
+    );
   }
 
-  private mealsToDishEntries(meals: Meal[]): DishEntry[] {
+  private mealsToDishEntries(
+    meals: Meal[],
+    scannerInsightsByConsumedAt: Map<string, string[]> = new Map(),
+  ): DishEntry[] {
     const dishEntries = meals
       .flatMap((meal) =>
         (meal.dishes ?? []).map((dish) => {
@@ -604,10 +656,13 @@ export default class UserDataResolver {
             safeDate(dish.uploadedAt) ??
             new Date();
           const analysis = dish.analysis;
-          const aiInsights = (analysis?.warnings ?? "")
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
+          const persistedInsights = splitStoredInsights(analysis?.warnings);
+          const recoveredScannerInsights =
+            scannerInsightsByConsumedAt.get(consumedAt.toISOString()) ?? [];
+          const aiInsights =
+            persistedInsights.length > 0
+              ? persistedInsights
+              : recoveredScannerInsights;
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
           const ingredients: DishEntryIngredient[] = (
             dish.dish_ingredients ?? []
@@ -642,17 +697,27 @@ export default class UserDataResolver {
   }
 
   private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
-    const meals = await Meal.find({
-      where: { user: { id: userId } },
-      relations: [
-        "dishes",
-        "dishes.analysis",
-        "dishes.dish_ingredients",
-        "dishes.dish_ingredients.ingredient",
-      ],
-      order: { consumedAt: "DESC" },
-    });
-    return this.mealsToDishEntries(meals);
+    const [meals, submissions] = await Promise.all([
+      Meal.find({
+        where: { user: { id: userId } },
+        relations: [
+          "dishes",
+          "dishes.analysis",
+          "dishes.dish_ingredients",
+          "dishes.dish_ingredients.ingredient",
+        ],
+        order: { consumedAt: "DESC" },
+      }),
+      Scanner_Coach_Submission.find({
+        where: { user: { id: userId } },
+        order: { createdAt: "DESC" },
+      }),
+    ]);
+
+    return this.mealsToDishEntries(
+      meals,
+      buildScannerInsightsByConsumedAt(submissions),
+    );
   }
 
   private async buildUserProfilePayload(
@@ -840,7 +905,7 @@ export default class UserDataResolver {
             fibres_g?: { min: number; max: number };
           };
           score_sante_100?: number;
-        };
+        } & ScannerAnalysisPayload;
       };
 
       const draft = payload.draft ?? {};
@@ -886,6 +951,7 @@ export default class UserDataResolver {
         lipids,
         fiber: fibers,
         mealHealthScore: analysis?.score_sante_100 ?? undefined,
+        warnings: buildScannerAnalysisWarningsText(analysis),
         suggestions:
           "Analyse IA assistée sauvegardée depuis la page de scan des repas.",
         status: Status.Brouillon,
@@ -986,10 +1052,7 @@ export default class UserDataResolver {
             safeDate(dish.uploadedAt) ??
             new Date();
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
-          const aiInsights = (analysis?.warnings ?? "")
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
+          const aiInsights = splitStoredInsights(analysis?.warnings);
           const fallbackName = `Repas ${index + 1}`;
           const name =
             meal.name?.trim() ||
