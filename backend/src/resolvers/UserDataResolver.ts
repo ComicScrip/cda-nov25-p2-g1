@@ -34,6 +34,16 @@ import { User, UserRole } from "../entities/User";
 import { User_profile } from "../entities/User_Profile";
 import { Weight_Measure } from "../entities/Weight_Measure";
 import type { GraphQLContext } from "../types";
+import {
+  calculateBodyMassIndex,
+  normalizeHeightToCentimeters,
+} from "../utils/bodyMetrics";
+import {
+  buildScannerAnalysisInsights,
+  buildScannerAnalysisWarningsText,
+  type ScannerAnalysisPayload,
+  splitStoredInsights,
+} from "../utils/scannerInsights";
 
 // Helper: mappe les labels de type de repas (venant du scanner ou d'autres sources)
 // vers les valeurs de l'enum MealType, en reprenant la logique du MealAnalysisResolver.
@@ -276,6 +286,9 @@ class UserProfileData {
   gender?: string;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
   height?: number;
 
   @Field(() => Float, { nullable: true })
@@ -464,6 +477,36 @@ function parseCoachSuggestion(suggestion?: string): {
   };
 }
 
+type ScannerSubmissionPayload = {
+  draft?: { savedAt?: string | null } | null;
+  analysis?: ScannerAnalysisPayload | null;
+};
+
+function buildScannerInsightsByConsumedAt(
+  submissions: Scanner_Coach_Submission[],
+): Map<string, string[]> {
+  const scannerInsightsByConsumedAt = new Map<string, string[]>();
+
+  for (const submission of submissions) {
+    const payload = submission.payload as ScannerSubmissionPayload | undefined;
+    const savedAt = payload?.draft?.savedAt;
+    const consumedAt = savedAt ? safeDate(new Date(savedAt)) : null;
+
+    if (!consumedAt) {
+      continue;
+    }
+
+    const insights = buildScannerAnalysisInsights(payload?.analysis);
+    if (insights.length === 0) {
+      continue;
+    }
+
+    scannerInsightsByConsumedAt.set(consumedAt.toISOString(), insights);
+  }
+
+  return scannerInsightsByConsumedAt;
+}
+
 async function resolveVisibleUserIds(
   currentUser: User,
 ): Promise<string[] | null> {
@@ -571,24 +614,40 @@ export default class UserDataResolver {
     limit: number = MAX_LAST_MEALS_TODAY,
   ): Promise<DishEntry[]> {
     const { start, end } = getTodayBounds();
-    const meals = await Meal.find({
-      where: {
-        user: { id: userId },
-        consumedAt: Between(start, end),
-      },
-      relations: [
-        "dishes",
-        "dishes.analysis",
-        "dishes.dish_ingredients",
-        "dishes.dish_ingredients.ingredient",
-      ],
-      order: { consumedAt: "DESC" },
-      take: limit,
-    });
-    return this.mealsToDishEntries(meals);
+    const [meals, submissions] = await Promise.all([
+      Meal.find({
+        where: {
+          user: { id: userId },
+          consumedAt: Between(start, end),
+        },
+        relations: [
+          "dishes",
+          "dishes.analysis",
+          "dishes.dish_ingredients",
+          "dishes.dish_ingredients.ingredient",
+        ],
+        order: { consumedAt: "DESC" },
+        take: limit,
+      }),
+      Scanner_Coach_Submission.find({
+        where: {
+          user: { id: userId },
+          createdAt: Between(start, end),
+        },
+        order: { createdAt: "DESC" },
+      }),
+    ]);
+
+    return this.mealsToDishEntries(
+      meals,
+      buildScannerInsightsByConsumedAt(submissions),
+    );
   }
 
-  private mealsToDishEntries(meals: Meal[]): DishEntry[] {
+  private mealsToDishEntries(
+    meals: Meal[],
+    scannerInsightsByConsumedAt: Map<string, string[]> = new Map(),
+  ): DishEntry[] {
     const dishEntries = meals
       .flatMap((meal) =>
         (meal.dishes ?? []).map((dish) => {
@@ -597,10 +656,13 @@ export default class UserDataResolver {
             safeDate(dish.uploadedAt) ??
             new Date();
           const analysis = dish.analysis;
-          const aiInsights = (analysis?.warnings ?? "")
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
+          const persistedInsights = splitStoredInsights(analysis?.warnings);
+          const recoveredScannerInsights =
+            scannerInsightsByConsumedAt.get(consumedAt.toISOString()) ?? [];
+          const aiInsights =
+            persistedInsights.length > 0
+              ? persistedInsights
+              : recoveredScannerInsights;
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
           const ingredients: DishEntryIngredient[] = (
             dish.dish_ingredients ?? []
@@ -635,17 +697,27 @@ export default class UserDataResolver {
   }
 
   private async loadUserDishEntries(userId: string): Promise<DishEntry[]> {
-    const meals = await Meal.find({
-      where: { user: { id: userId } },
-      relations: [
-        "dishes",
-        "dishes.analysis",
-        "dishes.dish_ingredients",
-        "dishes.dish_ingredients.ingredient",
-      ],
-      order: { consumedAt: "DESC" },
-    });
-    return this.mealsToDishEntries(meals);
+    const [meals, submissions] = await Promise.all([
+      Meal.find({
+        where: { user: { id: userId } },
+        relations: [
+          "dishes",
+          "dishes.analysis",
+          "dishes.dish_ingredients",
+          "dishes.dish_ingredients.ingredient",
+        ],
+        order: { consumedAt: "DESC" },
+      }),
+      Scanner_Coach_Submission.find({
+        where: { user: { id: userId } },
+        order: { createdAt: "DESC" },
+      }),
+    ]);
+
+    return this.mealsToDishEntries(
+      meals,
+      buildScannerInsightsByConsumedAt(submissions),
+    );
   }
 
   private async buildUserProfilePayload(
@@ -682,7 +754,7 @@ export default class UserDataResolver {
       lastName: profile.last_name ?? "",
       dateOfBirth: toIsoDate(profile.date_of_birth),
       gender: profile.gender ?? undefined,
-      height: profile.height ?? undefined,
+      height: normalizeHeightToCentimeters(profile.height) ?? undefined,
       currentWeight: weights[0]?.weight ?? undefined,
       goal: profile.goal ?? undefined,
       medicalTags: (profile.pathologies ?? []).map((item) => item.name),
@@ -736,9 +808,8 @@ export default class UserDataResolver {
     profile.last_name = lastName || profile.last_name || "";
     profile.date_of_birth = parsedDate ?? profile.date_of_birth;
     profile.gender = data.gender?.trim() || profile.gender || "";
-    profile.height = Number.isFinite(data.height)
-      ? Number(data.height)
-      : profile.height;
+    profile.height =
+      normalizeHeightToCentimeters(data.height) ?? profile.height;
     profile.goal = data.goal?.trim() || profile.goal || "";
 
     const incomingTags = [
@@ -834,7 +905,7 @@ export default class UserDataResolver {
             fibres_g?: { min: number; max: number };
           };
           score_sante_100?: number;
-        };
+        } & ScannerAnalysisPayload;
       };
 
       const draft = payload.draft ?? {};
@@ -880,6 +951,7 @@ export default class UserDataResolver {
         lipids,
         fiber: fibers,
         mealHealthScore: analysis?.score_sante_100 ?? undefined,
+        warnings: buildScannerAnalysisWarningsText(analysis),
         suggestions:
           "Analyse IA assistée sauvegardée depuis la page de scan des repas.",
         status: Status.Brouillon,
@@ -980,10 +1052,7 @@ export default class UserDataResolver {
             safeDate(dish.uploadedAt) ??
             new Date();
           const coachSuggestion = parseCoachSuggestion(analysis?.suggestions);
-          const aiInsights = (analysis?.warnings ?? "")
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
+          const aiInsights = splitStoredInsights(analysis?.warnings);
           const fallbackName = `Repas ${index + 1}`;
           const name =
             meal.name?.trim() ||
@@ -1044,20 +1113,20 @@ export default class UserDataResolver {
     const paginatedDishes = dishes.slice(offset, offset + limit);
     const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const latestRecordedDayKey = dishes[0]
-      ? toDateKey(dishes[0].consumedAt)
-      : null;
-    let latestDayProtein = 0;
-    let latestDayCarbs = 0;
-    let latestDayFat = 0;
+    const todayKey = toDateKey(new Date());
+    let todayCalories = 0;
+    let todayProtein = 0;
+    let todayCarbs = 0;
+    let todayFat = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
-      if (latestRecordedDayKey && dayKey === latestRecordedDayKey) {
-        latestDayProtein += dish.proteins;
-        latestDayCarbs += dish.carbs;
-        latestDayFat += dish.fats;
+      if (dayKey === todayKey) {
+        todayCalories += dish.calories;
+        todayProtein += dish.proteins;
+        todayCarbs += dish.carbs;
+        todayFat += dish.fats;
       }
     }
 
@@ -1070,7 +1139,7 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.round((totalCalories / targetCalories) * 100)
+        ? Math.round((todayCalories / targetCalories) * 100)
         : 0;
 
     return {
@@ -1084,9 +1153,9 @@ export default class UserDataResolver {
       targetProtein: 150,
       targetCarbs: 120,
       targetLipids: 40,
-      todayProtein: Math.round(latestDayProtein),
-      todayCarbs: Math.round(latestDayCarbs),
-      todayFat: Math.round(latestDayFat),
+      todayProtein: Math.round(todayProtein),
+      todayCarbs: Math.round(todayCarbs),
+      todayFat: Math.round(todayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
         const name =
@@ -1320,11 +1389,8 @@ export default class UserDataResolver {
 
     const currentWeight =
       weights.length > 0 ? weights[weights.length - 1].weight : null;
-    const height = profile.height ?? null;
-    const imc =
-      currentWeight !== null && height !== null && height > 0
-        ? Number((currentWeight / (height / 100) ** 2).toFixed(1))
-        : null;
+    const height = normalizeHeightToCentimeters(profile.height);
+    const imc = calculateBodyMassIndex(currentWeight, profile.height);
 
     const evolutionData = await this.buildEvolutionDataForUser(userId);
 

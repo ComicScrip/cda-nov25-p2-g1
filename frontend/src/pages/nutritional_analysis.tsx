@@ -432,8 +432,8 @@ export default function NutritionalAnalysisPage() {
                   onChange={(e) => setDataSource(e.target.value as "meals" | "scanner")}
                   className="min-w-[200px] rounded-md border border-[#c3d2ba] bg-white px-3 py-2 text-sm text-[#2c2c2c] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]"
                 >
-                  <option value="meals">Repas enregistrés (par défaut)</option>
-                  <option value="scanner">Soumissions scanner</option>
+                  <option value="meals">Serveur 2</option>
+                  <option value="scanner">Serveur 1</option>
                 </select>
               </div>
             )}

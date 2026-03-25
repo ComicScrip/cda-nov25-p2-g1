@@ -360,7 +360,7 @@ async function seedUsersProfilesWeights(
           last_name: "Demo",
           date_of_birth: new Date("1988-06-12") as any,
           gender: "femme" as any,
-          height: 1.72 as any,
+          height: 172 as any,
           goal: "Accompagner les utilisateurs MyDietChef au quotidien." as any,
           user: coachUser,
           pathologies: [],
@@ -395,11 +395,7 @@ async function seedUsersProfilesWeights(
           mode: "year",
         }) as any,
         gender: faker.helpers.arrayElement(["homme", "femme"]) as any,
-        height: faker.number.float({
-          min: 1.5,
-          max: 2.0,
-          fractionDigits: 2,
-        }) as any,
+        height: faker.number.int({ min: 150, max: 200 }) as any,
         goal: faker.helpers.arrayElement([
           "Weight loss",
           "Muscle gain",

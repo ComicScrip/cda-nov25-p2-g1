@@ -19,6 +19,7 @@ query CoachDashboardData {
       }
     }
     recentUsers {
+      userId
       name
       email
       score

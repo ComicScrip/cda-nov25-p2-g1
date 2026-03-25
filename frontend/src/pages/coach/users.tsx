@@ -28,6 +28,23 @@ type CoachUserRow = NonNullable<
   NonNullable<CoachUsersPageQuery["coachUsersPage"]>["users"]
 >[number];
 
+function isAbortLikeError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+
+  const name =
+    typeof error === "object" && error !== null && "name" in error ? String(error.name) : "";
+  const message =
+    typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+
+  return (
+    name === "AbortError" ||
+    message === "The operation was aborted." ||
+    message.toLowerCase().includes("aborted")
+  );
+}
+
 export default function CoachUsers() {
   const router = useRouter();
   const [allUsers, setAllUsers] = useState<CoachUserRow[]>([]);
@@ -77,6 +94,7 @@ export default function CoachUsers() {
     const sentinel = loadMoreSentinelRef.current;
     const scrollRoot = listScrollContainerRef.current ?? null;
     if (!sentinel || totalCount === 0 || allUsers.length >= totalCount) return;
+    let isEffectActive = true;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -97,6 +115,7 @@ export default function CoachUsers() {
           },
         })
           .then((result) => {
+            if (!isEffectActive) return;
             const nextUsers = result.data?.coachUsersPage?.users ?? [];
             if (nextUsers.length === 0) return;
             setAllUsers((prev) => {
@@ -106,14 +125,25 @@ export default function CoachUsers() {
               return [...prev, ...newOnes].slice(0, totalCount);
             });
           })
+          .catch((error) => {
+            if (!isAbortLikeError(error)) {
+              console.error("Load more users error:", error);
+            }
+          })
           .finally(() => {
-            isLoadingMoreRef.current = false;
+            if (isEffectActive) {
+              isLoadingMoreRef.current = false;
+            }
           });
       },
       { root: scrollRoot, rootMargin: "200px", threshold: 0.1 },
     );
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      isEffectActive = false;
+      observer.disconnect();
+      isLoadingMoreRef.current = false;
+    };
   }, [allUsers.length, totalCount, loadMoreLoading, loadMore]);
 
   if (loading || usersLoading) {

@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -13,8 +14,11 @@ const USER_MOBILE_NAV_LINKS = [
   { href: "/user_recipe", label: "Mes Recettes" },
   { href: "/evolution_user", label: "Mon Evolution" },
   { href: "/user_profile", label: "Mon Profile" },
-  { href: "/meals_scanning", label: "IA Assiste" },
-  { href: "/nutritional_analysis", label: "Analyse IA" },
+] as const;
+
+const USER_MOBILE_ANALYSIS_LINKS = [
+  { href: "/meals_scanning", label: "Server 1" },
+  { href: "/nutritional_analysis", label: "Server 2" },
 ] as const;
 
 const COACH_MOBILE_NAV_LINKS = [
@@ -27,6 +31,7 @@ const COACH_MOBILE_NAV_LINKS = [
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserAnalysisMenuOpen, setIsUserAnalysisMenuOpen] = useState(false);
   const coachSidebar = useCoachSidebar();
   const { data, loading, refetch } = useProfileQuery({
     fetchPolicy: "cache-and-network",
@@ -137,6 +142,9 @@ export default function Header() {
               setIsMenuOpen(false);
             } else {
               setIsMenuOpen(!isMenuOpen);
+              if (isMenuOpen) {
+                setIsUserAnalysisMenuOpen(false);
+              }
             }
           }}
           aria-label={isCoachOrAdmin ? "Ouvrir le menu coach" : "Toggle menu"}
@@ -211,19 +219,67 @@ export default function Header() {
                       </Button>
                     ))
                   ) : (
-                    USER_MOBILE_NAV_LINKS.map((item) => (
-                      <Button
-                        key={item.href}
-                        asChild
-                        variant="ghost"
-                        size="sm"
-                        className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                    <>
+                      {USER_MOBILE_NAV_LINKS.map((item) => (
+                        <Button
+                          key={item.href}
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:text-gray-300 hover:bg-gray-700 justify-start"
+                        >
+                          <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
+                            {item.label}
+                          </Link>
+                        </Button>
+                      ))}
+                      <button
+                        type="button"
+                        aria-expanded={isUserAnalysisMenuOpen}
+                        aria-controls="mobile-analysis-links"
+                        onClick={() => setIsUserAnalysisMenuOpen((isOpen) => !isOpen)}
+                        className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-white transition-colors hover:bg-gray-700 hover:text-gray-300"
                       >
-                        <Link href={item.href} onClick={() => setIsMenuOpen(false)}>
-                          {item.label}
-                        </Link>
-                      </Button>
-                    ))
+                        <span>Analyse Ia</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            isUserAnalysisMenuOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      <div
+                        id="mobile-analysis-links"
+                        className={`grid overflow-hidden transition-all duration-300 ease-out ${
+                          isUserAnalysisMenuOpen
+                            ? "grid-rows-[1fr] opacity-100"
+                            : "grid-rows-[0fr] opacity-0"
+                        }`}
+                      >
+                        <div className="min-h-0">
+                          <div className="flex flex-col gap-2 pl-4">
+                            {USER_MOBILE_ANALYSIS_LINKS.map((item) => (
+                              <Button
+                                key={item.href}
+                                asChild
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start text-white hover:bg-gray-700 hover:text-gray-300"
+                              >
+                                <Link
+                                  href={item.href}
+                                  onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setIsUserAnalysisMenuOpen(false);
+                                  }}
+                                >
+                                  {item.label}
+                                </Link>
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                   <Button
                     type="button"

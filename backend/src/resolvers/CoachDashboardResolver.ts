@@ -8,6 +8,7 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
+import { In } from "typeorm";
 import { getCurrentUser } from "../auth";
 import { Status, UserRole } from "../entities/enums";
 import { Meal } from "../entities/Meal";
@@ -52,6 +53,9 @@ class CoachDashboardStats {
  */
 @ObjectType()
 class RecentUserData {
+  @Field(() => String)
+  userId!: string;
+
   @Field(() => String)
   name!: string;
 
@@ -155,7 +159,7 @@ export default class CoachDashboardResolver {
   async coachDashboardData(
     @Ctx() context: GraphQLContext,
   ): Promise<CoachDashboardData | null> {
-    await getCurrentUser(context); // Verify user is authenticated and authorized
+    const currentUser = await getCurrentUser(context);
 
     // Calculate date ranges for evolution comparison
     const now = new Date();
@@ -164,10 +168,16 @@ export default class CoachDashboardResolver {
     const sixtyDaysAgo = new Date(now);
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    // Get all coachees (users with role Coachee)
+    const coacheeWhere =
+      currentUser.role === UserRole.Coach
+        ? { role: UserRole.Coachee, coach: { id: currentUser.id } }
+        : { role: UserRole.Coachee };
+
+    // Get all coachees visible to the current coach/admin
     const allCoachees = await User.find({
-      where: { role: UserRole.Coachee },
+      where: coacheeWhere,
     });
+    const coacheeIds = allCoachees.map((user) => user.id);
 
     // Get coachees created in last 30 days and previous 30 days for evolution
     const recentCoachees = allCoachees.filter(
@@ -178,10 +188,11 @@ export default class CoachDashboardResolver {
         user.createdAt >= sixtyDaysAgo && user.createdAt < thirtyDaysAgo,
     );
 
-    // Get all published recipes
-    const allPublishedRecipes = await Recipe.find({
-      where: { status: Status.Publie },
-    });
+    // Get all recipes, then keep published ones for publication stats
+    const allRecipes = await Recipe.find();
+    const allPublishedRecipes = allRecipes.filter(
+      (recipe) => recipe.status === Status.Publie,
+    );
 
     // Get recipes published in last 30 days and previous 30 days
     const recentRecipes = allPublishedRecipes.filter(
@@ -192,10 +203,14 @@ export default class CoachDashboardResolver {
         recipe.createdAt >= sixtyDaysAgo && recipe.createdAt < thirtyDaysAgo,
     );
 
-    // Get all meals with dishes and analysis (scanned meals)
-    const allMeals = await Meal.find({
-      relations: ["dishes", "dishes.analysis"],
-    });
+    // Get all meals with dishes and analysis for visible coachees only
+    const allMeals =
+      coacheeIds.length > 0
+        ? await Meal.find({
+            where: { user: { id: In(coacheeIds) } },
+            relations: ["user", "dishes", "dishes.analysis"],
+          })
+        : [];
     const allDishes = allMeals.flatMap((meal) => meal.dishes ?? []);
     const dishesWithAnalysis = allDishes.filter((dish) => dish.analysis);
 
@@ -269,9 +284,44 @@ export default class CoachDashboardResolver {
       },
     };
 
-    // Get recent users (last 3) with their average scores
-    const recentUsersList = allCoachees
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    const lastMealAtByUserId = new Map<string, number>();
+    const scoreBucketsByUserId = new Map<string, number[]>();
+
+    for (const meal of allMeals) {
+      const userId = meal.user?.id;
+      if (!userId) {
+        continue;
+      }
+
+      const consumedAt =
+        meal.consumedAt instanceof Date ? meal.consumedAt.getTime() : 0;
+      if (consumedAt > (lastMealAtByUserId.get(userId) ?? 0)) {
+        lastMealAtByUserId.set(userId, consumedAt);
+      }
+
+      const scoreBucket = scoreBucketsByUserId.get(userId) ?? [];
+      for (const dish of meal.dishes ?? []) {
+        const score = dish.analysis?.mealHealthScore ?? 0;
+        if (score > 0) {
+          scoreBucket.push(score);
+        }
+      }
+      scoreBucketsByUserId.set(userId, scoreBucket);
+    }
+
+    // Get recent active users (last 3 by most recent meal, fallback to login then creation date)
+    const recentUsersList = [...allCoachees]
+      .sort((a, b) => {
+        const aMealTime = lastMealAtByUserId.get(a.id) ?? 0;
+        const bMealTime = lastMealAtByUserId.get(b.id) ?? 0;
+        if (aMealTime !== bMealTime) {
+          return bMealTime - aMealTime;
+        }
+
+        const aFallbackTime = (a.last_login_at ?? a.createdAt).getTime();
+        const bFallbackTime = (b.last_login_at ?? b.createdAt).getTime();
+        return bFallbackTime - aFallbackTime;
+      })
       .slice(0, 3);
 
     const recentUsersData: RecentUserData[] = await Promise.all(
@@ -281,17 +331,7 @@ export default class CoachDashboardResolver {
           relations: ["weight_measures"],
         });
 
-        // Get user's meals with dishes and analysis to calculate average score
-        const userMeals = await Meal.find({
-          where: { user: { id: user.id } },
-          relations: ["dishes", "dishes.analysis"],
-        });
-
-        // Extract all dishes from meals and get their scores
-        const userDishes = userMeals.flatMap((meal) => meal.dishes ?? []);
-        const userScores = userDishes
-          .map((dish) => dish.analysis?.mealHealthScore ?? 0)
-          .filter((score) => score > 0);
+        const userScores = scoreBucketsByUserId.get(user.id) ?? [];
 
         const userAverageScore =
           userScores.length > 0
@@ -313,6 +353,7 @@ export default class CoachDashboardResolver {
             : undefined;
 
         return {
+          userId: user.id,
           name: getUserDisplayName(user, profile),
           email: user.email,
           score: userAverageScore,
@@ -323,8 +364,8 @@ export default class CoachDashboardResolver {
       }),
     );
 
-    // Get recent recipes (last 3 published recipes)
-    const recentRecipesList = allPublishedRecipes
+    // Get recent recipes (last 3 created recipes)
+    const recentRecipesList = allRecipes
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 3);
 
