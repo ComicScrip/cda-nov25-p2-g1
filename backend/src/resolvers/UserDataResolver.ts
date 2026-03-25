@@ -1050,22 +1050,20 @@ export default class UserDataResolver {
     const paginatedDishes = dishes.slice(offset, offset + limit);
     const hasMoreMeals = offset + limit < dishes.length;
     const dailyTotals = new Map<string, number>();
-    const referenceDayKey = dishes[0]
-      ? toDateKey(dishes[0].consumedAt)
-      : toDateKey(new Date());
-    let referenceDayCalories = 0;
-    let referenceDayProtein = 0;
-    let referenceDayCarbs = 0;
-    let referenceDayFat = 0;
+    const todayKey = toDateKey(new Date());
+    let todayCalories = 0;
+    let todayProtein = 0;
+    let todayCarbs = 0;
+    let todayFat = 0;
 
     for (const dish of dishes) {
       const dayKey = toDateKey(dish.consumedAt);
       dailyTotals.set(dayKey, (dailyTotals.get(dayKey) ?? 0) + dish.calories);
-      if (dayKey === referenceDayKey) {
-        referenceDayCalories += dish.calories;
-        referenceDayProtein += dish.proteins;
-        referenceDayCarbs += dish.carbs;
-        referenceDayFat += dish.fats;
+      if (dayKey === todayKey) {
+        todayCalories += dish.calories;
+        todayProtein += dish.proteins;
+        todayCarbs += dish.carbs;
+        todayFat += dish.fats;
       }
     }
 
@@ -1078,10 +1076,7 @@ export default class UserDataResolver {
     const targetCalories = 2000;
     const targetProgress =
       targetCalories > 0
-        ? Math.min(
-            100,
-            Math.round((referenceDayCalories / targetCalories) * 100),
-          )
+        ? Math.round((todayCalories / targetCalories) * 100)
         : 0;
 
     return {
@@ -1095,9 +1090,9 @@ export default class UserDataResolver {
       targetProtein: 150,
       targetCarbs: 120,
       targetLipids: 40,
-      todayProtein: Math.round(referenceDayProtein),
-      todayCarbs: Math.round(referenceDayCarbs),
-      todayFat: Math.round(referenceDayFat),
+      todayProtein: Math.round(todayProtein),
+      todayCarbs: Math.round(todayCarbs),
+      todayFat: Math.round(todayFat),
       recentMeals: paginatedDishes.map((dish, index) => {
         const fallbackName = `Repas ${offset + index + 1}`;
         const name =
