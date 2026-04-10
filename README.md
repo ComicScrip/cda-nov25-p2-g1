@@ -116,7 +116,6 @@ Apres execution du seed (`npm run seed`), vous obtenez aussi :
 - `dave.lopper@app.com` / `SuperP@ssW0rd!`
 - `jane.doe@app.com` / `SuperP@ssW0rd!`
 - `janette.doe@app.com` / `SuperP@ssW0rd!`
-- `admin@app.com` / `SuperP@ssW0rd!`
 
 ## Variables d'environnement
 
