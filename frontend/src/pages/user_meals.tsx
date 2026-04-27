@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 import { useUserMealsDataQuery } from "@/graphql/generated/schema";
+import { getObjectiveProgressGradient } from "@/lib/objectiveProgress";
 
 const getFirstQueryValue = (value: string | string[] | undefined): string | undefined => {
   return Array.isArray(value) ? value[0] : value;
@@ -155,15 +156,7 @@ export default function RepasUtilisateurPage() {
   const displayedProgress =
     targetCalories > 0 ? Math.round((totalScannedCalories / targetCalories) * 100) : 0;
   const clampedProgress = Math.max(0, Math.min(displayedProgress, 100));
-
-  const getProgressBarColor = (value: number) => {
-    if (value > 100) return "from-[#b91c1c] to-[#7f1d1d]"; // rouge foncé
-    if (value >= 70) return "from-[#22c55e] to-[#15803d]"; // vert
-    if (value >= 45) return "from-[#fb923c] to-[#c05621]"; // orange
-    return "from-[#3b82f6] to-[#1d4ed8]"; // bleu
-  };
-
-  const progressBarGradient = getProgressBarColor(displayedProgress);
+  const progressBarGradient = getObjectiveProgressGradient(displayedProgress);
 
   return (
     <HomeLayout pageTitle="Mes repas" footerVariant="userSlim">
@@ -223,8 +216,9 @@ export default function RepasUtilisateurPage() {
             </div>
             <div className="mt-1.5 h-3 w-full overflow-hidden rounded-full bg-[#e5edf7] border border-[#cbd5e1]">
               <div
-                className={`h-full bg-gradient-to-r ${progressBarGradient} transition-all duration-500 ease-out`}
+                className="h-full transition-all duration-500 ease-out"
                 style={{
+                  background: progressBarGradient,
                   width: `${Math.min(clampedProgress, 100)}%`,
                 }}
               />
@@ -249,10 +243,10 @@ export default function RepasUtilisateurPage() {
                         setSelectedMealId(meal.id);
                       }
                     }}
-                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition ${
+                    className={`w-full cursor-pointer overflow-hidden rounded-md border p-3 text-left transition-all duration-200 hover:scale-[1.01] ${
                       isSelected
                         ? "border-[#73916f] bg-[#ffffff] shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
-                        : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+                        : "border-[#cdd6cb] bg-[#f9fcf7] shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:border-[#73916f] hover:bg-[#ffffff] hover:shadow-[0_4px_10px_rgba(0,0,0,0.14)]"
                     }`}
                   >
                     <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[#5a6758]">

@@ -1,5 +1,6 @@
 import { BookOpen, ChefHat, Loader2, TrendingUp, User, Users, UtensilsCrossed } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type RecentRecipeData,
@@ -58,6 +59,44 @@ export default function CoachDashboard() {
 
   const recentUsers = dashboardData?.coachDashboardData?.recentUsers || [];
   const recentRecipes = dashboardData?.coachDashboardData?.recentRecipes || [];
+  const statCards = [
+    {
+      key: "users",
+      href: "/coach/users",
+      bgClassName: "bg-[#bfe8ea]",
+      title: "Utilisateurs",
+      icon: Users,
+      value: stats.users.count,
+      evolution: stats.users.evolution,
+    },
+    {
+      key: "recipes",
+      href: "/coach/recipes",
+      bgClassName: "bg-[#cfa0c8]",
+      title: "Recettes publiées",
+      icon: BookOpen,
+      value: stats.publishedRecipes.count,
+      evolution: stats.publishedRecipes.evolution,
+    },
+    {
+      key: "scannedMeals",
+      href: "/nutritional_analysis",
+      bgClassName: "bg-[#a7d9a1]",
+      title: "Repas scannés",
+      icon: UtensilsCrossed,
+      value: stats.scannedMeals.count,
+      evolution: stats.scannedMeals.evolution,
+    },
+    {
+      key: "averageScore",
+      href: "/nutritional_analysis",
+      bgClassName: "bg-[#e9b26b]",
+      title: "Score moyen",
+      icon: TrendingUp,
+      value: stats.averageScore.count,
+      evolution: stats.averageScore.evolution,
+    },
+  ] as const;
 
   const getUserName = (email: string) => {
     const name = email.split("@")[0];
@@ -81,81 +120,33 @@ export default function CoachDashboard() {
 
             {/* 4 Stats cards in 2x2 grid */}
             <div className="grid w-full max-w-md grid-cols-2 gap-2.5 md:gap-3 mb-6">
-              {/* Users card */}
-              <Card className="bg-[#bfe8ea] border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                <CardHeader className="p-2.5 md:p-3 space-y-0">
-                  <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1.5 text-[#2c2c2c]">
-                    <Users className="h-4 w-4 md:h-5 md:w-5" />
-                    Utilisateurs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2.5 md:p-3 pt-1">
-                  <div className="text-base md:text-lg font-bold text-[#2c2c2c]">
-                    {stats.users.count}
-                  </div>
-                  <CardDescription className="text-xs md:text-sm flex items-center gap-1 mt-1 text-[#2c2c2c]">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {stats.users.evolution}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              {statCards.map((statCard) => {
+                const Icon = statCard.icon;
 
-              {/* Published recipes card */}
-              <Card className="bg-[#cfa0c8] border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                <CardHeader className="p-2.5 md:p-3 space-y-0">
-                  <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1.5 text-[#2c2c2c]">
-                    <BookOpen className="h-4 w-4 md:h-5 md:w-5" />
-                    Recettes publiées
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2.5 md:p-3 pt-1">
-                  <div className="text-base md:text-lg font-bold text-[#2c2c2c]">
-                    {stats.publishedRecipes.count}
-                  </div>
-                  <CardDescription className="text-xs md:text-sm flex items-center gap-1 mt-1 text-[#2c2c2c]">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {stats.publishedRecipes.evolution}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              {/* Scanned meals card */}
-              <Card className="bg-[#a7d9a1] border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                <CardHeader className="p-2.5 md:p-3 space-y-0">
-                  <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1.5 text-[#2c2c2c]">
-                    <UtensilsCrossed className="h-4 w-4 md:h-5 md:w-5" />
-                    Repas scannés
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2.5 md:p-3 pt-1">
-                  <div className="text-base md:text-lg font-bold text-[#2c2c2c]">
-                    {stats.scannedMeals.count}
-                  </div>
-                  <CardDescription className="text-xs md:text-sm flex items-center gap-1 mt-1 text-[#2c2c2c]">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {stats.scannedMeals.evolution}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              {/* Average score card */}
-              <Card className="bg-[#e9b26b] border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                <CardHeader className="p-2.5 md:p-3 space-y-0">
-                  <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1.5 text-[#2c2c2c]">
-                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
-                    Score moyen
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2.5 md:p-3 pt-1">
-                  <div className="text-base md:text-lg font-bold text-[#2c2c2c]">
-                    {stats.averageScore.count}
-                  </div>
-                  <CardDescription className="text-xs md:text-sm flex items-center gap-1 mt-1 text-[#2c2c2c]">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {stats.averageScore.evolution}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+                return (
+                  <Link key={statCard.key} href={statCard.href} className="block">
+                    <Card
+                      className={`${statCard.bgClassName} border-0 shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_14px_rgba(0,0,0,0.16)]`}
+                    >
+                      <CardHeader className="p-2.5 md:p-3 space-y-0">
+                        <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1.5 text-[#2c2c2c]">
+                          <Icon className="h-4 w-4 md:h-5 md:w-5" />
+                          {statCard.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2.5 md:p-3 pt-1">
+                        <div className="text-base md:text-lg font-bold text-[#2c2c2c]">
+                          {statCard.value}
+                        </div>
+                        <CardDescription className="text-xs md:text-sm flex items-center gap-1 mt-1 text-[#2c2c2c]">
+                          <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                          {statCard.evolution}
+                        </CardDescription>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Two large cards */}
@@ -168,13 +159,14 @@ export default function CoachDashboard() {
                     Derniers utilisateurs
                   </CardTitle>
                   <CardDescription className="text-xs md:text-sm text-[#1f3d1f] opacity-90 mt-1">
-                    Les trois derniers utilisateurs
+                    Les trois derniers utilisateurs actifs
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentUsers.length > 0 ? (
                     recentUsers.map(
                       (userItem: {
+                        userId: string;
                         name: string;
                         email: string;
                         score: number;
@@ -182,40 +174,43 @@ export default function CoachDashboard() {
                         goal?: string | null;
                         targetDailyCalories?: number | null;
                       }) => (
-                        <Card
-                          key={userItem.email}
-                          className="bg-white/90 border-0 backdrop-blur-sm"
+                        <Link
+                          key={userItem.userId}
+                          href={`/coach/users/${userItem.userId}`}
+                          className="block"
                         >
-                          <CardContent className="p-4 md:p-5">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate min-w-0">
-                                {userItem.name}
+                          <Card className="cursor-pointer border-0 bg-white/90 backdrop-blur-sm transition-all duration-200 hover:scale-[1.01] hover:bg-white hover:shadow-[0_6px_14px_rgba(0,0,0,0.16)]">
+                            <CardContent className="p-4 md:p-5">
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate min-w-0">
+                                  {userItem.name}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
+                                  <span className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
+                                    {Math.round(userItem.score)}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#1f3d1f]" />
-                                <span className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
-                                  {Math.round(userItem.score)}
-                                </span>
-                              </div>
-                            </div>
-                            <CardDescription className="text-xs md:text-sm text-[#555] mt-1 block">
-                              {userItem.email}
-                            </CardDescription>
-                            <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                              Poids:{" "}
-                              {userItem.currentWeight != null
-                                ? `${userItem.currentWeight} kg`
-                                : "—"}
-                              {" | "}
-                              Objectif: {userItem.goal || "—"}
-                              {" | "}
-                              Objectif calorique:{" "}
-                              {userItem.targetDailyCalories != null
-                                ? `${userItem.targetDailyCalories} kcal/j`
-                                : "—"}
-                            </CardDescription>
-                          </CardContent>
-                        </Card>
+                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1 block">
+                                {userItem.email}
+                              </CardDescription>
+                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                                Poids:{" "}
+                                {userItem.currentWeight != null
+                                  ? `${userItem.currentWeight} kg`
+                                  : "—"}
+                                {" | "}
+                                Objectif: {userItem.goal || "—"}
+                                {" | "}
+                                Objectif calorique:{" "}
+                                {userItem.targetDailyCalories != null
+                                  ? `${userItem.targetDailyCalories} kcal/j`
+                                  : "—"}
+                              </CardDescription>
+                            </CardContent>
+                          </Card>
+                        </Link>
                       ),
                     )
                   ) : (
@@ -237,44 +232,49 @@ export default function CoachDashboard() {
                     <ChefHat className="h-6 w-6 md:h-7 md:w-7" />
                     Recettes récentes
                   </CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-[#1f3d1f] opacity-90 mt-1">
+                    Les trois dernières recettes créées
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 pt-0 space-y-3">
                   {recentRecipes.length > 0 ? (
                     recentRecipes.map((recipe: RecentRecipeData) => (
-                      <Card key={recipe.id} className="bg-white/90 border-0 backdrop-blur-sm">
-                        <CardContent className="p-4 md:p-5">
-                          <div className="flex items-start gap-3">
-                            <div className="relative h-16 w-20 md:h-20 md:w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc]">
-                              <Image
-                                src={recipe.photo}
-                                alt={recipe.name}
-                                fill
-                                sizes="80px"
-                                className="object-cover"
-                                loading="lazy"
-                                unoptimized={
-                                  recipe.photo.startsWith("data:") ||
-                                  recipe.photo.startsWith("blob:")
-                                }
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate">
-                                  {recipe.name}
-                                </div>
-                                <div className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
-                                  {Math.round(recipe.calories)} kcal
-                                </div>
+                      <Link key={recipe.id} href={`/coach/recipes/${recipe.id}`} className="block">
+                        <Card className="cursor-pointer border-0 bg-white/90 backdrop-blur-sm transition-all duration-200 hover:scale-[1.01] hover:bg-white hover:shadow-[0_6px_14px_rgba(0,0,0,0.16)]">
+                          <CardContent className="p-4 md:p-5">
+                            <div className="flex items-start gap-3">
+                              <div className="relative h-16 w-20 md:h-20 md:w-24 shrink-0 overflow-hidden rounded-md border border-[#cfd5cc]">
+                                <Image
+                                  src={recipe.photo}
+                                  alt={recipe.name}
+                                  fill
+                                  sizes="80px"
+                                  className="object-cover"
+                                  loading="lazy"
+                                  unoptimized={
+                                    recipe.photo.startsWith("data:") ||
+                                    recipe.photo.startsWith("blob:")
+                                  }
+                                />
                               </div>
-                              <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
-                                P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g |
-                                L: {Math.round(recipe.lipids)}g
-                              </CardDescription>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <div className="font-semibold text-[#2c2c2c] text-sm md:text-base truncate">
+                                    {recipe.name}
+                                  </div>
+                                  <div className="font-bold text-[#2c2c2c] text-xs md:text-sm whitespace-nowrap">
+                                    {Math.round(recipe.calories)} kcal
+                                  </div>
+                                </div>
+                                <CardDescription className="text-xs md:text-sm text-[#555] mt-1">
+                                  P: {Math.round(recipe.proteins)}g | G: {Math.round(recipe.carbs)}g
+                                  {" | "}L: {Math.round(recipe.lipids)}g
+                                </CardDescription>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </Link>
                     ))
                   ) : (
                     <Card className="bg-white/90 border-0 backdrop-blur-sm">

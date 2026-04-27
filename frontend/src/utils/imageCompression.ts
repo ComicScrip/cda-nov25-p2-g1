@@ -66,10 +66,10 @@ export async function compressImage(
 /**
  * Validate image file before processing
  * @param file File to validate
- * @param maxSizeBytes Maximum file size in bytes (default: 10MB)
+ * @param maxSizeBytes Maximum file size in bytes (default: 50MB)
  * @returns Error message if invalid, null if valid
  */
-export function validateImageFile(file: File, maxSizeBytes = 10 * 1024 * 1024): string | null {
+export function validateImageFile(file: File, maxSizeBytes = 50 * 1024 * 1024): string | null {
   if (file.size > maxSizeBytes) {
     return `Le fichier est trop volumineux (${Math.round(
       file.size / 1024 / 1024,

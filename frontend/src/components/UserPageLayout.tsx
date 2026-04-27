@@ -1,5 +1,7 @@
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 const USER_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard_user" },
@@ -7,11 +9,16 @@ const USER_NAV_ITEMS = [
   { id: "recipes", label: "Mes Recettes", href: "/user_recipe" },
   { id: "evolution", label: "Mon Evolution", href: "/evolution_user" },
   { id: "profile", label: "Mon Profil", href: "/user_profile" },
-  { id: "aiAssist", label: "IA Assiste", href: "/meals_scanning" },
-  { id: "analyseIa", label: "Analyse IA", href: "/nutritional_analysis" },
 ] as const;
 
-type UserNavId = (typeof USER_NAV_ITEMS)[number]["id"];
+const USER_ANALYSIS_NAV_ITEMS = [
+  { id: "aiAssist", label: "Server 1", href: "/meals_scanning" },
+  { id: "analyseIa", label: "Server 2", href: "/nutritional_analysis" },
+] as const;
+
+type UserNavId =
+  | (typeof USER_NAV_ITEMS)[number]["id"]
+  | (typeof USER_ANALYSIS_NAV_ITEMS)[number]["id"];
 
 interface UserPageLayoutProps {
   activeNav: UserNavId;
@@ -30,6 +37,9 @@ export default function UserPageLayout({
   frameClassName = "overflow-hidden rounded-md border border-[#c9c9c9] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]",
   hideSidebarOnMobile = true,
 }: UserPageLayoutProps) {
+  const isAnalysisNavActive = activeNav === "aiAssist" || activeNav === "analyseIa";
+  const [isAnalysisMenuOpen, setIsAnalysisMenuOpen] = useState(isAnalysisNavActive);
+
   return (
     <section className="flex flex-1 bg-[#f3f7ee]">
       <div className={`mx-auto flex w-full flex-1 xl:mx-0 ${maxWidthClassName}`}>
@@ -54,13 +64,65 @@ export default function UserPageLayout({
                       ) : (
                         <Link
                           href={item.href}
-                          className="relative z-10 block w-full rounded-sm bg-[#f1f1f1] py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                          className="relative z-10 block w-full rounded-sm bg-[#f1f1f1] py-2 text-center shadow-[0_2px_4px_rgba(0,0,0,0.18)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#a680a8] hover:text-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
                         >
                           {item.label}
                         </Link>
                       )}
                     </li>
                   ))}
+                  <li>
+                    <button
+                      type="button"
+                      aria-expanded={isAnalysisMenuOpen}
+                      aria-controls="user-analysis-nav"
+                      onClick={() => setIsAnalysisMenuOpen((isOpen) => !isOpen)}
+                      className={`flex w-full items-center justify-between rounded-sm py-2 px-3 text-left shadow-[0_2px_4px_rgba(0,0,0,0.18)] transition-all duration-200 ${
+                        isAnalysisNavActive
+                          ? "bg-[#a680a8] text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                          : "bg-[#f1f1f1] hover:scale-[1.02] hover:bg-[#a680a8] hover:text-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                      }`}
+                    >
+                      <span>Analyse Ia</span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          isAnalysisMenuOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    <div
+                      id="user-analysis-nav"
+                      className={`grid overflow-hidden transition-all duration-300 ease-out ${
+                        isAnalysisMenuOpen
+                          ? "mt-2 grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="min-h-0">
+                        <div className="space-y-2 pl-4">
+                          {USER_ANALYSIS_NAV_ITEMS.map((item) =>
+                            item.id === activeNav ? (
+                              <button
+                                key={item.id}
+                                type="button"
+                                className="block w-full rounded-sm bg-[#8c6d8e] py-2 text-center text-white shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                              >
+                                {item.label}
+                              </button>
+                            ) : (
+                              <Link
+                                key={item.id}
+                                href={item.href}
+                                className="block w-full rounded-sm bg-[#ece6ed] py-2 text-center text-[#4f4150] shadow-[0_2px_4px_rgba(0,0,0,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#8c6d8e] hover:text-white"
+                              >
+                                {item.label}
+                              </Link>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
                 </ul>
               </nav>
             </aside>

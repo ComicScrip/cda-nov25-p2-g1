@@ -24,6 +24,10 @@ import { Nutritional_Analysis } from "../entities/Nutritional_Analysis";
 import { Scanner_Coach_Submission } from "../entities/Scanner_Coach_Submission";
 import type { User } from "../entities/User";
 import type { GraphQLContext } from "../types";
+import {
+  buildScannerAnalysisWarningsText,
+  type ScannerAnalysisPayload,
+} from "../utils/scannerInsights";
 
 // Maps French meal type strings from Gemini to MealType enum values
 function mapMealTypeToEnum(mealType?: string): MealType | undefined {
@@ -663,7 +667,7 @@ export default class MealAnalysisResolver {
       | { dishName?: string; mealMoment?: string }
       | undefined;
     const analysisPayload = payload?.analysis as
-      | {
+      | ({
           nutrition_estimee?: {
             calories_kcal?: { min: number; max: number };
             proteines_g?: { min: number; max: number };
@@ -671,7 +675,7 @@ export default class MealAnalysisResolver {
             lipides_g?: { min: number; max: number };
             fibres_g?: { min: number; max: number };
           };
-        }
+        } & ScannerAnalysisPayload)
       | undefined;
 
     const mid = (r: { min: number; max: number } | undefined): number =>
@@ -705,7 +709,7 @@ export default class MealAnalysisResolver {
       lipids: nut ? mid(nut.lipides_g) : undefined,
       fiber: nut ? mid(nut.fibres_g) : undefined,
       mealHealthScore: undefined,
-      warnings: undefined,
+      warnings: buildScannerAnalysisWarningsText(analysisPayload),
       suggestions: "Créé à partir d'une soumission scanner (analyse IA).",
       status: Status.Publie,
       isModified: true,

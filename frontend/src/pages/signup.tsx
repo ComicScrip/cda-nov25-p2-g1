@@ -184,7 +184,7 @@ export default function Signup() {
               <CardFooter className="flex flex-col gap-2 px-4 pb-4">
                 <Button
                   type="submit"
-                  className="w-full h-10 text-sm bg-dark-header text-white hover:bg-dark-footer"
+                  className="w-full h-10 cursor-pointer text-sm bg-dark-header text-white transition-all duration-200 hover:scale-[1.02] hover:bg-[#5a5a5a] hover:shadow-lg"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

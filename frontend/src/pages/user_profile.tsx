@@ -101,6 +101,7 @@ export default function UserProfilePage() {
     ? selectedBirthDate.format("DD/MM/YYYY")
     : "";
   const profileName = firstName.trim() || "Utilisateur";
+  const hasMedicalInfoInput = medicalInfoInput.trim().length > 0;
 
   const handleAddMedicalTag = () => {
     const nextTag = medicalInfoInput.trim();
@@ -351,7 +352,12 @@ export default function UserProfilePage() {
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-[#7a9378] px-6 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+                  disabled={!hasMedicalInfoInput}
+                  className={`rounded-md px-6 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ${
+                    hasMedicalInfoInput
+                      ? "cursor-pointer bg-[#2f3d2f] hover:scale-[1.02] hover:bg-[#465946] hover:shadow-lg"
+                      : "bg-[#7a9378]"
+                  }`}
                 >
                   Ajouter
                 </button>
@@ -414,7 +420,7 @@ export default function UserProfilePage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="rounded-md bg-[#2f3d2f] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.25)] disabled:opacity-60"
+            className="cursor-pointer rounded-md bg-[#2f3d2f] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#465946] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? "Enregistrement..." : "Enregistrer"}
           </button>

@@ -153,7 +153,7 @@ describe("CoachLayout", () => {
       );
 
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
-      expect(screen.getByText("utilisateurs")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /utilisateurs/i, hidden: true })).toBeInTheDocument();
       expect(screen.getByText("Recettes")).toBeInTheDocument();
       expect(screen.getByText("Analyse IA")).toBeInTheDocument();
     });
@@ -180,7 +180,10 @@ describe("CoachLayout", () => {
         </CoachLayout>,
       );
 
-      const usersLink = screen.getByText("utilisateurs").closest("a");
+      const usersLink = screen.getByRole("link", {
+        name: /utilisateurs/i,
+        hidden: true,
+      });
       expect(usersLink).toBeInTheDocument();
       // The isActive function checks if router.pathname === href
       // Since pathname is "/coach/users" and href is "/coach/users", it should be active
@@ -389,7 +392,7 @@ describe("CoachLayout", () => {
       await user.click(menuButton);
 
       expect(screen.getByTestId("coach-sidebar")).toHaveAttribute("aria-hidden", "false");
-      expect(screen.getByText("utilisateurs")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /utilisateurs/i })).toBeInTheDocument();
       // Close sidebar via close button (burger only opens, does not toggle)
       const closeButtons = screen.getAllByRole("button", { name: "Fermer le menu" });
       await user.click(closeButtons[0]);

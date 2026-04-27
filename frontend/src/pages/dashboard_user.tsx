@@ -3,6 +3,7 @@ import Link from "next/link";
 import HomeLayout from "@/components/HomeLayout";
 import UserPageLayout from "@/components/UserPageLayout";
 import { type UserDashboardDataQuery, useUserDashboardDataQuery } from "@/graphql/generated/schema";
+import { getExceededObjectivePercentage, getObjectiveProgressColor } from "@/lib/objectiveProgress";
 
 const RECENT_ACTIVITY_LIMIT = 5;
 
@@ -40,6 +41,9 @@ export default function DashboardPage() {
     UserDashboardDataQuery["userDashboardData"]
   >["recentMeals"][number];
   const meals: DashboardMeal[] = (dashboard?.recentMeals ?? []).slice(0, RECENT_ACTIVITY_LIMIT);
+  const targetProgress = Math.max(0, dashboard?.targetProgress ?? 0);
+  const objectiveProgressColor = getObjectiveProgressColor(targetProgress);
+  const exceededObjectivePercentage = getExceededObjectivePercentage(targetProgress);
 
   return (
     <HomeLayout pageTitle="Dashboard" footerVariant="userSlim">
@@ -80,7 +84,7 @@ export default function DashboardPage() {
               />
               <Link
                 href="/meals_scanning"
-                className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
+                className="mt-3 inline-block rounded-md bg-[#36442d] px-6 py-2 text-xs font-semibold text-white shadow-[0_3px_6px_rgba(0,0,0,0.3)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#5f8a56] hover:shadow-lg"
               >
                 Scanner un repas
               </Link>
@@ -98,13 +102,23 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-6 rounded-md border border-[#d5a76a] bg-linear-to-r from-[#f4d49a] to-[#eaa552] p-4 shadow-[0_3px_6px_rgba(0,0,0,0.2)]">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="text-sm font-semibold text-[#3a2a12]">
-              Objectif calorique{" "}
-              <span className="ml-2 font-normal">{dashboard?.targetCalories ?? 0} cal / j</span>
+              <div>
+                Objectif calorique{" "}
+                <span className="ml-2 font-normal">{dashboard?.targetCalories ?? 0} cal / j</span>
+              </div>
+              {exceededObjectivePercentage > 0 && (
+                <div className="mt-1 text-xs font-semibold text-[#7f1d1d]">
+                  Objectif dépassé de {exceededObjectivePercentage} %
+                </div>
+              )}
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2bbf5c] text-xs font-bold text-white">
-              {dashboard?.targetProgress ?? 0}%
+            <div
+              className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-bold whitespace-nowrap text-white"
+              style={{ backgroundColor: objectiveProgressColor }}
+            >
+              {targetProgress}%
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-[#3a2a12]">

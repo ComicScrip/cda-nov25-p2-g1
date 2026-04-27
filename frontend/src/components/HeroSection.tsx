@@ -43,7 +43,7 @@ export default function HeroSection() {
             onClick={handleRequestDemo}
             variant="outline"
             size="sm"
-            className="w-full sm:w-auto border-2 border-white/70 bg-transparent text-white hover:bg-white/15 text-xs md:text-sm px-4 md:px-6 py-3 sm:py-2.5 md:py-3 rounded-lg min-h-[44px] sm:min-h-0"
+            className="w-full cursor-pointer sm:w-auto border-2 border-white/70 bg-transparent text-white hover:bg-white/15 text-xs md:text-sm px-4 md:px-6 py-3 sm:py-2.5 md:py-3 rounded-lg min-h-[44px] sm:min-h-0"
           >
             Demander une démo
           </Button>
@@ -51,7 +51,7 @@ export default function HeroSection() {
             type="button"
             onClick={handleTryFree}
             size="lg"
-            className="w-full sm:w-auto bg-white text-[#1e4a1e] hover:bg-white/95 font-semibold text-sm md:text-base px-6 md:px-8 py-3.5 sm:py-3 md:py-4 rounded-xl border-2 border-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 min-h-[48px] sm:min-h-0"
+            className="w-full cursor-pointer sm:w-auto bg-white text-[#1e4a1e] hover:bg-white/95 font-semibold text-sm md:text-base px-6 md:px-8 py-3.5 sm:py-3 md:py-4 rounded-xl border-2 border-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 min-h-[48px] sm:min-h-0"
           >
             Essayez gratuitement
           </Button>

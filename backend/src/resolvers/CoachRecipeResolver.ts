@@ -343,6 +343,18 @@ export default class CoachRecipeResolver {
 
   @Mutation(() => Boolean)
   @Authorized("coach", "admin")
+  async deleteRecipe(
+    @Ctx() context: GraphQLContext,
+    @Arg("id", () => String) id: string,
+  ): Promise<boolean> {
+    await getCurrentUser(context);
+
+    const deleteResult = await Recipe.delete({ id });
+    return (deleteResult.affected ?? 0) > 0;
+  }
+
+  @Mutation(() => Boolean)
+  @Authorized("coach", "admin")
   async assignRecipeToUser(
     @Ctx() context: GraphQLContext,
     @Arg("recipeId", () => String) recipeId: string,
